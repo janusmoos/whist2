@@ -1,0 +1,246 @@
+import SwiftUI
+
+/// Struktureret visning af den aktuelle melding (melding + resultat + «Aktivt spil»).
+struct MeldingPresentation {
+    var sectionTitle: String = "Nuværende melding"
+    var rows: [(String, String)]
+    var statusFootnote: String?
+
+    static func from(draft: HandInputDraft, navigationStepLabel: String? = nil) -> MeldingPresentation {
+        let foot = navigationStepLabel
+        switch draft.kind {
+        case .duty:
+            return MeldingPresentation(
+                rows: [("Type", "Duestraf")],
+                statusFootnote: foot
+            )
+        case .sol:
+            var r: [(String, String)] = [
+                ("Type", "Sol"),
+                ("Variant", solTypeDanish(draft.solType)),
+                ("Melder", draft.solBidder.playerDisplayName),
+            ]
+            if !draft.goingWith.isEmpty {
+                let names = draft.goingWith.sorted(by: { $0.rawValue < $1.rawValue }).map(\.playerDisplayName).joined(separator: ", ")
+                r.append(("Går med", names))
+            } else {
+                r.append(("Går med", "—"))
+            }
+            return MeldingPresentation(rows: r, statusFootnote: foot)
+        case .normal:
+            var r: [(String, String)] = [
+                ("Melder", draft.bidder.playerDisplayName),
+                ("Spiltype", draft.normalSubtype.title),
+                ("Meldt", "\(draft.bidTricks) stik"),
+            ]
+            if draft.normalSubtype == .alm, let t = draft.trumpAlm {
+                r.append(("Trumf (bud)", t.rawValue))
+            }
+            if draft.normalSubtype == .gode {
+                r.append(("Bemærk", "Gode i klør"))
+            }
+            if draft.normalSubtype == .halve || draft.normalSubtype == .vip {
+                r.append(("Trumf", "Vælges efter spillet"))
+            }
+            if draft.requiresPartnerAceForBid, let ace = draft.partnerAceSuit {
+                r.append(("Makker-es", ace.shortSymbol))
+            } else if draft.requiresPartnerAceForBid {
+                r.append(("Makker-es", "Ikke valgt"))
+            }
+            if draft.normalSubtype == .vip {
+                r.append(("VIP-niveau", draft.vipLevel.danishLabel))
+            }
+            return MeldingPresentation(rows: r, statusFootnote: foot)
+        }
+    }
+
+    static func from(snapshot: HandDraftPersistence.Snapshot) -> MeldingPresentation {
+        let kind = AddHandKind(rawValue: snapshot.kindRaw) ?? .normal
+        let step: String? = {
+            switch snapshot.navigationStep {
+            case HandDraftPersistence.stepResultat: return "Trin: resultat (efter spillet)"
+            case HandDraftPersistence.stepMelding: return "Trin: melding"
+            default: return nil
+            }
+        }()
+        var draft = HandInputDraft()
+        HandDraftPersistence.apply(snapshot, to: draft)
+        return from(draft: draft, navigationStepLabel: step)
+    }
+
+    private static func solTypeDanish(_ t: SolType) -> String {
+        switch t {
+        case .normal: return "Sol"
+        case .pure: return "Ren sol"
+        case .halfDealer: return "Halv bordlægger"
+        case .dealer: return "Bordlægger"
+        }
+    }
+}
+
+// MARK: - Kort UI
+
+struct MeldingStatusCard: View {
+    let presentation: MeldingPresentation
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(presentation.sectionTitle)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            ForEach(Array(presentation.rows.enumerated()), id: \.offset) { _, row in
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(row.0)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 100, alignment: .leading)
+                    Text(row.1)
+                        .font(row.0 == "Melder" ? .body.weight(.bold) : .body.weight(.semibold))
+                        .textCase(row.0 == "Melder" ? .uppercase : nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+
+            if let foot = presentation.statusFootnote {
+                Text(foot)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.thinMaterial)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+    }
+}
+
+// MARK: - Melder som knapper (fire spillere)
+
+struct MelderSeatButtonGrid: View {
+    @Binding var selectedSeat: Seat
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+            ForEach(Seat.all, id: \.self) { seat in
+                let on = selectedSeat == seat
+                Button {
+                    selectedSeat = seat
+                } label: {
+                    Text(seat.playerDisplayName)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.bordered)
+                .tint(on ? .accentColor : .secondary)
+                .buttonBorderShape(.roundedRectangle(radius: 6))
+                .fontWeight(on ? .semibold : .regular)
+                .accessibilityLabel("Melder: \(seat.playerDisplayName)")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Vælg melder")
+    }
+}
+
+// MARK: - Makker som knapper (samme udtryk som melder på meldingssiden)
+
+struct PartnerSeatButtonGrid: View {
+    @Binding var selectedPartner: Seat?
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+            ForEach(Seat.all, id: \.self) { seat in
+                let on = selectedPartner == seat
+                Button {
+                    selectedPartner = seat
+                } label: {
+                    Text(seat.playerDisplayName)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.bordered)
+                .tint(on ? .accentColor : .secondary)
+                .buttonBorderShape(.roundedRectangle(radius: 6))
+                .fontWeight(on ? .semibold : .regular)
+                .accessibilityLabel("Makker: \(seat.playerDisplayName)")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Vælg makker")
+    }
+}
+
+// MARK: - Antal stik (normal) — hjul som i Ur-appen
+
+struct NormalBidTricksWheelPicker: View {
+    @Binding var bidTricks: Int
+
+    var body: some View {
+        Picker("Meldt antal stik", selection: $bidTricks) {
+            ForEach(Array(8 ... 13), id: \.self) { n in
+                Text("\(n) stik").tag(n)
+            }
+        }
+        .pickerStyle(.wheel)
+        .labelsHidden()
+        .frame(height: 128)
+        .clipped()
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel("Meldt antal stik")
+    }
+}
+
+// MARK: - Taget stik (resultat, normal)
+
+struct ActualTricksWheelPicker: View {
+    @Binding var actualTricks: Int
+
+    var body: some View {
+        Picker("Vundne stik", selection: $actualTricks) {
+            ForEach(Array(0 ... 13), id: \.self) { n in
+                Text("\(n) stik").tag(n)
+            }
+        }
+        .pickerStyle(.wheel)
+        .labelsHidden()
+        .frame(height: 128)
+        .clipped()
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel("Antal vundne stik for kontrakt-holdet")
+    }
+}
+
+private extension Suit {
+    var shortSymbol: String {
+        switch self {
+        case .spades: return "♠"
+        case .hearts: return "♥"
+        case .diamonds: return "♦"
+        case .clubs: return "♣"
+        }
+    }
+}
+
+private extension VipLevel {
+    var danishLabel: String {
+        switch self {
+        case .single: return "Første"
+        case .double: return "Anden"
+        case .triple: return "Tredje"
+        }
+    }
+}

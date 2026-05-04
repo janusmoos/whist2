@@ -1,0 +1,7 @@
+# Lokale Xcode-brugerdata (beholdes ikke i snapshots heller)
+**/xcuserdata/
+
+# Snapshot-mapper (store kopier); README og script under Snapshots/ kan stadig versioneres
+/Snapshots/Whist20-*/
+
+.DS_Store
