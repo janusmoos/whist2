@@ -39,8 +39,19 @@ struct MeldingPresentation {
             if draft.normalSubtype == .gode {
                 r.append(("Bemærk", "Gode i klør"))
             }
-            if draft.normalSubtype == .halve || draft.normalSubtype == .vip {
-                r.append(("Trumf", "Vælges efter spillet"))
+            if draft.normalSubtype == .halve {
+                if let t = draft.trumpAfterPlay {
+                    r.append(("Trumf", t.rawValue))
+                } else {
+                    r.append(("Trumf", "Vælges på næste trin"))
+                }
+            }
+            if draft.normalSubtype == .vip {
+                if let t = draft.trumpAfterPlay {
+                    r.append(("Trumf", t.rawValue))
+                } else {
+                    r.append(("Trumf", "Vælges ved halve"))
+                }
             }
             if draft.requiresPartnerAceForBid, let ace = draft.partnerAceSuit {
                 r.append(("Makker-es", ace.shortSymbol))
@@ -58,8 +69,9 @@ struct MeldingPresentation {
         let kind = AddHandKind(rawValue: snapshot.kindRaw) ?? .normal
         let step: String? = {
             switch snapshot.navigationStep {
-            case HandDraftPersistence.stepResultat: return "Trin: resultat (efter spillet)"
+            case HandDraftPersistence.stepResultat: return "Trin: resultat"
             case HandDraftPersistence.stepMelding: return "Trin: melding"
+            case HandDraftPersistence.stepHalveTrumf: return "Trin: trumf (halve)"
             default: return nil
             }
         }()
@@ -83,6 +95,8 @@ struct MeldingPresentation {
 struct MeldingStatusCard: View {
     let presentation: MeldingPresentation
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(presentation.sectionTitle)
@@ -95,7 +109,7 @@ struct MeldingStatusCard: View {
                     Text(row.0)
                         .foregroundStyle(.secondary)
                         .frame(width: 100, alignment: .leading)
-                    Text(row.1)
+                    SuitColoredInlineText.build(row.1, colorScheme: colorScheme)
                         .font(row.0 == "Melder" ? .body.weight(.bold) : .body.weight(.semibold))
                         .textCase(row.0 == "Melder" ? .uppercase : nil)
                         .frame(maxWidth: .infinity, alignment: .leading)

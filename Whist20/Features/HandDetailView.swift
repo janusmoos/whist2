@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HandDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
 
     let hand: RecordedHand
     /// Bruges til migration af `handNumber` på ældre gemte kampe.
@@ -19,8 +20,10 @@ struct HandDetailView: View {
     var body: some View {
         List {
             Section {
-                Text(hand.summaryLine)
-                    .font(.subheadline)
+                SuitColoredInlineText.build(hand.displayResumeNarrative, colorScheme: colorScheme)
+                    .font(.body)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(hand.playedAt.formatted(date: .abbreviated, time: .shortened))
                     .foregroundStyle(.secondary)
             }

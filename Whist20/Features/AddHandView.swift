@@ -4,6 +4,8 @@ import SwiftUI
 // MARK: - Routing
 
 private enum HandRoute: Hashable {
+    /// Kun normale spil med undertype halve: trumf før resultat.
+    case halveTrumf
     case resultat
 }
 
@@ -40,6 +42,42 @@ final class HandInputDraft {
     var dutySeat: Seat = .south
 
     var solTricks: [Seat: Int] = Dictionary(uniqueKeysWithValues: Seat.all.map { ($0, 0) })
+
+    /// Resultat for sol: kun melder + «går med» tastes ind; resten udledes.
+    var solTrickInputSeats: [Seat] {
+        guard kind == .sol else { return [] }
+        var out: [Seat] = [solBidder]
+        for s in goingWith.sorted(by: { $0.rawValue < $1.rawValue }) where s != solBidder {
+            out.append(s)
+        }
+        return out
+    }
+
+    /// Fordeler rest-stik på modstanderne så summen over fire pladser er 13 (kun kontraktsiden redigeres i UI).
+    func syncSolOpponentTricksFromContractSide() {
+        guard kind == .sol else { return }
+        var copy = solTricks
+        let contractList = [solBidder] + goingWith.filter { $0 != solBidder }.sorted { $0.rawValue < $1.rawValue }
+        let contractSet = Set(contractList)
+        let opponents = Seat.all.filter { !contractSet.contains($0) }
+        let contractSum = contractList.reduce(0) { $0 + (copy[$1] ?? 0) }
+        let remaining = 13 - contractSum
+        if opponents.isEmpty {
+            solTricks = copy
+            return
+        }
+        if remaining < 0 {
+            solTricks = copy
+            return
+        }
+        let n = opponents.count
+        let base = remaining / n
+        let extras = remaining % n
+        for (index, seat) in opponents.enumerated() {
+            copy[seat] = base + (index < extras ? 1 : 0)
+        }
+        solTricks = copy
+    }
 
     func resolvedNormalGameType() -> NormalGameType {
         switch normalSubtype {
@@ -129,6 +167,7 @@ final class HandInputDraft {
             if normalSubtype == .halve || normalSubtype == .vip, trumpAfterPlay == nil { return false }
             return normalScoresPreview != nil
         case .sol:
+            guard solContractTricksValid else { return false }
             return solScoresPreview != nil
         case .duty:
             return true
@@ -154,6 +193,12 @@ final class HandInputDraft {
             goingWith: goingWith,
             tricksBySeat: solTricks
         ))
+    }
+
+    private var solContractTricksValid: Bool {
+        guard kind == .sol else { return true }
+        let sum = solTrickInputSeats.reduce(0) { $0 + (solTricks[$1] ?? 0) }
+        return sum <= 13
     }
 
     func finalScores() -> [Seat: Int]? {
@@ -244,7 +289,10 @@ private struct BidStepView: View {
         }
         .navigationTitle("Melding")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: draft.normalSubtype) { _, _ in
+        .onChange(of: draft.normalSubtype) { _, newSubtype in
+            if newSubtype != .halve && newSubtype != .vip {
+                draft.trumpAfterPlay = nil
+            }
             if !draft.requiresPartnerAceForBid {
                 draft.partnerAceSuit = nil
             } else if let ace = draft.partnerAceSuit, draft.makkerEsExcludedSuits.contains(ace) {
@@ -262,13 +310,23 @@ private struct BidStepView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Næste") {
-                    HandDraftPersistence.upsertPending(
-                        context: modelContext,
-                        gameDay: gameDay,
-                        draft: draft,
-                        navigationStep: HandDraftPersistence.stepResultat
-                    )
-                    path.append(HandRoute.resultat)
+                    if draft.kind == .normal && draft.normalSubtype == .halve {
+                        HandDraftPersistence.upsertPending(
+                            context: modelContext,
+                            gameDay: gameDay,
+                            draft: draft,
+                            navigationStep: HandDraftPersistence.stepHalveTrumf
+                        )
+                        path.append(HandRoute.halveTrumf)
+                    } else {
+                        HandDraftPersistence.upsertPending(
+                            context: modelContext,
+                            gameDay: gameDay,
+                            draft: draft,
+                            navigationStep: HandDraftPersistence.stepResultat
+                        )
+                        path.append(HandRoute.resultat)
+                    }
                 }
                 .disabled(!draft.isBidStepValid)
             }
@@ -313,7 +371,7 @@ private struct BidStepView: View {
 
     @ViewBuilder
     private var solBidSections: some View {
-        Section("Sol") {
+        Section {
             Picker("Sol-type", selection: $draft.solType) {
                 ForEach(SolType.allCases, id: \.self) { t in
                     Text(solTypeTitle(t)).tag(t)
@@ -327,7 +385,7 @@ private struct BidStepView: View {
         Section {
             MelderSeatButtonGrid(selectedSeat: $draft.solBidder)
         }
-        Section("Går med (valgfrit)") {
+        Section("Går med") {
             ForEach(Seat.all.filter { $0 != draft.solBidder }, id: \.self) { seat in
                 Toggle(seat.playerDisplayName, isOn: bindingGoingWith(seat))
             }
@@ -350,6 +408,76 @@ private struct BidStepView: View {
                 if newValue { draft.goingWith.insert(seat) } else { draft.goingWith.remove(seat) }
             }
         )
+    }
+}
+
+// MARK: - Trin 1b: Halve — trumf (før resultat)
+
+private struct HalveTrumpStepView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    @Bindable var draft: HandInputDraft
+    @Binding var path: NavigationPath
+    let gameDay: GameDay
+
+    var body: some View {
+        Form {
+            Section {
+                MeldingStatusCard(
+                    presentation: MeldingPresentation.from(
+                        draft: draft,
+                        navigationStepLabel: nil
+                    )
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowBackground(Color.clear)
+            }
+
+            Section {
+                Text("Vælg trumf for halve-spillet. Den bruges i pointberegning og vises på Aktivt spil med det samme.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                optionalSuitPicker(selection: $draft.trumpAfterPlay, excludedSuits: draft.makkerEsExcludedSuits)
+            } header: {
+                Text("Trumf")
+            }
+        }
+        .navigationTitle("Trumf (halve)")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: draft.trumpAfterPlay) { _, newTrump in
+            if let ace = draft.partnerAceSuit, let t = newTrump, ace == t {
+                draft.partnerAceSuit = nil
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Tilbage") {
+                    path.removeLast()
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Næste") {
+                    HandDraftPersistence.upsertPending(
+                        context: modelContext,
+                        gameDay: gameDay,
+                        draft: draft,
+                        navigationStep: HandDraftPersistence.stepResultat
+                    )
+                    path.append(HandRoute.resultat)
+                }
+                .disabled(draft.trumpAfterPlay == nil)
+            }
+        }
+        .onAppear {
+            HandDraftPersistence.upsertPending(
+                context: modelContext,
+                gameDay: gameDay,
+                draft: draft,
+                navigationStep: HandDraftPersistence.stepHalveTrumf
+            )
+        }
     }
 }
 
@@ -399,6 +527,9 @@ private struct ResultStepView: View {
             }
         }
         .onAppear {
+            if draft.kind == .sol {
+                draft.syncSolOpponentTricksFromContractSide()
+            }
             HandDraftPersistence.upsertPending(
                 context: modelContext,
                 gameDay: gameDay,
@@ -445,8 +576,9 @@ private struct ResultStepView: View {
             ActualTricksWheelPicker(actualTricks: $draft.actualTricks)
         }
 
-        if draft.normalSubtype == .halve || draft.normalSubtype == .vip {
-            Section("Trumf (efter spillet)") {
+        /// Halve: trumf vælges på forrige skærm (`HalveTrumpStepView`).
+        if draft.normalSubtype == .vip {
+            Section("Trumf") {
                 optionalSuitPicker(selection: $draft.trumpAfterPlay)
             }
         }
@@ -492,7 +624,7 @@ private struct ResultStepView: View {
             Text("Dobbelt point")
                 .font(.subheadline.weight(.semibold))
             Text(
-                "Du har valgt VIP i tredje og klør som trumf efter spillet. Kontraktholdets point beregnes som ved andre VIP-spil og ganges derefter med 2 — det følger reglen om, at klør i tredje VIP tæller dobbelt."
+                "Du har valgt VIP i tredje og klør som trumf ved halve. Kontraktholdets point beregnes som ved andre VIP-spil og ganges derefter med 2 — det følger reglen om, at klør i tredje VIP tæller dobbelt."
             )
             .font(.footnote)
             .foregroundStyle(.secondary)
@@ -512,9 +644,9 @@ private struct ResultStepView: View {
 
     @ViewBuilder
     private var solResultSections: some View {
-        Section("Stik pr. spiller") {
-            ForEach(Seat.all, id: \.self) { seat in
-                Stepper("\(seat.playerDisplayName): \(draft.solTricks[seat] ?? 0)", value: bindingSolTricks(seat), in: 0 ... 13)
+        Section("Stik (melder og medspillere)") {
+            ForEach(draft.solTrickInputSeats, id: \.self) { seat in
+                Stepper("\(seat.playerDisplayName): \(draft.solTricks[seat] ?? 0)", value: bindingSolTricksContract(seat), in: 0 ... 13)
             }
         }
         if let scores = draft.finalScores() {
@@ -541,13 +673,14 @@ private struct ResultStepView: View {
         }
     }
 
-    private func bindingSolTricks(_ seat: Seat) -> Binding<Int> {
+    private func bindingSolTricksContract(_ seat: Seat) -> Binding<Int> {
         Binding(
             get: { draft.solTricks[seat] ?? 0 },
             set: { newValue in
                 var copy = draft.solTricks
                 copy[seat] = newValue
                 draft.solTricks = copy
+                draft.syncSolOpponentTricksFromContractSide()
             }
         )
     }
@@ -572,6 +705,21 @@ private struct ResultStepView: View {
         }
     }
 
+    private func persistPartnerSeatRaw(draft: HandInputDraft, kind: String) -> Int {
+        guard kind == "normal", let p = draft.partner else { return -1 }
+        return p.rawValue
+    }
+
+    private func persistSolAlliesJSON(draft: HandInputDraft, kind: String) -> String {
+        guard kind == "sol" else { return "[]" }
+        let arr = draft.goingWith.map(\.rawValue).sorted()
+        guard let data = try? JSONEncoder().encode(arr),
+              let str = String(data: data, encoding: .utf8) else {
+            return "[]"
+        }
+        return str
+    }
+
     private func save() {
         guard let scores = draft.finalScores() else { return }
         let kind: String = {
@@ -583,20 +731,24 @@ private struct ResultStepView: View {
             }
         }()
         let json = HandScorePersistence.encodeScores(scores)
-        let summary = HandScorePersistence.makeSummaryLine(kind: kind, scores: scores)
         let caption = HandResumeCaption.compactLine(from: draft)
         let bidderSeat = persistBidderSeatRaw(draft: draft, kind: kind)
+        let partnerSeat = persistPartnerSeatRaw(draft: draft, kind: kind)
+        let solAlliesJSON = persistSolAlliesJSON(draft: draft, kind: kind)
         gameDay.migrateLegacyHandNumbersIfNeeded()
         let nextHandNumber = (gameDay.hands.map(\.handNumber).max() ?? 0) + 1
         let hand = RecordedHand(
             kindRaw: kind,
-            summaryLine: summary,
+            summaryLine: "",
             scoresBySeatJSON: json,
             resumeCaption: caption,
             bidderSeatRaw: bidderSeat,
+            partnerSeatRaw: partnerSeat,
+            solAlliesSeatsJSON: solAlliesJSON,
             handNumber: nextHandNumber,
             gameDay: gameDay
         )
+        hand.summaryLine = hand.displayResumeNarrative
         modelContext.insert(hand)
         HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
         try? modelContext.save()
@@ -631,6 +783,8 @@ struct AddHandView: View {
             BidStepView(draft: draft, path: $path, gameDay: gameDay, onAnnuller: { userCancelledSheet = true })
                 .navigationDestination(for: HandRoute.self) { route in
                     switch route {
+                    case .halveTrumf:
+                        HalveTrumpStepView(draft: draft, path: $path, gameDay: gameDay)
                     case .resultat:
                         ResultStepView(
                             draft: draft,
@@ -661,7 +815,13 @@ struct AddHandView: View {
             userCancelledSheet = false
             return
         }
-        let step = path.isEmpty ? HandDraftPersistence.stepMelding : HandDraftPersistence.stepResultat
+        let stepFromPending: String? = {
+            guard let p = gameDay.pendingHand,
+                  let snap = try? HandDraftPersistence.decode(p.draftJSON) else { return nil }
+            return snap.navigationStep
+        }()
+        let step = stepFromPending
+            ?? (path.isEmpty ? HandDraftPersistence.stepMelding : HandDraftPersistence.stepResultat)
         HandDraftPersistence.upsertPending(
             context: modelContext,
             gameDay: gameDay,
@@ -678,6 +838,9 @@ struct AddHandView: View {
             }
             return "Kladde gemt som aktivt spil. Melding er ikke færdigregistreret før du trykker «Næste». Fortsæt via «Fortsæt aktivt spil»."
         }
+        if draft.kind == .normal, draft.normalSubtype == .halve, draft.trumpAfterPlay == nil {
+            return "Kladde gemt. Vælg trumf for halve under «Fortsæt aktivt spil» — den vises også på Aktivt spil, når den er valgt."
+        }
         if !draft.isResultStepValid {
             return "Resultatkladde gemt som aktivt spil. Spillet er ikke gemt før felterne er gyldige og du trykker «Gem»."
         }
@@ -691,6 +854,10 @@ struct AddHandView: View {
         if snap.navigationStep == HandDraftPersistence.stepResultat {
             DispatchQueue.main.async {
                 path.append(HandRoute.resultat)
+            }
+        } else if snap.navigationStep == HandDraftPersistence.stepHalveTrumf {
+            DispatchQueue.main.async {
+                path.append(HandRoute.halveTrumf)
             }
         }
         /// `stepMelding`: genskab kun udkastet; brugeren forbliver på meldingstrinnet.
@@ -716,55 +883,95 @@ private struct DismissAddHandButton: View {
 }
 
 private func trumpPicker(selection: Binding<Suit>) -> some View {
-    HStack {
-        Spacer()
-        ForEach(Suit.allCases, id: \.self) { suit in
-            Button {
-                selection.wrappedValue = suit
-            } label: {
-                Text(suit.cardSymbol)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    .background(selection.wrappedValue == suit ? Color.accentColor.opacity(0.25) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+    TrumpSuitPicker(selection: selection)
+}
+
+private struct TrumpSuitPicker: View {
+    @Binding var selection: Suit
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack {
+            Spacer()
+            ForEach(Suit.allCases, id: \.self) { suit in
+                Button {
+                    selection = suit
+                } label: {
+                    Text(suit.cardSymbol)
+                        .font(.title2)
+                        .foregroundStyle(suit.playingCardForegroundColor(colorScheme: colorScheme))
+                        .frame(width: 44, height: 44)
+                        .background(selection == suit ? Color.accentColor.opacity(0.25) : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.borderless)
             }
-            .buttonStyle(.borderless)
+            Spacer()
         }
-        Spacer()
     }
 }
 
 /// Vælg kulør; ingen forvalg. Tryk samme kulør igen for at fjerne valget (`nil`). Udelukkede kulører er inaktive.
 private func optionalSuitPicker(selection: Binding<Suit?>, excludedSuits: Set<Suit> = []) -> some View {
-    HStack {
-        Spacer()
-        ForEach(Suit.allCases, id: \.self) { suit in
-            let excluded = excludedSuits.contains(suit)
-            Button {
-                guard !excluded else { return }
-                if selection.wrappedValue == suit {
-                    selection.wrappedValue = nil
-                } else {
-                    selection.wrappedValue = suit
+    OptionalSuitPicker(selection: selection, excludedSuits: excludedSuits)
+}
+
+private struct OptionalSuitPicker: View {
+    @Binding var selection: Suit?
+    var excludedSuits: Set<Suit> = []
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack {
+            Spacer()
+            ForEach(Suit.allCases, id: \.self) { suit in
+                let excluded = excludedSuits.contains(suit)
+                Button {
+                    guard !excluded else { return }
+                    if selection == suit {
+                        selection = nil
+                    } else {
+                        selection = suit
+                    }
+                } label: {
+                    Text(suit.cardSymbol)
+                        .font(.title2)
+                        .foregroundStyle(symbolColor(suit: suit, excluded: excluded))
+                        .frame(width: 44, height: 44)
+                        .background(selection == suit && !excluded ? Color.accentColor.opacity(0.25) : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-            } label: {
-                Text(suit.cardSymbol)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    .background(selection.wrappedValue == suit && !excluded ? Color.accentColor.opacity(0.25) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                .buttonStyle(.borderless)
+                .disabled(excluded)
             }
-            .buttonStyle(.borderless)
-            .disabled(excluded)
-            .foregroundStyle(excluded ? Color.secondary.opacity(0.35) : Color.primary)
+            Spacer()
         }
-        Spacer()
+    }
+
+    private func symbolColor(suit: Suit, excluded: Bool) -> Color {
+        if excluded { return Color.secondary.opacity(0.35) }
+        return suit.playingCardForegroundColor(colorScheme: colorScheme)
     }
 }
 
 // MARK: - Kort resume til «Seneste spil»
 
 enum HandResumeCaption {
+    /// Kort status under «Aktivt spil» (kladde) — samme rå trin som i `PendingHand`.
+    static func pendingNavigationStepHint(navigationStepRaw: String?) -> String? {
+        guard let s = navigationStepRaw else { return nil }
+        switch s {
+        case HandDraftPersistence.stepMelding:
+            return "Trin: melding (indtastning)"
+        case HandDraftPersistence.stepResultat:
+            return "Trin: resultat (indtastning)"
+        case HandDraftPersistence.stepHalveTrumf:
+            return "Trin: trumf for halve (indtastning)"
+        default:
+            return nil
+        }
+    }
+
     /// Talesprog + kulør-ikoner (♠♥♦♣), gemmes i `RecordedHand.resumeCaption`.
     static func compactLine(from draft: HandInputDraft) -> String {
         if draft.kind == .duty {
@@ -784,29 +991,36 @@ enum HandResumeCaption {
     }
 
     struct CaptionDisplayParts: Sendable {
+        /// Fuld talesprogssætning (inkl. stikudfald for normale bud med `||`-kode i `resumeCaption`).
         var narrative: String
-        /// Stik over/under bud (`nil` for ældre tekster uden `||`-kode, sol, duestraf).
+        /// Forældet — alt vises i `narrative`; bevares som `nil` fra `displayParts`.
         var trickDelta: Int?
     }
 
-    /// Del resume op i fortælling + evt. stik-delta (kodet efter `||` i `resumeCaption`).
+    /// Én sammenhængende fortælling: kulør som symboler, evt. «gik med» fra JSON, stikudfald som talesprog.
     static func displayParts(for hand: RecordedHand) -> CaptionDisplayParts {
         let trimmed = hand.resumeCaption.trimmingCharacters(in: .whitespacesAndNewlines)
         let base = trimmed.isEmpty ? legacyFallback(for: hand) : trimmed
-        if let range = base.range(of: "||") {
-            let nar = String(base[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-            let code = String(base[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if let delta = parseDeltaToken(code) {
-                return CaptionDisplayParts(
-                    narrative: substituteSuitNamesWithSymbols(in: nar),
-                    trickDelta: delta
-                )
+
+        let (narrativeRaw, parsedDelta): (String, Int?) = {
+            if let range = base.range(of: "||") {
+                let nar = String(base[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let code = String(base[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                return (nar, parseDeltaToken(code))
             }
+            return (base, nil)
+        }()
+
+        var narrative = substituteSuitNamesWithSymbols(in: narrativeRaw)
+        narrative = applyLegacyResumeWordFixes(narrative)
+        narrative = appendSolGoingWithToNarrative(narrative, hand: hand)
+        narrative = prependNormalBidderIfNeeded(narrative, hand: hand)
+        if let d = parsedDelta {
+            let bid = parseBidTricksAfterMeldte(in: narrative)
+            narrative += trickOutcomeSpoken(delta: d, bidTricks: bid, hand: hand)
         }
-        return CaptionDisplayParts(
-            narrative: substituteSuitNamesWithSymbols(in: base),
-            trickDelta: nil
-        )
+        narrative = stripUnwantedResumePhrases(narrative)
+        return CaptionDisplayParts(narrative: narrative, trickDelta: nil)
     }
 
     /// Kun fortællingstekst (fx til enkel visning uden badge).
@@ -827,40 +1041,133 @@ enum HandResumeCaption {
         return "Spil"
     }
 
+    /// Fjerner formuleringer der ikke må bruges i halve-resume (fx «efter spillet») og retter ældre ordlyd.
+    private static func stripUnwantedResumePhrases(_ text: String) -> String {
+        var s = text
+        let banned = [" efter spillet", " bagefter", " efter spil"]
+        for b in banned {
+            s = s.replacingOccurrences(of: b, with: "", options: .caseInsensitive)
+        }
+        while s.contains("  ") {
+            s = s.replacingOccurrences(of: "  ", with: " ")
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func applyLegacyResumeWordFixes(_ text: String) -> String {
+        var t = text.replacingOccurrences(of: "bordlægger-sol", with: "bordlægger", options: .caseInsensitive)
+        t = t.replacingOccurrences(of: " (fast trumf)", with: "")
+        return t
+    }
+
+    /// Ældre kampe uden «… meldte …» i teksten — tilføj melder ud fra `bidderSeatRaw`.
+    private static func prependNormalBidderIfNeeded(_ narrative: String, hand: RecordedHand) -> String {
+        guard hand.kindRaw == "normal",
+              hand.bidderSeatRaw >= 0,
+              let bidder = Seat(rawValue: hand.bidderSeatRaw) else {
+            return narrative
+        }
+        let trimmed = narrative.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return narrative }
+        let name = bidder.playerDisplayName
+        let prefix = "\(name) meldte "
+        if trimmed.hasPrefix(prefix) { return narrative }
+        if trimmed.lowercased().hasPrefix("\(name.lowercased()) meldte ") { return narrative }
+        return prefix + trimmed
+    }
+
+    /// Melder og makker som navne til stikudfald (normal); ellers melder alene.
+    private static func contractSideNames(for hand: RecordedHand) -> String {
+        guard hand.kindRaw == "normal" else {
+            if let s = Seat(rawValue: hand.bidderSeatRaw) { return s.playerDisplayName }
+            return "Spillerne"
+        }
+        guard let bidder = Seat(rawValue: hand.bidderSeatRaw) else { return "Spillerne" }
+        guard hand.partnerSeatRaw >= 0, let partner = Seat(rawValue: hand.partnerSeatRaw) else {
+            return bidder.playerDisplayName
+        }
+        if bidder == partner {
+            return bidder.playerDisplayName
+        }
+        return "\(bidder.playerDisplayName) og \(partner.playerDisplayName)"
+    }
+
+    /// Første heltal efter sidste «meldte » i normal-resumé (meldt antal stik).
+    private static func parseBidTricksAfterMeldte(in narrative: String) -> Int? {
+        guard let range = narrative.range(of: "meldte ", options: [.backwards, .caseInsensitive]) else { return nil }
+        let after = narrative[range.upperBound...].trimmingCharacters(in: .whitespaces)
+        return after.split(separator: " ").first.flatMap { Int($0) }
+    }
+
+    /// Stikudfald: `… tog 10 stik (+2)` / `… tog 6 stik (-2)` (kun normale spil med `||` i gemt tekst).
+    private static func trickOutcomeSpoken(delta: Int, bidTricks: Int?, hand: RecordedHand) -> String {
+        let who = contractSideNames(for: hand)
+        guard let bid = bidTricks else {
+            return trickOutcomeSpokenLegacy(delta: delta, who: who)
+        }
+        if delta == 0 {
+            return ", og \(who) ramte buddet præcis på stikkene"
+        }
+        let actual = bid + delta
+        let paren = delta > 0 ? "(+\(delta))" : "(\(delta))"
+        return ", og \(who) tog \(actual) stik \(paren)"
+    }
+
+    private static func trickOutcomeSpokenLegacy(delta: Int, who: String) -> String {
+        switch delta {
+        case 0:
+            return ", og \(who) ramte buddet præcis på stikkene"
+        case 1:
+            return ", og \(who) tog ét stik for meget"
+        case let x where x > 1:
+            return ", og \(who) tog \(x) stik for meget"
+        case -1:
+            return ", og \(who) tog ét stik for lidt"
+        case let x where x < -1:
+            return ", og \(who) tog \(-x) stik for lidt"
+        default:
+            return ""
+        }
+    }
+
     // MARK: - Normal (talesprog)
 
     private static func normalLineSpoken(_ d: HandInputDraft) -> String {
         let bid = d.bidTricks
-        var sentence: String
+        let melder = d.bidder.playerDisplayName
+        let core: String
         switch d.normalSubtype {
         case .alm:
-            sentence = "\(bid) almindelige"
+            var s = "\(bid) almindelige"
             if let t = d.trumpAlm {
-                sentence += " med \(t.cardSymbol) som trumf"
+                s += " med \(t.cardSymbol) som trumf"
             }
             if let ace = d.partnerAceSuit {
-                sentence += " og \(ace.cardSymbol) som makker-es"
+                s += " og \(ace.cardSymbol) som makker-es"
             }
+            core = s
         case .sans:
-            sentence = "\(bid) sans uden trumf"
+            core = "\(bid) sans uden trumf"
         case .gode:
-            sentence = "\(bid) gode i \(Suit.clubs.cardSymbol) (fast trumf)"
+            core = "\(bid) gode i \(Suit.clubs.cardSymbol)"
         case .halve:
-            sentence = "\(bid) halve"
+            var s = "\(bid) halve"
             if let ace = d.partnerAceSuit {
-                sentence += " til \(ace.cardSymbol)"
+                s += " til \(ace.cardSymbol)"
             }
             if let tr = d.trumpAfterPlay {
-                sentence += " med \(tr.cardSymbol) som trumf"
+                s += " med \(tr.cardSymbol) som trumf"
             }
+            core = s
         case .vip:
-            sentence = "\(bid) VIP \(vipOrdinalDanish(d.vipLevel))"
+            var s = "\(bid) VIP \(vipOrdinalDanish(d.vipLevel))"
             if let tr = d.trumpAfterPlay {
-                sentence += " med \(tr.cardSymbol) som trumf"
+                s += " med \(tr.cardSymbol) som trumf"
             }
+            core = s
         }
-        /// `||` + kode vises som cirkel under «Seneste spil» (fx `||+2`, `||-1`, `||0`).
-        return "\(sentence)||\(deltaToken(bid: d.bidTricks, actual: d.actualTricks))"
+        /// `||` + kode parses til stikudfald i visning.
+        return "\(melder) meldte \(core)||\(deltaToken(bid: d.bidTricks, actual: d.actualTricks))"
     }
 
     private static func vipOrdinalDanish(_ level: VipLevel) -> String {
@@ -881,7 +1188,48 @@ enum HandResumeCaption {
     // MARK: - Sol
 
     private static func solLineSpoken(_ d: HandInputDraft) -> String {
-        "\(d.solBidder.playerDisplayName) meldte \(solTypeSpoken(d.solType))"
+        var sentence = "\(d.solBidder.playerDisplayName) meldte \(solTypeSpoken(d.solType))"
+        let allies = d.goingWith.sorted { $0.rawValue < $1.rawValue }
+        if !allies.isEmpty {
+            let names = allies.map(\.playerDisplayName).joined(separator: ", ")
+            sentence += ", og \(names) gik med"
+        }
+        sentence += solOutcomeSpoken(from: d)
+        return sentence
+    }
+
+    private static func solOutcomeSpoken(from d: HandInputDraft) -> String {
+        let bidderTricks = d.solTricks[d.solBidder] ?? 0
+        let limit = d.solType.maxAllowedTricks
+        if bidderTricks <= limit {
+            return ", og melderen holdt solen"
+        }
+        return ", og melderen overskred solens grænse"
+    }
+
+    /// Tilføjer «gik med» fra gemt JSON når det ikke allerede står i teksten (ældre resuméer).
+    private static func appendSolGoingWithToNarrative(_ narrative: String, hand: RecordedHand) -> String {
+        guard hand.kindRaw == "sol" else { return narrative }
+        let allies = solAlliesSeats(from: hand)
+        guard !allies.isEmpty else { return narrative }
+        if narrative.range(of: "gik med", options: .caseInsensitive) != nil
+            || narrative.range(of: "går med", options: .caseInsensitive) != nil {
+            return narrative
+        }
+        let names = allies.map(\.playerDisplayName).joined(separator: ", ")
+        if narrative.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "\(names) gik med"
+        }
+        return "\(narrative), og \(names) gik med"
+    }
+
+    private static func solAlliesSeats(from hand: RecordedHand) -> [Seat] {
+        guard hand.kindRaw == "sol" else { return [] }
+        guard let data = hand.solAlliesSeatsJSON.data(using: .utf8),
+              let rawInts = try? JSONDecoder().decode([Int].self, from: data) else {
+            return []
+        }
+        return rawInts.compactMap { Seat(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
     }
 
     private static func solTypeSpoken(_ t: SolType) -> String {
@@ -889,7 +1237,7 @@ enum HandResumeCaption {
         case .normal: return "sol"
         case .pure: return "ren sol"
         case .halfDealer: return "halv bordlægger"
-        case .dealer: return "bordlægger-sol"
+        case .dealer: return "bordlægger"
         }
     }
 

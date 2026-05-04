@@ -27,6 +27,19 @@
 		B2A100592CF0000000120059 /* MeldingPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100572CF0000000120057 /* MeldingPresentation.swift */; };
 		B2A1005A2CF000000012005A /* ActiveGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100582CF0000000120058 /* ActiveGameView.swift */; };
 		B2A1005E2CF000000012005E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1005D2CF000000012005D /* HomeView.swift */; };
+		B2A100602CF0000000120060 /* GameDayScoreAggregation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1005F2CF000000012005F /* GameDayScoreAggregation.swift */; };
+		B2A100622CF0000000120062 /* PointStandingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100612CF0000000120061 /* PointStandingView.swift */; };
+		B2A100672CF0000000120067 /* GameDayScoreAggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100662CF0000000120066 /* GameDayScoreAggregationTests.swift */; };
+		B2A100722CF0000000120072 /* StandingsPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100702CF0000000120070 /* StandingsPresentation.swift */; };
+		B2A100732CF0000000120073 /* StandingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100712CF0000000120071 /* StandingsView.swift */; };
+		B2A100762CF0000000120076 /* HomeRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100752CF0000000120075 /* HomeRoute.swift */; };
+		B2A100782CF0000000120078 /* NewGameDayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100772CF0000000120077 /* NewGameDayView.swift */; };
+		B2A1007C2CF000000012007C /* GameDayMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100792CF0000000120079 /* GameDayMigration.swift */; };
+		B2A1007D2CF000000012007D /* GameDaySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1007A2CF000000012007A /* GameDaySession.swift */; };
+		B2A1007E2CF000000012007E /* HomeNavigationEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1007B2CF000000012007B /* HomeNavigationEnvironment.swift */; };
+		B2A100802CF0000000120080 /* SenesteSpilComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100812CF0000000120081 /* SenesteSpilComponents.swift */; };
+		B2A100822CF0000000120082 /* SenesteSpilView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100832CF0000000120083 /* SenesteSpilView.swift */; };
+		B2A100842CF0000000120084 /* SuitPlayingCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100852CF0000000120085 /* SuitPlayingCardStyle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +75,19 @@
 		B2A100572CF0000000120057 /* MeldingPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeldingPresentation.swift; sourceTree = "<group>"; };
 		B2A100582CF0000000120058 /* ActiveGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveGameView.swift; sourceTree = "<group>"; };
 		B2A1005D2CF000000012005D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B2A1005F2CF000000012005F /* GameDayScoreAggregation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDayScoreAggregation.swift; sourceTree = "<group>"; };
+		B2A100612CF0000000120061 /* PointStandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointStandingView.swift; sourceTree = "<group>"; };
+		B2A100662CF0000000120066 /* GameDayScoreAggregationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDayScoreAggregationTests.swift; sourceTree = "<group>"; };
+		B2A100702CF0000000120070 /* StandingsPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingsPresentation.swift; sourceTree = "<group>"; };
+		B2A100712CF0000000120071 /* StandingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandingsView.swift; sourceTree = "<group>"; };
+		B2A100752CF0000000120075 /* HomeRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeRoute.swift; sourceTree = "<group>"; };
+		B2A100772CF0000000120077 /* NewGameDayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewGameDayView.swift; sourceTree = "<group>"; };
+		B2A100792CF0000000120079 /* GameDayMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDayMigration.swift; sourceTree = "<group>"; };
+		B2A1007A2CF000000012007A /* GameDaySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDaySession.swift; sourceTree = "<group>"; };
+		B2A1007B2CF000000012007B /* HomeNavigationEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeNavigationEnvironment.swift; sourceTree = "<group>"; };
+		B2A100812CF0000000120081 /* SenesteSpilComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SenesteSpilComponents.swift; sourceTree = "<group>"; };
+		B2A100832CF0000000120083 /* SenesteSpilView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SenesteSpilView.swift; sourceTree = "<group>"; };
+		B2A100852CF0000000120085 /* SuitPlayingCardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuitPlayingCardStyle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +136,8 @@
 				B2A1002D2CF000000012002D /* Seat.swift */,
 				B2A1002E2CF000000012002E /* WhistGameTypes.swift */,
 				B2A1002F2CF000000012002F /* ScoringEngine.swift */,
+				B2A1005F2CF000000012005F /* GameDayScoreAggregation.swift */,
+				B2A100702CF0000000120070 /* StandingsPresentation.swift */,
 			);
 			path = Domain;
 			sourceTree = "<group>";
@@ -117,14 +145,22 @@
 		B2A100382CF0000000120038 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				B2A100752CF0000000120075 /* HomeRoute.swift */,
+				B2A1007B2CF000000012007B /* HomeNavigationEnvironment.swift */,
 				B2A100362CF0000000120036 /* ScoringDemoView.swift */,
 				B2A100372CF0000000120037 /* GameDaysView.swift */,
 				B2A100552CF0000000120055 /* GameDayStartView.swift */,
+				B2A100812CF0000000120081 /* SenesteSpilComponents.swift */,
+				B2A100832CF0000000120083 /* SenesteSpilView.swift */,
+				B2A100852CF0000000120085 /* SuitPlayingCardStyle.swift */,
 				B2A1005D2CF000000012005D /* HomeView.swift */,
+				B2A100772CF0000000120077 /* NewGameDayView.swift */,
 				B2A100572CF0000000120057 /* MeldingPresentation.swift */,
 				B2A100582CF0000000120058 /* ActiveGameView.swift */,
 				B2A100482CF0000000120048 /* AddHandView.swift */,
 				B2A1004A2CF000000012004A /* HandDetailView.swift */,
+				B2A100612CF0000000120061 /* PointStandingView.swift */,
+				B2A100712CF0000000120071 /* StandingsView.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -133,6 +169,8 @@
 			isa = PBXGroup;
 			children = (
 				B2A1003F2CF000000012003F /* GameDay.swift */,
+				B2A100792CF0000000120079 /* GameDayMigration.swift */,
+				B2A1007A2CF000000012007A /* GameDaySession.swift */,
 				B2A100462CF0000000120046 /* RecordedHand.swift */,
 				B2A100502CF0000000120050 /* PendingHand.swift */,
 				B2A100512CF0000000120051 /* HandDraftPersistence.swift */,
@@ -154,6 +192,7 @@
 			children = (
 				B2A100182CF0000000120018 /* Whist20Tests.swift */,
 				B2A100342CF0000000120034 /* ScoringEngineTests.swift */,
+				B2A100662CF0000000120066 /* GameDayScoreAggregationTests.swift */,
 			);
 			path = Whist20Tests;
 			sourceTree = "<group>";
@@ -275,6 +314,18 @@
 				B2A100592CF0000000120059 /* MeldingPresentation.swift in Sources */,
 				B2A1005A2CF000000012005A /* ActiveGameView.swift in Sources */,
 				B2A1005E2CF000000012005E /* HomeView.swift in Sources */,
+				B2A100602CF0000000120060 /* GameDayScoreAggregation.swift in Sources */,
+				B2A100622CF0000000120062 /* PointStandingView.swift in Sources */,
+				B2A100722CF0000000120072 /* StandingsPresentation.swift in Sources */,
+				B2A100732CF0000000120073 /* StandingsView.swift in Sources */,
+				B2A100762CF0000000120076 /* HomeRoute.swift in Sources */,
+				B2A100782CF0000000120078 /* NewGameDayView.swift in Sources */,
+				B2A1007C2CF000000012007C /* GameDayMigration.swift in Sources */,
+				B2A1007D2CF000000012007D /* GameDaySession.swift in Sources */,
+				B2A1007E2CF000000012007E /* HomeNavigationEnvironment.swift in Sources */,
+				B2A100802CF0000000120080 /* SenesteSpilComponents.swift in Sources */,
+				B2A100822CF0000000120082 /* SenesteSpilView.swift in Sources */,
+				B2A100842CF0000000120084 /* SuitPlayingCardStyle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,6 +335,7 @@
 			files = (
 				B2A100192CF0000000120019 /* Whist20Tests.swift in Sources */,
 				B2A100352CF0000000120035 /* ScoringEngineTests.swift in Sources */,
+				B2A100672CF0000000120067 /* GameDayScoreAggregationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

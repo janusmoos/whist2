@@ -2,8 +2,13 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+
     var body: some View {
         HomeView()
+            .onAppear {
+                GameDayEndedAtMigration.runIfNeeded(modelContext: modelContext)
+            }
     }
 }
 

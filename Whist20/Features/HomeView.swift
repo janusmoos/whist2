@@ -8,13 +8,10 @@ struct HomeView: View {
 
     @State private var path = NavigationPath()
     @State private var alertMessage: String?
+    @State private var showEndGameDayConfirm = false
 
-    private enum HomeRoute: Hashable {
-        case gameDay(UUID, openAddHand: Bool)
-        case hand(gameDayId: UUID, handId: UUID)
-        case standings
-        case settings
-        case allGameDays
+    private var activeGameDay: GameDay? {
+        GameDay.activeDay(in: gameDays)
     }
 
     var body: some View {
@@ -34,12 +31,52 @@ struct HomeView: View {
                         action: openAddHandFlow
                     )
 
-                    largeHomeButton(
-                        title: "Ny spilledag",
-                        systemImage: "calendar.badge.plus",
-                        prominent: true,
-                        action: createGameDayAndOpen
-                    )
+                    if let day = activeGameDay {
+                        Button {
+                            path.append(HomeRoute.activeGame(gameDayId: day.id))
+                        } label: {
+                            homeButtonLabel(
+                                title: "Aktivt spil",
+                                systemImage: "rectangle.and.hand.point.up.left.filled"
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.accentColor)
+                        .controlSize(.large)
+                        .overlay(alignment: .topTrailing) {
+                            if day.pendingHand != nil {
+                                Circle()
+                                    .fill(.orange)
+                                    .frame(width: 10, height: 10)
+                                    .padding(.trailing, 8)
+                                    .padding(.top, 10)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .accessibilityLabel(
+                            day.pendingHand != nil
+                                ? "Aktivt spil, kladde i gang"
+                                : "Aktivt spil"
+                        )
+                    }
+
+                    if activeGameDay != nil {
+                        Button {
+                            showEndGameDayConfirm = true
+                        } label: {
+                            homeButtonLabel(title: "Afslut spilledag", systemImage: "flag.checkered")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .controlSize(.large)
+                    } else {
+                        largeHomeButton(
+                            title: "Ny spilledag",
+                            systemImage: "calendar.badge.plus",
+                            prominent: true,
+                            action: { path.append(HomeRoute.newGameDay) }
+                        )
+                    }
 
                     largeHomeButton(
                         title: "Stilling",
@@ -69,6 +106,7 @@ struct HomeView: View {
             }
             .navigationTitle("Whist 2.0")
             .navigationBarTitleDisplayMode(.large)
+            .environment(\.homeNavigationPath, $path)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -82,6 +120,16 @@ struct HomeView: View {
             }
             .navigationDestination(for: HomeRoute.self) { route in
                 switch route {
+                case .senesteSpil:
+                    SenesteSpilView()
+                case .activeGame(let gameDayId):
+                    if let day = gameDays.first(where: { $0.id == gameDayId }) {
+                        ActiveGameView(gameDay: day)
+                    } else {
+                        missingContent(title: "Spilledag findes ikke")
+                    }
+                case .newGameDay:
+                    NewGameDayView(path: $path)
                 case .gameDay(let id, let openAdd):
                     if let day = gameDays.first(where: { $0.id == id }) {
                         GameDayStartView(gameDay: day, presentAddHandSheetOnAppear: openAdd)
@@ -96,7 +144,7 @@ struct HomeView: View {
                         missingContent(title: "Kamp findes ikke")
                     }
                 case .standings:
-                    StandingsPlaceholderView()
+                    StandingsView()
                 case .settings:
                     AppSettingsView()
                 case .allGameDays:
@@ -111,6 +159,20 @@ struct HomeView: View {
             Button("OK", role: .cancel) { alertMessage = nil }
         } message: {
             Text(alertMessage ?? "")
+        }
+        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
+            Button("Annuller", role: .cancel) {}
+            Button("Afslut", role: .destructive) {
+                if let day = activeGameDay {
+                    day.close(modelContext: modelContext)
+                }
+            }
+        } message: {
+            Text(
+                GameDaySessionDialogs.endGameDayMessage(
+                    hasPendingHand: activeGameDay?.pendingHand != nil
+                )
+            )
         }
     }
 
@@ -147,64 +209,20 @@ struct HomeView: View {
     }
 
     private func openAddHandFlow() {
-        if let id = gameDays.first?.id {
-            path.append(HomeRoute.gameDay(id, openAddHand: true))
-        } else {
-            let day = GameDay()
-            modelContext.insert(day)
-            try? modelContext.save()
-            path.append(HomeRoute.gameDay(day.id, openAddHand: true))
+        guard let id = GameDay.activeDay(in: gameDays)?.id else {
+            alertMessage = "Der er ingen aktiv spilledag. Opret en ny spilledag, eller genoptag en afsluttet under «Alle spilledage»."
+            return
         }
-    }
-
-    private func createGameDayAndOpen() {
-        let day = GameDay()
-        modelContext.insert(day)
-        try? modelContext.save()
-        path.append(HomeRoute.gameDay(day.id, openAddHand: false))
+        path.append(HomeRoute.gameDay(id, openAddHand: true))
     }
 
     private func openLatestHand() {
-        guard let pair = globalLatestHand else {
-            alertMessage = "Der er ikke gemt nogen kamp endnu."
-            return
-        }
-        path.append(HomeRoute.hand(gameDayId: pair.0.id, handId: pair.1.id))
-    }
-
-    private var globalLatestHand: (GameDay, RecordedHand)? {
-        var best: (GameDay, RecordedHand)?
-        for day in gameDays {
-            for hand in day.hands {
-                guard let cur = best else {
-                    best = (day, hand)
-                    continue
-                }
-                if hand.playedAt > cur.1.playedAt {
-                    best = (day, hand)
-                }
-            }
-        }
-        return best
+        path.append(HomeRoute.senesteSpil)
     }
 
     @ViewBuilder
     private func missingContent(title: String) -> some View {
         ContentUnavailableView(title, systemImage: "exclamationmark.triangle")
-    }
-}
-
-// MARK: - Stilling (placeholder)
-
-private struct StandingsPlaceholderView: View {
-    var body: some View {
-        ContentUnavailableView(
-            "Stilling",
-            systemImage: "list.number",
-            description: Text("Samlet stilling og historik på tværs af spilledage — kommer senere.")
-        )
-        .navigationTitle("Stilling")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

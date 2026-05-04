@@ -5,7 +5,9 @@ import SwiftData
 enum HandDraftPersistence {
     /// Brugeren er stadig på meldingssiden (gemmes ikke automatisk under redigering).
     static let stepMelding = "melding"
-    /// Melding er afsluttet med «Næste»; brugeren kan være på resultat eller appen kan være crashet.
+    /// Halve: melding afsluttet; brugeren vælger trumf før resultat.
+    static let stepHalveTrumf = "halve_trumf"
+    /// Brugeren er på resultat (eller appen kan være crashet dér).
     static let stepResultat = "resultat"
 
     struct Snapshot: Codable {
