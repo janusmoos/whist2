@@ -319,6 +319,10 @@ private struct BidStepView: View {
                     Text(solTypeTitle(t)).tag(t)
                 }
             }
+            .pickerStyle(.wheel)
+            .frame(height: 128)
+            .clipped()
+            .accessibilityLabel("Sol-type")
         }
         Section {
             MelderSeatButtonGrid(selectedSeat: $draft.solBidder)

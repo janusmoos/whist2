@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/update-issues.sh",
+        "timeout": 20
+      }
+    ]
+  }
+}
+
