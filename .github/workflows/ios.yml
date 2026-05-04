@@ -7,9 +7,6 @@ on:
 jobs:
   test:
     runs-on: macos-15
-    defaults:
-      run:
-        working-directory: whist 2.0
 
     steps:
       - uses: actions/checkout@v4
