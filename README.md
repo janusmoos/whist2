@@ -30,6 +30,22 @@ Snapshots ligger i `Snapshots/` og kan laves sådan:
 ./Scripts/make-snapshot.sh
 ```
 
+## GitHub issues (hurtige kommandoer)
+
+```bash
+# Liste issues
+gh issue list -R janusmoos/whist2
+
+# Se et issue (fx #1)
+gh issue view 1 -R janusmoos/whist2 --web
+
+# Start arbejde på et issue (lav branch og gå i gang)
+git checkout -b issue-1-sol-wheel
+
+# (Når du er klar) lav PR der lukker issue
+gh pr create -R janusmoos/whist2 --title "Issue #1: Sol-type som wheel" --body "Closes #1"
+```
+
 Se også:
 - `VERSIONING.md` (marketing-version vs build-nummer, og foreslåede git-tags)
 - `MULTI_DEVICE.md` (overblik over fler-enheds-sync og anbefalet retning)
