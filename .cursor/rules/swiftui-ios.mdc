@@ -1,0 +1,60 @@
+---
+description: SwiftUI iOS app development rules
+globs:
+  - "**/*.swift"
+alwaysApply: true
+---
+
+# SwiftUI iOS Rules
+
+You are helping build a native iPhone app in SwiftUI.
+
+## General
+- Prefer SwiftUI-first solutions.
+- Use Xcode as the source of truth for build errors, previews, signing, capabilities, and App Store settings.
+- Do not invent APIs. If unsure, say so and suggest how to verify in Apple documentation.
+- Prefer simple, maintainable code over clever abstractions.
+- Explain architectural choices briefly before making large changes.
+
+## Architecture
+- Use MVVM where it adds clarity, but avoid unnecessary boilerplate.
+- Keep business logic out of Views.
+- Views should be small, composable, and mostly declarative.
+- Use dependency injection for services, repositories, API clients, and persistence.
+- Keep one clear source of truth for app state.
+- Avoid global mutable state unless there is a strong reason.
+
+## Swift and SwiftUI
+- Use modern Swift, async/await, actors, and structured concurrency where appropriate.
+- Mark UI-updating view models with @MainActor when needed.
+- Prefer structs and value types unless reference semantics are required.
+- Avoid force unwraps.
+- Avoid silently ignored errors.
+- Use meaningful names for types, properties, and functions.
+- Prefer explicit access control when helpful.
+
+## UI and design
+- Follow Apple Human Interface Guidelines.
+- Use native iOS components before custom ones.
+- Support Dynamic Type where practical.
+- Respect safe areas, accessibility labels, dark mode, and localization readiness.
+- Extract repeated UI into reusable SwiftUI components.
+- Do not hard-code layout magic numbers without explanation.
+
+## Data and persistence
+- Use SwiftData, Core Data, CloudKit, or local storage only when appropriate to the project.
+- Keep persistence code separate from Views.
+- Use repositories/services to isolate data access.
+- Avoid mixing networking, persistence, and UI logic in the same file.
+
+## Testing
+- Add unit tests for business logic.
+- Add UI tests for critical flows when relevant.
+- Do not mark a task complete until the app builds or the likely build issue is clearly stated.
+
+## Working style
+- Before changing multiple files, summarize the intended change.
+- Make small, reviewable changes.
+- When refactoring, preserve behavior unless explicitly asked otherwise.
+- After edits, list what changed and what should be tested in Xcode.
+

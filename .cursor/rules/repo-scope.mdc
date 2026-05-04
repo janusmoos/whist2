@@ -1,0 +1,17 @@
+---
+description: Repo scope and source-of-truth rules
+alwaysApply: true
+---
+
+# Repo scope (Whist)
+
+## Source of truth
+
+- Primær udvikling foregår i `whist 2.0/` (Whist20).
+- Mapperne under `App/` og ældre “Whist 1/2/3” betragtes som legacy/reference, medmindre opgaven eksplicit handler om dem.
+
+## Arbejdsflow
+
+- Når vi laver ændringer, så peg altid på de præcise filer under `whist 2.0/` og undgå at kopiere kode mellem versioner uden tydelig grund.
+- Hvis der opstår tvivl om regelsæt eller adfærd: behandl `docs/` som produkt-/regel-reference, og Xcode som facit for build/signing.
+
