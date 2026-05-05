@@ -11,6 +11,10 @@ final class GameDay {
     /// `nil` = aktiv spilledag; sat dato = afsluttet (kan genoptages hvis ingen anden er aktiv).
     var endedAt: Date?
 
+    /// Rækkefølge spillerne sidder i (Seat.rawValue JSON-array), fx `[0,1,2,3]`.
+    /// Bruges til visning og senere flows; defaults til standard-orden.
+    var seatOrderJSON: String = "[0,1,2,3]"
+
     @Relationship(deleteRule: .cascade, inverse: \RecordedHand.gameDay)
     var hands: [RecordedHand] = []
 
@@ -23,13 +27,34 @@ final class GameDay {
         createdAt: Date = Date(),
         title: String = "Spilledag",
         notes: String = "",
-        endedAt: Date? = nil
+        endedAt: Date? = nil,
+        seatOrderJSON: String = "[0,1,2,3]"
     ) {
         self.id = id
         self.createdAt = createdAt
         self.title = title
         self.notes = notes
         self.endedAt = endedAt
+        self.seatOrderJSON = seatOrderJSON
+    }
+}
+
+extension GameDay {
+    var seatOrder: [Seat] {
+        guard let data = seatOrderJSON.data(using: .utf8),
+              let raw = try? JSONDecoder().decode([Int].self, from: data) else {
+            return Seat.all
+        }
+        let seats = raw.compactMap { Seat(rawValue: $0) }
+        return seats.count == 4 ? seats : Seat.all
+    }
+
+    /// Dealer til kampnummer (#1 → første i `seatOrder`, #2 → næste, osv.).
+    func dealerSeat(forHandNumber handNumber: Int) -> Seat {
+        let order = seatOrder
+        guard !order.isEmpty else { return .north }
+        let idx = max(0, handNumber - 1) % order.count
+        return order[idx]
     }
 }
 

@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Læsevisning af kladde i `PendingHand` — **samme** resumélinje som gemmes i `RecordedHand.resumeCaption` ved «Gem» (`HandResumeCaption.compactLine`).
+/// Læsevisning af kladde i `PendingHand` — nutidsform uden resultat (se `HandResumeCaption.presentTenseLine`).
 struct ActiveGameView: View {
     @Bindable var gameDay: GameDay
 
@@ -25,7 +25,7 @@ struct ActiveGameView: View {
                     .foregroundStyle(.secondary)
 
                 if let (draft, step) = loadedDraft {
-                    let resumeLine = HandResumeCaption.compactLine(from: draft)
+                    let resumeLine = HandResumeCaption.presentTenseLine(from: draft)
                     VStack(alignment: .leading, spacing: 12) {
                         SuitColoredInlineText.build(resumeLine, colorScheme: colorScheme)
                             .font(.title2.weight(.semibold))
@@ -33,12 +33,6 @@ struct ActiveGameView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityLabel(resumeLine)
-
-                        if let hint = HandResumeCaption.pendingNavigationStepHint(navigationStepRaw: step) {
-                            Text(hint)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
 
                         if draft.isDuty, draft.kind == .normal {
                             Text("Registreres som duestraf (erstatter spillets point).")

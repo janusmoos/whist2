@@ -13,12 +13,22 @@ struct HandDetailView: View {
         HandScorePersistence.decodeScores(hand.scoresBySeatJSON)
     }
 
+    private var orderedSeats: [Seat] {
+        gameDay?.seatOrder ?? Seat.all.sorted { $0.rawValue < $1.rawValue }
+    }
+
     private var navigationTitleText: String {
         hand.handNumber > 0 ? "Kamp #\(hand.handNumber)" : "Kamp"
     }
 
     var body: some View {
         List {
+            if let day = gameDay, hand.handNumber > 0 {
+                Section("Dealer") {
+                    Text(day.dealerSeat(forHandNumber: hand.handNumber).playerDisplayName)
+                        .font(.headline)
+                }
+            }
             Section {
                 SuitColoredInlineText.build(hand.displayResumeNarrative, colorScheme: colorScheme)
                     .font(.body)
@@ -29,7 +39,7 @@ struct HandDetailView: View {
             }
 
             Section("Point") {
-                ForEach(Seat.all, id: \.self) { seat in
+                ForEach(orderedSeats, id: \.self) { seat in
                     HStack {
                         Text(seat.playerDisplayName)
                         Spacer()

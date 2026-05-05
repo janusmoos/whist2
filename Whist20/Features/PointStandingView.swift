@@ -13,7 +13,7 @@ struct PointStandingView: View {
     }
 
     private var orderedSeats: [Seat] {
-        Seat.all.sorted { $0.rawValue < $1.rawValue }
+        gameDay.seatOrder
     }
 
     /// Nyeste kamp øverst (samme som «Seneste spil» / spilledagsliste).
@@ -112,7 +112,7 @@ struct PointStandingView: View {
 
     private var standingChart: some View {
         Chart {
-            ForEach(Seat.all, id: \.self) { seat in
+            ForEach(orderedSeats, id: \.self) { seat in
                 ForEach(standing.steps) { step in
                     LineMark(
                         x: .value("Kamp", step.afterHandNumber),

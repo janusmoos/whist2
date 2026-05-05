@@ -11,11 +11,13 @@ struct GameDayStartView: View {
     @Query(sort: \GameDay.createdAt, order: .reverse) private var allGameDays: [GameDay]
 
     @State private var showAddHand = false
-    @State private var sheetDismissNotice: String?
+    @State private var toastMessage: String?
+    @State private var toastWorkItem: DispatchWorkItem?
     @State private var didConsumePresentAddHand = false
     @State private var showResumeBlocked = false
     /// Hvilken af de kompakte kampe (ikke den fremhævede seneste) er udvidet med resumé.
     @State private var expandedOtherHandID: UUID?
+    @State private var senesteSpilVisning: SenesteSpilOversigtVisning = .table
 
     private var hasActivePendingHand: Bool {
         gameDay.pendingHand != nil
@@ -57,63 +59,85 @@ struct GameDayStartView: View {
 
             if canStartOrContinueHand {
                 Section {
-                    Button {
-                        showAddHand = true
-                    } label: {
-                        Label(
-                            hasActivePendingHand ? "Fortsæt aktivt spil" : "Tilføj spil",
-                            systemImage: hasActivePendingHand ? "arrow.triangle.2.circlepath.circle.fill" : "plus.circle.fill"
-                        )
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                }
-            }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Button {
+                            showAddHand = true
+                        } label: {
+                            Label(
+                                "Tilføj spil",
+                                systemImage: "plus.circle.fill"
+                            )
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        }
+                        .buttonStyle(.borderedProminent)
 
-            if canStartOrContinueHand {
-                Section {
-                    NavigationLink {
-                        ActiveGameView(gameDay: gameDay)
-                    } label: {
-                        Label("Aktivt spil", systemImage: "rectangle.and.hand.point.up.left.filled")
+                        // Aktivitetsstatus: diskret række når der ikke er en kladde.
+                        if hasActivePendingHand {
+                            NavigationLink {
+                                ActiveGameView(gameDay: gameDay)
+                            } label: {
+                                Label("Fortsæt aktivt spil", systemImage: "arrow.triangle.2.circlepath.circle.fill")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                        } else {
+                            HStack(spacing: 10) {
+                                Image(systemName: "rectangle.and.hand.point.up.left.filled")
+                                    .foregroundStyle(.tertiary)
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Ingen kladde i gang")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Text("Et påbegyndt spil dukker op her som «Aktivt spil».")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Aktivt spil: ingen kladde")
+                        }
                     }
-                    if !hasActivePendingHand {
-                        Text("Når et spil er påbegyndt uden at være gemt, vises meldingen under «Aktivt spil».")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+                    .padding(.vertical, 4)
                 }
             }
 
             Section("Seneste spil") {
-                if let hand = latestHand {
-                    NavigationLink {
-                        HandDetailView(hand: hand, gameDay: gameDay)
-                    } label: {
-                        FeaturedLatestHandCard(hand: hand)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                    .listRowBackground(Color.clear)
-
-                    ForEach(otherHandsChronological, id: \.id) { other in
-                        CompactHandDayRow(
-                            hand: other,
-                            isExpanded: expandedOtherHandID == other.id,
-                            onToggle: {
-                                withAnimation(.easeInOut(duration: 0.22)) {
-                                    if expandedOtherHandID == other.id {
-                                        expandedOtherHandID = nil
-                                    } else {
-                                        expandedOtherHandID = other.id
-                                    }
-                                }
+                if latestHand != nil {
+                    if senesteSpilVisning == .cards {
+                        if let hand = latestHand {
+                            NavigationLink(value: HomeRoute.hand(gameDayId: gameDay.id, handId: hand.id)) {
+                                FeaturedLatestHandCard(hand: hand, gameDay: gameDay)
                             }
-                        )
-                        .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                        .listRowBackground(Color.clear)
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                            .listRowBackground(Color.clear)
+
+                            ForEach(otherHandsChronological, id: \.id) { other in
+                                CompactHandDayRow(
+                                    hand: other,
+                                    gameDay: gameDay,
+                                    isExpanded: expandedOtherHandID == other.id,
+                                    onToggle: {
+                                        withAnimation(.easeInOut(duration: 0.22)) {
+                                            if expandedOtherHandID == other.id {
+                                                expandedOtherHandID = nil
+                                            } else {
+                                                expandedOtherHandID = other.id
+                                            }
+                                        }
+                                    }
+                                )
+                                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                                .listRowBackground(Color.clear)
+                            }
+                        }
+                    } else {
+                        SenesteSpilDiscreteTable(gameDay: gameDay, hands: handsNewestFirst)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 10, trailing: 12))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
                 } else {
                     Text("Ingen gemte kampe endnu. Brug «Tilføj spil» når spilledagen er aktiv.")
@@ -159,21 +183,32 @@ struct GameDayStartView: View {
                 }
             }
         }
-        .navigationTitle(gameDay.title)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAddHand) {
             AddHandView(gameDay: gameDay) { message in
-                sheetDismissNotice = message
+                showBriefToast(message)
             }
         }
-        .alert("Aktivt spil", isPresented: Binding(
-            get: { sheetDismissNotice != nil },
-            set: { if !$0 { sheetDismissNotice = nil } }
-        )) {
-            Button("OK", role: .cancel) { sheetDismissNotice = nil }
-        } message: {
-            Text(sheetDismissNotice ?? "")
+        .overlay(alignment: .top) {
+            if let msg = toastMessage {
+                Text(msg)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial.opacity(0.85))
+                    .background(Color.primary.opacity(0.7))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onTapGesture { dismissBriefToast() }
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: toastMessage != nil)
         .onAppear {
             gameDay.migrateLegacyHandNumbersIfNeeded()
             try? modelContext.save()
@@ -183,7 +218,30 @@ struct GameDayStartView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text("Nyt spil")
+                        .font(.headline.weight(.semibold))
+                    Text("Spilledag: \(gameDay.title)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Nyt spil, spilledag \(gameDay.title)")
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                Menu {
+                    Picker("Visning", selection: $senesteSpilVisning) {
+                        ForEach(SenesteSpilOversigtVisning.allCases) { mode in
+                            Text(mode.menuTitle).tag(mode)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "square.grid.2x2")
+                }
+                .accessibilityLabel("Visning af seneste spil")
+
                 if canStartOrContinueHand {
                     Button {
                         showAddHand = true
@@ -203,6 +261,12 @@ struct GameDayStartView: View {
 
     private var latestHand: RecordedHand? {
         gameDay.hands.max(by: { $0.playedAt < $1.playedAt })
+    }
+
+    /// Seneste kamp først, derefter ældre (samme orden som kortvisningen).
+    private var handsNewestFirst: [RecordedHand] {
+        guard let latest = latestHand else { return [] }
+        return [latest] + otherHandsChronological
     }
 
     /// Øvrige kampe samme dag (ikke den senest afsluttede): omvendt kronologisk (#n−1 … #1).
@@ -234,6 +298,21 @@ struct GameDayStartView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private func showBriefToast(_ message: String) {
+        toastWorkItem?.cancel()
+        withAnimation { toastMessage = message }
+        let item = DispatchWorkItem { [self] in
+            withAnimation { self.toastMessage = nil }
+        }
+        toastWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: item)
+    }
+
+    private func dismissBriefToast() {
+        toastWorkItem?.cancel()
+        withAnimation { toastMessage = nil }
     }
 }
 
@@ -293,9 +372,7 @@ private struct GameDaySettingsAndHandsView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(sortedHands, id: \.id) { hand in
-                    NavigationLink {
-                        HandDetailView(hand: hand, gameDay: gameDay)
-                    } label: {
+                    NavigationLink(value: HomeRoute.hand(gameDayId: gameDay.id, handId: hand.id)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(handListTitleLine(hand))
                                 .font(.subheadline)

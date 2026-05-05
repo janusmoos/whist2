@@ -13,6 +13,7 @@ struct NewGameDayView: View {
     @State private var savedDayId: UUID?
     @State private var savedTitle = ""
     @State private var showAlreadyHasActiveDay = false
+    @State private var seatOrder: [Seat] = Seat.all
 
     private var trimmedTitle: String {
         titleText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -53,7 +54,7 @@ struct NewGameDayView: View {
 
     private var editFormContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Giv spilledagen et navn og eventuelle noter. Du kan ændre det senere under spilledagens indstillinger.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -74,9 +75,32 @@ struct NewGameDayView: View {
                         .lineLimit(4...10)
                 }
 
-                Text("Noterne er kun til jer i appen — de påvirker ikke point.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Rækkefølge ved bordet")
+                        .font(.subheadline.weight(.semibold))
+
+                    List {
+                        ForEach(seatOrder, id: \.self) { seat in
+                            HStack(spacing: 12) {
+                                Image(systemName: "line.3.horizontal")
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityHidden(true)
+                                Text(seat.playerDisplayName)
+                                    .font(.body.weight(.medium))
+                                Spacer()
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        .onMove { from, to in
+                            seatOrder.move(fromOffsets: from, toOffset: to)
+                        }
+                    }
+                    .environment(\.editMode, .constant(.active))
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .listStyle(.plain)
+                    .frame(height: 48 * 4 + 6)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
@@ -162,7 +186,8 @@ struct NewGameDayView: View {
             return
         }
         let notes = notesText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let day = GameDay(title: title, notes: notes)
+        let seatOrderJSON = (try? String(data: JSONEncoder().encode(seatOrder.map(\.rawValue)), encoding: .utf8)) ?? "[0,1,2,3]"
+        let day = GameDay(title: title, notes: notes, seatOrderJSON: seatOrderJSON)
         modelContext.insert(day)
         try? modelContext.save()
         savedDayId = day.id

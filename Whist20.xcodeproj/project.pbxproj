@@ -40,6 +40,8 @@
 		B2A100802CF0000000120080 /* SenesteSpilComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100812CF0000000120081 /* SenesteSpilComponents.swift */; };
 		B2A100822CF0000000120082 /* SenesteSpilView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100832CF0000000120083 /* SenesteSpilView.swift */; };
 		B2A100842CF0000000120084 /* SuitPlayingCardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100852CF0000000120085 /* SuitPlayingCardStyle.swift */; };
+		B2A100862CF0000000120086 /* SenesteSpilDiscreteTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100872CF0000000120087 /* SenesteSpilDiscreteTable.swift */; };
+		B2A100912CF0000000120091 /* MainTabShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100902CF0000000120090 /* MainTabShell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +90,8 @@
 		B2A100812CF0000000120081 /* SenesteSpilComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SenesteSpilComponents.swift; sourceTree = "<group>"; };
 		B2A100832CF0000000120083 /* SenesteSpilView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SenesteSpilView.swift; sourceTree = "<group>"; };
 		B2A100852CF0000000120085 /* SuitPlayingCardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuitPlayingCardStyle.swift; sourceTree = "<group>"; };
+		B2A100872CF0000000120087 /* SenesteSpilDiscreteTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SenesteSpilDiscreteTable.swift; sourceTree = "<group>"; };
+		B2A100902CF0000000120090 /* MainTabShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabShell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -151,8 +155,10 @@
 				B2A100372CF0000000120037 /* GameDaysView.swift */,
 				B2A100552CF0000000120055 /* GameDayStartView.swift */,
 				B2A100812CF0000000120081 /* SenesteSpilComponents.swift */,
+				B2A100872CF0000000120087 /* SenesteSpilDiscreteTable.swift */,
 				B2A100832CF0000000120083 /* SenesteSpilView.swift */,
 				B2A100852CF0000000120085 /* SuitPlayingCardStyle.swift */,
+				B2A100902CF0000000120090 /* MainTabShell.swift */,
 				B2A1005D2CF000000012005D /* HomeView.swift */,
 				B2A100772CF0000000120077 /* NewGameDayView.swift */,
 				B2A100572CF0000000120057 /* MeldingPresentation.swift */,
@@ -313,6 +319,7 @@
 				B2A100562CF0000000120056 /* GameDayStartView.swift in Sources */,
 				B2A100592CF0000000120059 /* MeldingPresentation.swift in Sources */,
 				B2A1005A2CF000000012005A /* ActiveGameView.swift in Sources */,
+				B2A100912CF0000000120091 /* MainTabShell.swift in Sources */,
 				B2A1005E2CF000000012005E /* HomeView.swift in Sources */,
 				B2A100602CF0000000120060 /* GameDayScoreAggregation.swift in Sources */,
 				B2A100622CF0000000120062 /* PointStandingView.swift in Sources */,
@@ -324,6 +331,7 @@
 				B2A1007D2CF000000012007D /* GameDaySession.swift in Sources */,
 				B2A1007E2CF000000012007E /* HomeNavigationEnvironment.swift in Sources */,
 				B2A100802CF0000000120080 /* SenesteSpilComponents.swift in Sources */,
+				B2A100862CF0000000120086 /* SenesteSpilDiscreteTable.swift in Sources */,
 				B2A100822CF0000000120082 /* SenesteSpilView.swift in Sources */,
 				B2A100842CF0000000120084 /* SuitPlayingCardStyle.swift in Sources */,
 			);
@@ -489,7 +497,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dk.janusmoos.whist20;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -518,7 +526,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dk.janusmoos.whist20;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -536,7 +544,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dk.janusmoos.whist20Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -555,7 +563,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dk.janusmoos.whist20Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;

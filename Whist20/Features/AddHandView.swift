@@ -9,13 +9,31 @@ private enum HandRoute: Hashable {
     case resultat
 }
 
+// MARK: - Session (delt mellem AddHandView og dens del-views)
+
+/// Centralt status-objekt for ét «Tilføj spil»-flow. Når `didCompleteSave`
+/// (eller `userCancelled`) er sandt, må INGEN sti i AddHandView-træet
+/// længere kalde `upsertPending` — det er det værn der forhindrer at en
+/// netop slettet `PendingHand` bliver genskabt af et sent SwiftUI-tick
+/// (onAppear, onChange, onDisappear, debounced autosave m.m.).
+@Observable
+final class AddHandSession {
+    var didCompleteSave: Bool = false
+    var userCancelled: Bool = false
+
+    var shouldSuppressAutosave: Bool {
+        didCompleteSave || userCancelled
+    }
+}
+
 // MARK: - Draft (delt mellem Melding og Resultat)
 
 @Observable
 final class HandInputDraft {
     var kind: AddHandKind = .normal
 
-    var bidder: Seat = .north
+    /// Valgt melder. `nil` indtil brugeren vælger.
+    var bidder: Seat?
     var bidTricks: Int = 8
 
     /// Kun **almindelig**: trumf vælges i melding. Halve/VIP: trumf først i resultat.
@@ -27,7 +45,8 @@ final class HandInputDraft {
     var partnerAceSuit: Suit?
 
     var solType: SolType = .normal
-    var solBidder: Seat = .north
+    /// Valgt melder for sol. `nil` indtil brugeren vælger.
+    var solBidder: Seat?
     var goingWith: Set<Seat> = []
 
     var partner: Seat?
@@ -39,15 +58,17 @@ final class HandInputDraft {
     var vip3IsClubs: Bool = true
 
     var isDuty: Bool = false
-    var dutySeat: Seat = .south
+    /// Valgt spiller til duestraf. `nil` indtil brugeren vælger.
+    var dutySeat: Seat?
 
     var solTricks: [Seat: Int] = Dictionary(uniqueKeysWithValues: Seat.all.map { ($0, 0) })
 
     /// Resultat for sol: kun melder + «går med» tastes ind; resten udledes.
     var solTrickInputSeats: [Seat] {
         guard kind == .sol else { return [] }
-        var out: [Seat] = [solBidder]
-        for s in goingWith.sorted(by: { $0.rawValue < $1.rawValue }) where s != solBidder {
+        guard let bidder = solBidder else { return [] }
+        var out: [Seat] = [bidder]
+        for s in goingWith.sorted(by: { $0.rawValue < $1.rawValue }) where s != bidder {
             out.append(s)
         }
         return out
@@ -56,8 +77,9 @@ final class HandInputDraft {
     /// Fordeler rest-stik på modstanderne så summen over fire pladser er 13 (kun kontraktsiden redigeres i UI).
     func syncSolOpponentTricksFromContractSide() {
         guard kind == .sol else { return }
+        guard let bidder = solBidder else { return }
         var copy = solTricks
-        let contractList = [solBidder] + goingWith.filter { $0 != solBidder }.sorted { $0.rawValue < $1.rawValue }
+        let contractList = [bidder] + goingWith.filter { $0 != bidder }.sorted { $0.rawValue < $1.rawValue }
         let contractSet = Set(contractList)
         let opponents = Seat.all.filter { !contractSet.contains($0) }
         let contractSum = contractList.reduce(0) { $0 + (copy[$1] ?? 0) }
@@ -133,6 +155,13 @@ final class HandInputDraft {
         return out
     }
 
+    /// Kun halve: trumf må ikke være samme kulør som valgt makker-es.
+    var halveTrumpExcludedSuits: Set<Suit> {
+        guard kind == .normal, normalSubtype == .halve else { return [] }
+        guard let ace = partnerAceSuit else { return [] }
+        return [ace]
+    }
+
     /// Bruges til at gemme resultat-trinnet ved hver relevant ændring.
     var resultAutosaveToken: String {
         (try? HandDraftPersistence.encode(self, navigationStep: HandDraftPersistence.stepResultat)) ?? UUID().uuidString
@@ -142,6 +171,7 @@ final class HandInputDraft {
         switch kind {
         case .normal:
             guard bidTricks >= 8, bidTricks <= 13 else { return false }
+            guard bidder != nil else { return false }
             if normalSubtype == .alm {
                 guard trumpAlm != nil else { return false }
             }
@@ -150,15 +180,15 @@ final class HandInputDraft {
             }
             return true
         case .sol:
-            return true
+            return solBidder != nil
         case .duty:
-            return true
+            return dutySeat != nil
         }
     }
 
     var isResultStepValid: Bool {
-        if kind == .duty { return true }
-        if kind == .normal, isDuty { return true }
+        if kind == .duty { return dutySeat != nil }
+        if kind == .normal, isDuty { return dutySeat != nil }
         switch kind {
         case .normal:
             guard partner != nil else { return false }
@@ -170,26 +200,27 @@ final class HandInputDraft {
             guard solContractTricksValid else { return false }
             return solScoresPreview != nil
         case .duty:
-            return true
+            return dutySeat != nil
         }
     }
 
     private var normalScoresPreview: [Seat: Int]? {
-        guard let p = partner, !isDuty, kind != .duty else { return nil }
+        guard let b = bidder, let p = partner, !isDuty, kind != .duty else { return nil }
         return ScoringEngine.scoreNormalHand(NormalHandScoreInput(
             gameType: resolvedNormalGameType(),
             bidTricks: bidTricks,
             actualTricks: actualTricks,
-            bidder: bidder,
+            bidder: b,
             partner: p,
             trumpSuit: effectiveTrumpForScoring()
         ))
     }
 
     private var solScoresPreview: [Seat: Int]? {
-        ScoringEngine.scoreSolHand(SolHandScoreInput(
+        guard let b = solBidder else { return nil }
+        return ScoringEngine.scoreSolHand(SolHandScoreInput(
             solType: solType,
-            bidder: solBidder,
+            bidder: b,
             goingWith: goingWith,
             tricksBySeat: solTricks
         ))
@@ -203,23 +234,25 @@ final class HandInputDraft {
 
     func finalScores() -> [Seat: Int]? {
         if kind == .duty || isDuty {
-            return ScoringEngine.dutyScores(dutyHolder: dutySeat)
+            guard let d = dutySeat else { return nil }
+            return ScoringEngine.dutyScores(dutyHolder: d)
         }
         switch kind {
         case .normal:
-            guard let p = partner else { return nil }
+            guard let b = bidder, let p = partner else { return nil }
             return ScoringEngine.scoreNormalHand(NormalHandScoreInput(
                 gameType: resolvedNormalGameType(),
                 bidTricks: bidTricks,
                 actualTricks: actualTricks,
-                bidder: bidder,
+                bidder: b,
                 partner: p,
                 trumpSuit: effectiveTrumpForScoring()
             ))
         case .sol:
             return solScoresPreview
         case .duty:
-            return ScoringEngine.dutyScores(dutyHolder: dutySeat)
+            guard let d = dutySeat else { return nil }
+            return ScoringEngine.dutyScores(dutyHolder: d)
         }
     }
 }
@@ -264,27 +297,53 @@ enum NormalBidSubtype: String, CaseIterable, Identifiable, Codable {
 // MARK: - Trin 1: Melding
 
 private struct BidStepView: View {
+    @Environment(\.dismiss) private var dismissSheet
     @Environment(\.modelContext) private var modelContext
     @Bindable var draft: HandInputDraft
+    var onSaved: ((UUID) -> Void)?
     @Binding var path: NavigationPath
+    let session: AddHandSession
     let gameDay: GameDay
     let onAnnuller: () -> Void
 
+    private var nextHandNumber: Int {
+        let maxNum = gameDay.hands.map(\.handNumber).max() ?? 0
+        if maxNum >= 1 { return maxNum + 1 }
+        return gameDay.hands.count + 1
+    }
+
+    private var dealerSeat: Seat {
+        gameDay.dealerSeat(forHandNumber: nextHandNumber)
+    }
+
+    private var seatOrder: [Seat] {
+        gameDay.seatOrder
+    }
+
     var body: some View {
-        Form {
-            Section("Spiltype") {
+        VStack(spacing: 0) {
+            Text("Spil #\(nextHandNumber)")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+
+            Form {
                 Picker("Type", selection: $draft.kind) {
                     ForEach(AddHandKind.allCases) { k in
                         Text(k.title).tag(k)
                     }
                 }
                 .pickerStyle(.segmented)
-            }
 
-            if draft.kind == .normal {
-                normalBidSections
-            } else if draft.kind == .sol {
-                solBidSections
+                if draft.kind == .normal {
+                    normalBidSections
+                } else if draft.kind == .sol {
+                    solBidSections
+                } else if draft.kind == .duty {
+                    dutyBidSections
+                }
             }
         }
         .navigationTitle("Melding")
@@ -309,34 +368,132 @@ private struct BidStepView: View {
                 DismissAddHandButton(gameDay: gameDay, onAnnuller: onAnnuller)
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Næste") {
+                Button(draft.kind == .duty ? "Gem" : "Næste") {
+                    if draft.kind == .duty {
+                        saveDutyFromBidStep()
+                        return
+                    }
                     if draft.kind == .normal && draft.normalSubtype == .halve {
-                        HandDraftPersistence.upsertPending(
-                            context: modelContext,
-                            gameDay: gameDay,
-                            draft: draft,
-                            navigationStep: HandDraftPersistence.stepHalveTrumf
-                        )
+                        if !session.shouldSuppressAutosave {
+                            HandDraftPersistence.upsertPending(
+                                context: modelContext,
+                                gameDay: gameDay,
+                                draft: draft,
+                                navigationStep: HandDraftPersistence.stepHalveTrumf
+                            )
+                        }
                         path.append(HandRoute.halveTrumf)
                     } else {
-                        HandDraftPersistence.upsertPending(
-                            context: modelContext,
-                            gameDay: gameDay,
-                            draft: draft,
-                            navigationStep: HandDraftPersistence.stepResultat
-                        )
+                        if draft.kind == .normal {
+                            draft.actualTricks = draft.bidTricks
+                        }
+                        if !session.shouldSuppressAutosave {
+                            HandDraftPersistence.upsertPending(
+                                context: modelContext,
+                                gameDay: gameDay,
+                                draft: draft,
+                                navigationStep: HandDraftPersistence.stepResultat
+                            )
+                        }
                         path.append(HandRoute.resultat)
                     }
                 }
                 .disabled(!draft.isBidStepValid)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
             }
         }
     }
 
     @ViewBuilder
+    private var dutyBidSections: some View {
+        Section("Duestraf") {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                ForEach(seatOrder, id: \.self) { seat in
+                    let on = draft.dutySeat == seat
+                    Button {
+                        draft.dutySeat = seat
+                    } label: {
+                        Text(seat.playerDisplayName)
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(on ? .red : .secondary)
+                    .buttonBorderShape(.roundedRectangle(radius: 6))
+                    .fontWeight(on ? .semibold : .regular)
+                    .overlay(alignment: .topLeading) {
+                        if dealerSeat == seat {
+                            dealerBadge
+                                .padding(.leading, 6)
+                                .padding(.top, 4)
+                        }
+                    }
+                    .accessibilityLabel("Duestraf til: \(seat.playerDisplayName)")
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Vælg spiller til duestraf")
+        }
+    }
+
+    private var dealerBadge: some View {
+        Text("D")
+            .font(.caption2.weight(.heavy))
+            .foregroundStyle(.white)
+            .frame(width: 18, height: 18)
+            .background(Circle().fill(Color.orange))
+            .accessibilityLabel("Dealer")
+    }
+
+    private func saveDutyFromBidStep() {
+        guard let scores = draft.finalScores() else { return }
+        guard let dutySeat = draft.dutySeat else { return }
+
+        // VIGTIGT: sæt session-flaget FØR vi rører persistencen, så hvis SwiftUI
+        // ekstra-kører onChange/onAppear/onDisappear mens vi gemmer, kan ingen
+        // sti recreate en `PendingHand`.
+        session.didCompleteSave = true
+        #if DEBUG
+        print("[AddHand] saveDutyFromBidStep: didCompleteSave=true (før persistens)")
+        #endif
+
+        let kind = "duty"
+        let json = HandScorePersistence.encodeScores(scores)
+        let caption = HandResumeCaption.compactLine(from: draft)
+        let bidderSeat = dutySeat.rawValue
+        let solAlliesJSON = "[]"
+        gameDay.migrateLegacyHandNumbersIfNeeded()
+        let nextHandNumber = (gameDay.hands.map(\.handNumber).max() ?? 0) + 1
+        let hand = RecordedHand(
+            kindRaw: kind,
+            summaryLine: "",
+            scoresBySeatJSON: json,
+            resumeCaption: caption,
+            bidderSeatRaw: bidderSeat,
+            partnerSeatRaw: -1,
+            solAlliesSeatsJSON: solAlliesJSON,
+            handNumber: nextHandNumber,
+            gameDay: gameDay
+        )
+        hand.summaryLine = hand.displayResumeNarrative
+        modelContext.insert(hand)
+        HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
+        try? modelContext.save()
+        #if DEBUG
+        print("[AddHand] saveDutyFromBidStep: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
+        #endif
+        onSaved?(gameDay.id)
+        dismissSheet()
+    }
+
+    @ViewBuilder
     private var normalBidSections: some View {
         Section {
-            MelderSeatButtonGrid(selectedSeat: $draft.bidder)
+            OptionalMelderSeatButtonGrid(seats: seatOrder, selectedSeat: $draft.bidder, dealerSeat: dealerSeat)
         }
         Section {
             HStack(spacing: 0) {
@@ -383,10 +540,10 @@ private struct BidStepView: View {
             .accessibilityLabel("Sol-type")
         }
         Section {
-            MelderSeatButtonGrid(selectedSeat: $draft.solBidder)
+            OptionalMelderSeatButtonGrid(seats: seatOrder, selectedSeat: $draft.solBidder, dealerSeat: dealerSeat)
         }
         Section("Går med") {
-            ForEach(Seat.all.filter { $0 != draft.solBidder }, id: \.self) { seat in
+            ForEach(seatOrder.filter { $0 != draft.solBidder }, id: \.self) { seat in
                 Toggle(seat.playerDisplayName, isOn: bindingGoingWith(seat))
             }
         }
@@ -402,9 +559,16 @@ private struct BidStepView: View {
     }
 
     private func bindingGoingWith(_ seat: Seat) -> Binding<Bool> {
-        Binding(
+        guard let bidder = draft.solBidder else {
+            return Binding(
+                get: { false },
+                set: { _ in }
+            )
+        }
+        return Binding(
             get: { draft.goingWith.contains(seat) },
             set: { newValue in
+                guard seat != bidder else { return }
                 if newValue { draft.goingWith.insert(seat) } else { draft.goingWith.remove(seat) }
             }
         )
@@ -418,6 +582,7 @@ private struct HalveTrumpStepView: View {
 
     @Bindable var draft: HandInputDraft
     @Binding var path: NavigationPath
+    let session: AddHandSession
     let gameDay: GameDay
 
     var body: some View {
@@ -439,7 +604,7 @@ private struct HalveTrumpStepView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                optionalSuitPicker(selection: $draft.trumpAfterPlay, excludedSuits: draft.makkerEsExcludedSuits)
+                optionalSuitPicker(selection: $draft.trumpAfterPlay, excludedSuits: draft.halveTrumpExcludedSuits)
             } header: {
                 Text("Trumf")
             }
@@ -459,18 +624,24 @@ private struct HalveTrumpStepView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Næste") {
-                    HandDraftPersistence.upsertPending(
-                        context: modelContext,
-                        gameDay: gameDay,
-                        draft: draft,
-                        navigationStep: HandDraftPersistence.stepResultat
-                    )
+                    draft.actualTricks = draft.bidTricks
+                    if !session.shouldSuppressAutosave {
+                        HandDraftPersistence.upsertPending(
+                            context: modelContext,
+                            gameDay: gameDay,
+                            draft: draft,
+                            navigationStep: HandDraftPersistence.stepResultat
+                        )
+                    }
                     path.append(HandRoute.resultat)
                 }
                 .disabled(draft.trumpAfterPlay == nil)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
             }
         }
         .onAppear {
+            guard !session.shouldSuppressAutosave else { return }
             HandDraftPersistence.upsertPending(
                 context: modelContext,
                 gameDay: gameDay,
@@ -490,7 +661,9 @@ private struct ResultStepView: View {
     let gameDay: GameDay
     @Binding var navigationPath: NavigationPath
     var dismissSheet: DismissAction
-    @Binding var didCompleteSave: Bool
+    let session: AddHandSession
+    var onSaved: ((UUID) -> Void)?
+    @State private var pendingAutosaveTask: Task<Void, Never>?
 
     var body: some View {
         Form {
@@ -498,7 +671,7 @@ private struct ResultStepView: View {
                 MeldingStatusCard(
                     presentation: MeldingPresentation.from(
                         draft: draft,
-                        navigationStepLabel: "Resultat — udfyld nedenfor og gem når spillet er færdigspillet"
+                        navigationStepLabel: nil
                     )
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
@@ -516,19 +689,23 @@ private struct ResultStepView: View {
         .navigationTitle("Resultat")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Tilbage") {
-                    navigationPath.removeLast()
-                }
-            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Gem") { save() }
                     .disabled(!draft.isResultStepValid)
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
             }
         }
         .onAppear {
             if draft.kind == .sol {
                 draft.syncSolOpponentTricksFromContractSide()
+            }
+            // Hvis vi allerede er ved at gemme/annullere må vi ALDRIG genskabe kladden.
+            guard !session.shouldSuppressAutosave else {
+                #if DEBUG
+                print("[AddHand] ResultStepView.onAppear: skipper upsert (session lukket)")
+                #endif
+                return
             }
             HandDraftPersistence.upsertPending(
                 context: modelContext,
@@ -538,28 +715,61 @@ private struct ResultStepView: View {
             )
         }
         .onChange(of: draft.resultAutosaveToken) { _, _ in
-            HandDraftPersistence.upsertPending(
-                context: modelContext,
-                gameDay: gameDay,
-                draft: draft,
-                navigationStep: HandDraftPersistence.stepResultat
-            )
+            pendingAutosaveTask?.cancel()
+            // Hvis sessionen er ved at lukke ned (gem/cancel) — gør slet ingenting.
+            guard !session.shouldSuppressAutosave else { return }
+            pendingAutosaveTask = Task { @MainActor in
+                // Coalesce rapid changes (steppers/wheels) to avoid multiple updates per frame.
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                guard !Task.isCancelled else { return }
+                guard !session.shouldSuppressAutosave else { return }
+                HandDraftPersistence.upsertPending(
+                    context: modelContext,
+                    gameDay: gameDay,
+                    draft: draft,
+                    navigationStep: HandDraftPersistence.stepResultat
+                )
+            }
+        }
+        .onDisappear {
+            pendingAutosaveTask?.cancel()
+            pendingAutosaveTask = nil
         }
     }
 
     @ViewBuilder
     private var normalResultSections: some View {
-        Section("Makker") {
-            PartnerSeatButtonGrid(selectedPartner: $draft.partner)
-            if let p = draft.partner {
-                Text(
-                    p == draft.bidder
-                        ? "\(draft.bidder.playerDisplayName) meldte til sig selv (selvmakker)"
-                        : "\(draft.bidder.playerDisplayName) meldte til \(p.playerDisplayName)"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        let scores = draft.finalScores()
+
+        Section("Makker til \(draft.bidder?.playerDisplayName ?? "—")") {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                ForEach(gameDay.seatOrder, id: \.self) { seat in
+                    let on = draft.partner == seat
+                    Button {
+                        draft.partner = seat
+                    } label: {
+                        HStack(spacing: 0) {
+                            Text(seat.playerDisplayName)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Spacer(minLength: 4)
+                            if let s = scores, let v = s[seat] {
+                                scoreBadge(v)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(on ? .accentColor : .secondary)
+                    .buttonBorderShape(.roundedRectangle(radius: 6))
+                    .fontWeight(on ? .semibold : .regular)
+                    .accessibilityLabel("Makker: \(seat.playerDisplayName), \(scores?[seat].map { "\($0) point" } ?? "")")
+                }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Vælg makker")
         }
 
         if draft.normalSubtype == .vip {
@@ -573,10 +783,9 @@ private struct ResultStepView: View {
         }
 
         Section {
-            ActualTricksWheelPicker(actualTricks: $draft.actualTricks)
+            ActualTricksWheelPicker(actualTricks: $draft.actualTricks, bidTricks: draft.bidTricks)
         }
 
-        /// Halve: trumf vælges på forrige skærm (`HalveTrumpStepView`).
         if draft.normalSubtype == .vip {
             Section("Trumf") {
                 optionalSuitPicker(selection: $draft.trumpAfterPlay)
@@ -589,33 +798,6 @@ private struct ResultStepView: View {
             }
             .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
             .listRowBackground(Color.clear)
-        }
-
-        if !draft.isDuty, let scores = draft.finalScores() {
-            Section("Resultat") {
-                ForEach(Seat.all, id: \.self) { seat in
-                    HStack {
-                        Text(seat.playerDisplayName)
-                        Spacer()
-                        Text("\(scores[seat] ?? 0)")
-                            .monospacedDigit()
-                    }
-                }
-            }
-        }
-
-        Section {
-            Toggle("Duestraf (erstatter spillets point)", isOn: $draft.isDuty)
-        }
-
-        if draft.isDuty {
-            Section("Duestraf") {
-                Picker("Spiller med duty", selection: $draft.dutySeat) {
-                    ForEach(Seat.all, id: \.self) { seat in
-                        Text(seat.playerDisplayName).tag(seat)
-                    }
-                }
-            }
         }
     }
 
@@ -644,19 +826,14 @@ private struct ResultStepView: View {
 
     @ViewBuilder
     private var solResultSections: some View {
+        let scores = draft.finalScores()
+
         Section("Stik (melder og medspillere)") {
             ForEach(draft.solTrickInputSeats, id: \.self) { seat in
-                Stepper("\(seat.playerDisplayName): \(draft.solTricks[seat] ?? 0)", value: bindingSolTricksContract(seat), in: 0 ... 13)
-            }
-        }
-        if let scores = draft.finalScores() {
-            Section("Resultat") {
-                ForEach(Seat.all, id: \.self) { seat in
-                    HStack {
-                        Text(seat.playerDisplayName)
-                        Spacer()
-                        Text("\(scores[seat] ?? 0)")
-                            .monospacedDigit()
+                HStack {
+                    Stepper("\(seat.playerDisplayName): \(draft.solTricks[seat] ?? 0)", value: bindingSolTricksContract(seat), in: 0 ... 13)
+                    if let s = scores, let v = s[seat] {
+                        scoreBadge(v)
                     }
                 }
             }
@@ -666,11 +843,23 @@ private struct ResultStepView: View {
     private var dutyResultSections: some View {
         Section("Duestraf") {
             Picker("Spiller med duty", selection: $draft.dutySeat) {
-                ForEach(Seat.all, id: \.self) { seat in
-                    Text(seat.playerDisplayName).tag(seat)
+                ForEach(gameDay.seatOrder, id: \.self) { seat in
+                    Text(seat.playerDisplayName).tag(Optional(seat))
                 }
             }
         }
+    }
+
+    private func scoreBadge(_ value: Int) -> some View {
+        let text = value > 0 ? "+\(value)" : "\(value)"
+        let color: Color = value > 0 ? .green : value < 0 ? .red : .secondary
+        return Text(text)
+            .font(.caption2.weight(.bold).monospacedDigit())
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(.white, in: Capsule())
+            .overlay(Capsule().strokeBorder(color, lineWidth: 1))
     }
 
     private func bindingSolTricksContract(_ seat: Seat) -> Binding<Int> {
@@ -697,11 +886,11 @@ private struct ResultStepView: View {
     private func persistBidderSeatRaw(draft: HandInputDraft, kind: String) -> Int {
         switch kind {
         case "sol":
-            return draft.solBidder.rawValue
+            return draft.solBidder?.rawValue ?? -1
         case "duty":
-            return draft.dutySeat.rawValue
+            return draft.dutySeat?.rawValue ?? -1
         default:
-            return draft.bidder.rawValue
+            return draft.bidder?.rawValue ?? -1
         }
     }
 
@@ -722,6 +911,17 @@ private struct ResultStepView: View {
 
     private func save() {
         guard let scores = draft.finalScores() else { return }
+
+        // VIGTIGT: luk sessionen FØR vi rører persistencen. På den måde kan ingen
+        // resterende SwiftUI-tick (onAppear/onChange/onDisappear) eller debounced
+        // autosave-task nå at genskabe `PendingHand` mens vi gemmer.
+        session.didCompleteSave = true
+        pendingAutosaveTask?.cancel()
+        pendingAutosaveTask = nil
+        #if DEBUG
+        print("[AddHand] save: didCompleteSave=true (før persistens)")
+        #endif
+
         let kind: String = {
             if draft.isDuty { return "duty" }
             switch draft.kind {
@@ -752,7 +952,10 @@ private struct ResultStepView: View {
         modelContext.insert(hand)
         HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
         try? modelContext.save()
-        didCompleteSave = true
+        #if DEBUG
+        print("[AddHand] save: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
+        #endif
+        onSaved?(gameDay.id)
         dismissSheet()
     }
 }
@@ -766,32 +969,46 @@ struct AddHandView: View {
     @State private var draft = HandInputDraft()
     @State private var path = NavigationPath()
     @State private var didRestoreFromPending = false
-    @State private var userCancelledSheet = false
-    @State private var didCompleteSave = false
+    @State private var session = AddHandSession()
 
     let gameDay: GameDay
     /// Kaldes når arket lukkes uden «Annuller» og uden fuld «Gem» — typisk træk-ned.
     var onDismissSaveNotice: ((String) -> Void)?
+    /// Kaldes umiddelbart efter «Gem» (inden dismiss), med den gemte spilledags id.
+    var onSaved: ((UUID) -> Void)?
 
-    init(gameDay: GameDay, onDismissSaveNotice: ((String) -> Void)? = nil) {
+    init(
+        gameDay: GameDay,
+        onDismissSaveNotice: ((String) -> Void)? = nil,
+        onSaved: ((UUID) -> Void)? = nil
+    ) {
         self.gameDay = gameDay
         self.onDismissSaveNotice = onDismissSaveNotice
+        self.onSaved = onSaved
     }
 
     var body: some View {
         NavigationStack(path: $path) {
-            BidStepView(draft: draft, path: $path, gameDay: gameDay, onAnnuller: { userCancelledSheet = true })
+            BidStepView(
+                draft: draft,
+                onSaved: onSaved,
+                path: $path,
+                session: session,
+                gameDay: gameDay,
+                onAnnuller: { session.userCancelled = true }
+            )
                 .navigationDestination(for: HandRoute.self) { route in
                     switch route {
                     case .halveTrumf:
-                        HalveTrumpStepView(draft: draft, path: $path, gameDay: gameDay)
+                        HalveTrumpStepView(draft: draft, path: $path, session: session, gameDay: gameDay)
                     case .resultat:
                         ResultStepView(
                             draft: draft,
                             gameDay: gameDay,
                             navigationPath: $path,
                             dismissSheet: dismissSheet,
-                            didCompleteSave: $didCompleteSave
+                            session: session,
+                            onSaved: onSaved
                         )
                     }
                 }
@@ -807,12 +1024,21 @@ struct AddHandView: View {
     }
 
     private func handleInteractiveSheetDismiss() {
-        if didCompleteSave {
-            didCompleteSave = false
+        // Hvis brugeren har gemt eller trykket Annuller må vi ALDRIG autosave —
+        // ellers genskaber vi den `PendingHand` som save() lige har slettet.
+        if session.shouldSuppressAutosave {
+            #if DEBUG
+            print("[AddHand] onDisappear: skipper autosave — session.shouldSuppressAutosave=true (saved=\(session.didCompleteSave), cancelled=\(session.userCancelled))")
+            #endif
             return
         }
-        if userCancelledSheet {
-            userCancelledSheet = false
+        // Ekstra værn: hvis der ikke længere ligger en pending OG draften er tom,
+        // er der ingenting at gemme. Dette dækker race-tilfælde hvor flagene af
+        // en eller anden grund ikke er blevet opdateret.
+        if gameDay.pendingHand == nil, draftIsEffectivelyEmpty {
+            #if DEBUG
+            print("[AddHand] onDisappear: ingen pending + tom draft — skipper autosave")
+            #endif
             return
         }
         let stepFromPending: String? = {
@@ -822,6 +1048,9 @@ struct AddHandView: View {
         }()
         let step = stepFromPending
             ?? (path.isEmpty ? HandDraftPersistence.stepMelding : HandDraftPersistence.stepResultat)
+        #if DEBUG
+        print("[AddHand] onDisappear: autosaver kladde (step=\(step))")
+        #endif
         HandDraftPersistence.upsertPending(
             context: modelContext,
             gameDay: gameDay,
@@ -829,6 +1058,19 @@ struct AddHandView: View {
             navigationStep: step
         )
         onDismissSaveNotice?(buildDismissUserMessage())
+    }
+
+    /// Når brugeren ikke har rørt noget endnu (frisk sheet uden valg), skal vi ikke
+    /// gemme en tom kladde og dermed lade «Fortsæt aktivt spil» hænge fast.
+    private var draftIsEffectivelyEmpty: Bool {
+        draft.bidder == nil
+            && draft.solBidder == nil
+            && draft.dutySeat == nil
+            && draft.partner == nil
+            && draft.trumpAlm == nil
+            && draft.trumpAfterPlay == nil
+            && draft.partnerAceSuit == nil
+            && draft.goingWith.isEmpty
     }
 
     private func buildDismissUserMessage() -> String {
@@ -911,6 +1153,50 @@ private struct TrumpSuitPicker: View {
     }
 }
 
+/// Melder som knapper (fire spillere) uden forvalg (`nil` indtil valgt).
+private struct OptionalMelderSeatButtonGrid: View {
+    var seats: [Seat]
+    @Binding var selectedSeat: Seat?
+    var dealerSeat: Seat?
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+            ForEach(seats, id: \.self) { seat in
+                let on = selectedSeat == seat
+                Button {
+                    selectedSeat = seat
+                } label: {
+                    Text(seat.playerDisplayName)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.bordered)
+                .tint(on ? .accentColor : .secondary)
+                .buttonBorderShape(.roundedRectangle(radius: 6))
+                .fontWeight(on ? .semibold : .regular)
+                .overlay(alignment: .topLeading) {
+                    if dealerSeat == seat {
+                        Text("D")
+                            .font(.caption2.weight(.heavy))
+                            .foregroundStyle(.white)
+                            .frame(width: 18, height: 18)
+                            .background(Circle().fill(Color.orange))
+                            .padding(.leading, 6)
+                            .padding(.top, 4)
+                            .accessibilityLabel("Dealer")
+                    }
+                }
+                .accessibilityLabel("Melder: \(seat.playerDisplayName)")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Vælg melder")
+    }
+}
+
 /// Vælg kulør; ingen forvalg. Tryk samme kulør igen for at fjerne valget (`nil`). Udelukkede kulører er inaktive.
 private func optionalSuitPicker(selection: Binding<Suit?>, excludedSuits: Set<Suit> = []) -> some View {
     OptionalSuitPicker(selection: selection, excludedSuits: excludedSuits)
@@ -975,10 +1261,10 @@ enum HandResumeCaption {
     /// Talesprog + kulør-ikoner (♠♥♦♣), gemmes i `RecordedHand.resumeCaption`.
     static func compactLine(from draft: HandInputDraft) -> String {
         if draft.kind == .duty {
-            return "Duestraf til \(draft.dutySeat.playerDisplayName)"
+            return "Duestraf til \(draft.dutySeat?.playerDisplayName ?? "—")"
         }
         if draft.isDuty {
-            return "Duestraf til \(draft.dutySeat.playerDisplayName)"
+            return "Duestraf til \(draft.dutySeat?.playerDisplayName ?? "—")"
         }
         switch draft.kind {
         case .normal:
@@ -986,8 +1272,73 @@ enum HandResumeCaption {
         case .sol:
             return solLineSpoken(draft)
         case .duty:
-            return "Duestraf til \(draft.dutySeat.playerDisplayName)"
+            return "Duestraf til \(draft.dutySeat?.playerDisplayName ?? "—")"
         }
+    }
+
+    /// Som `compactLine`, men uden `||`-kode (normale spil). Gemte kampe får stikudfald via `displayResumeLine`; kladde på «Aktivt spil» skal ikke vise rå token.
+    static func compactLineForHumanDisplay(from draft: HandInputDraft) -> String {
+        let full = compactLine(from: draft)
+        guard let range = full.range(of: "||") else { return full }
+        return String(full[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Nutidsform uden resultat — til visning af **aktive** (igangværende) spil.
+    /// Fx "Christian melder sol og Thomas går med" i stedet for "Christian meldte sol … – de gik alle hjem".
+    static func presentTenseLine(from draft: HandInputDraft) -> String {
+        if draft.kind == .duty || draft.isDuty {
+            return "Duestraf til \(draft.dutySeat?.playerDisplayName ?? "—")"
+        }
+        switch draft.kind {
+        case .normal:
+            return normalLinePresentTense(draft)
+        case .sol:
+            return solLinePresentTense(draft)
+        case .duty:
+            return "Duestraf til \(draft.dutySeat?.playerDisplayName ?? "—")"
+        }
+    }
+
+    private static func normalLinePresentTense(_ d: HandInputDraft) -> String {
+        let bid = d.bidTricks
+        let melder = d.bidder?.playerDisplayName ?? "—"
+        let core: String
+        switch d.normalSubtype {
+        case .alm:
+            var s = "\(bid) almindelige"
+            if let t = d.trumpAlm { s += " med \(t.cardSymbol) som trumf" }
+            if let ace = d.partnerAceSuit { s += " og \(ace.cardSymbol) som makker-es" }
+            core = s
+        case .sans:
+            core = "\(bid) sans uden trumf"
+        case .gode:
+            core = "\(bid) \(Suit.clubs.cardSymbol) (gode)"
+        case .halve:
+            var s = "\(bid) halve"
+            if let ace = d.partnerAceSuit { s += " til \(ace.cardSymbol)" }
+            if let tr = d.trumpAfterPlay { s += " med \(tr.cardSymbol) som trumf" }
+            core = s
+        case .vip:
+            var s = "\(bid) VIP \(vipOrdinalDanish(d.vipLevel))"
+            if let tr = d.trumpAfterPlay { s += " med \(tr.cardSymbol) som trumf" }
+            core = s
+        }
+        let selfmakkerSuffix: String = {
+            guard let b = d.bidder, let p = d.partner, b == p else { return "" }
+            return " som selvmakker"
+        }()
+        return "\(melder) melder \(core)\(selfmakkerSuffix)"
+    }
+
+    private static func solLinePresentTense(_ d: HandInputDraft) -> String {
+        let melder = d.solBidder?.playerDisplayName ?? "—"
+        var sentence = "\(melder) melder \(solTypeSpoken(d.solType))"
+        let allies = d.goingWith.sorted { $0.rawValue < $1.rawValue }
+        if !allies.isEmpty {
+            let names = allies.map(\.playerDisplayName)
+            sentence += " og \(danishNameList(names)) går med"
+        }
+        return sentence
     }
 
     struct CaptionDisplayParts: Sendable {
@@ -1012,15 +1363,34 @@ enum HandResumeCaption {
         }()
 
         var narrative = substituteSuitNamesWithSymbols(in: narrativeRaw)
+        narrative = rewriteGodeMeldtePhrasing(narrative)
         narrative = applyLegacyResumeWordFixes(narrative)
         narrative = appendSolGoingWithToNarrative(narrative, hand: hand)
         narrative = prependNormalBidderIfNeeded(narrative, hand: hand)
+        narrative = appendSelfmakkerIfNeeded(narrative, hand: hand)
         if let d = parsedDelta {
             let bid = parseBidTricksAfterMeldte(in: narrative)
             narrative += trickOutcomeSpoken(delta: d, bidTricks: bid, hand: hand)
         }
+        narrative = deduplicateBidderName(narrative, hand: hand)
         narrative = stripUnwantedResumePhrases(narrative)
         return CaptionDisplayParts(narrative: narrative, trickDelta: nil)
+    }
+
+    /// Normal: hvis melder er selvmakker (partner == melder), så nævn det altid i resuméet.
+    private static func appendSelfmakkerIfNeeded(_ narrative: String, hand: RecordedHand) -> String {
+        guard hand.kindRaw == "normal" else { return narrative }
+        guard hand.bidderSeatRaw >= 0,
+              hand.partnerSeatRaw >= 0,
+              hand.bidderSeatRaw == hand.partnerSeatRaw else {
+            return narrative
+        }
+        if narrative.range(of: "selvmakker", options: .caseInsensitive) != nil {
+            return narrative
+        }
+        let trimmed = narrative.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return narrative }
+        return trimmed + " som selvmakker"
     }
 
     /// Kun fortællingstekst (fx til enkel visning uden badge).
@@ -1039,6 +1409,48 @@ enum HandResumeCaption {
             return String(hand.summaryLine[..<idx]).trimmingCharacters(in: .whitespaces)
         }
         return "Spil"
+    }
+
+    /// Undgår at melderens navn gentages lige efter hinanden i sætningen.
+    /// "Thomas meldte 8 ♣ (gode), og Thomas og Christian tog 10 stik (+2)"
+    /// → "Thomas meldte 8 ♣ (gode), og sammen med Christian tog de 10 stik (+2)"
+    private static func deduplicateBidderName(_ text: String, hand: RecordedHand) -> String {
+        guard hand.bidderSeatRaw >= 0,
+              let bidder = Seat(rawValue: hand.bidderSeatRaw) else { return text }
+        let name = bidder.playerDisplayName
+
+        // Case 1: "…, og <Name> og <Partner> tog …" → "…, og sammen med <Partner> tog han …"
+        if hand.kindRaw == "normal",
+           hand.partnerSeatRaw >= 0,
+           let partner = Seat(rawValue: hand.partnerSeatRaw),
+           bidder != partner {
+            let pattern = ", og \(name) og \(partner.playerDisplayName) "
+            if let range = text.range(of: pattern) {
+                var after = String(text[range.upperBound...])
+                if after.hasPrefix("tog ") {
+                    after = "tog han " + after.dropFirst(4)
+                }
+                return String(text[..<range.lowerBound])
+                    + ", og sammen med \(partner.playerDisplayName) "
+                    + after
+            }
+        }
+
+        // Case 2: "…, og <Name> tog …" → "… og tog …" (name allerede nævnt i starten)
+        let soloPattern = ", og \(name) "
+        if text.hasPrefix("\(name) "), let range = text.range(of: soloPattern) {
+            let after = text[range.upperBound...]
+            return String(text[..<range.lowerBound]) + " og " + after
+        }
+
+        // Case 3: "…, og <Name> ramte …" → "… og ramte …"
+        let soloPattern2 = ", og \(name) ramte "
+        if text.hasPrefix("\(name) "), let range = text.range(of: soloPattern2) {
+            let after = text[range.upperBound...]
+            return String(text[..<range.lowerBound]) + " og ramte " + after
+        }
+
+        return text
     }
 
     /// Fjerner formuleringer der ikke må bruges i halve-resume (fx «efter spillet») og retter ældre ordlyd.
@@ -1134,7 +1546,7 @@ enum HandResumeCaption {
 
     private static func normalLineSpoken(_ d: HandInputDraft) -> String {
         let bid = d.bidTricks
-        let melder = d.bidder.playerDisplayName
+        let melder = d.bidder?.playerDisplayName ?? "—"
         let core: String
         switch d.normalSubtype {
         case .alm:
@@ -1149,7 +1561,8 @@ enum HandResumeCaption {
         case .sans:
             core = "\(bid) sans uden trumf"
         case .gode:
-            core = "\(bid) gode i \(Suit.clubs.cardSymbol)"
+            /// Fx «9 ♣ (gode)» — ikonet for klør står før «(gode)».
+            core = "\(bid) \(Suit.clubs.cardSymbol) (gode)"
         case .halve:
             var s = "\(bid) halve"
             if let ace = d.partnerAceSuit {
@@ -1167,7 +1580,11 @@ enum HandResumeCaption {
             core = s
         }
         /// `||` + kode parses til stikudfald i visning.
-        return "\(melder) meldte \(core)||\(deltaToken(bid: d.bidTricks, actual: d.actualTricks))"
+        let selfmakkerSuffix: String = {
+            guard let b = d.bidder, let p = d.partner, b == p else { return "" }
+            return " som selvmakker"
+        }()
+        return "\(melder) meldte \(core)\(selfmakkerSuffix)||\(deltaToken(bid: d.bidTricks, actual: d.actualTricks))"
     }
 
     private static func vipOrdinalDanish(_ level: VipLevel) -> String {
@@ -1188,23 +1605,60 @@ enum HandResumeCaption {
     // MARK: - Sol
 
     private static func solLineSpoken(_ d: HandInputDraft) -> String {
-        var sentence = "\(d.solBidder.playerDisplayName) meldte \(solTypeSpoken(d.solType))"
+        let melder = d.solBidder?.playerDisplayName ?? "—"
+        var sentence = "\(melder) meldte \(solTypeSpoken(d.solType))"
         let allies = d.goingWith.sorted { $0.rawValue < $1.rawValue }
         if !allies.isEmpty {
-            let names = allies.map(\.playerDisplayName).joined(separator: ", ")
-            sentence += ", og \(names) gik med"
+            let names = allies.map(\.playerDisplayName)
+            sentence += " og \(danishNameList(names)) gik med"
         }
         sentence += solOutcomeSpoken(from: d)
         return sentence
     }
 
     private static func solOutcomeSpoken(from d: HandInputDraft) -> String {
-        let bidderTricks = d.solTricks[d.solBidder] ?? 0
         let limit = d.solType.maxAllowedTricks
-        if bidderTricks <= limit {
-            return ", og melderen holdt solen"
+        let participants = ([d.solBidder].compactMap { $0 } + d.goingWith.sorted { $0.rawValue < $1.rawValue })
+            .uniquedPreservingOrder()
+
+        if participants.isEmpty { return "" }
+
+        var wentHome: [String] = []
+        var wentDown: [String] = []
+        for seat in participants {
+            let tricks = d.solTricks[seat] ?? 0
+            if tricks <= limit {
+                wentHome.append(seat.playerDisplayName)
+            } else {
+                wentDown.append(seat.playerDisplayName)
+            }
         }
-        return ", og melderen overskred solens grænse"
+
+        if wentDown.isEmpty {
+            return " – de gik alle hjem"
+        }
+        if wentHome.isEmpty {
+            return " – de gik alle ned"
+        }
+
+        let homePart = danishNameList(wentHome)
+        let downPart = danishNameList(wentDown)
+        return " – \(homePart) gik hjem, men \(downPart) gik ned"
+    }
+
+    private static func danishNameList(_ names: [String]) -> String {
+        let trimmed = names.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        switch trimmed.count {
+        case 0:
+            return ""
+        case 1:
+            return trimmed[0]
+        case 2:
+            return "\(trimmed[0]) og \(trimmed[1])"
+        default:
+            let head = trimmed.dropLast().joined(separator: ", ")
+            return "\(head) og \(trimmed.last!)"
+        }
     }
 
     /// Tilføjer «gik med» fra gemt JSON når det ikke allerede står i teksten (ældre resuméer).
@@ -1216,7 +1670,7 @@ enum HandResumeCaption {
             || narrative.range(of: "går med", options: .caseInsensitive) != nil {
             return narrative
         }
-        let names = allies.map(\.playerDisplayName).joined(separator: ", ")
+        let names = danishNameList(allies.map(\.playerDisplayName))
         if narrative.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "\(names) gik med"
         }
@@ -1241,6 +1695,15 @@ enum HandResumeCaption {
         }
     }
 
+    /// Ældre lagrede resuméer: «N gode i ♣» → «N ♣ (gode)» (samme ordlyd som nye gem).
+    private static func rewriteGodeMeldtePhrasing(_ text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: #"(\\d+) gode i ♣"#, options: []) else {
+            return text
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "$1 ♣ (gode)")
+    }
+
     // MARK: - Ældre tekst → ikoner
 
     private static func substituteSuitNamesWithSymbols(in text: String) -> String {
@@ -1256,6 +1719,20 @@ enum HandResumeCaption {
             s = s.replacingOccurrences(of: word, with: sym)
         }
         return s
+    }
+}
+
+private extension Array where Element: Hashable {
+    /// Bevar rækkefølge, fjern dubletter.
+    func uniquedPreservingOrder() -> [Element] {
+        var seen = Set<Element>()
+        var out: [Element] = []
+        out.reserveCapacity(count)
+        for e in self where !seen.contains(e) {
+            out.append(e)
+            seen.insert(e)
+        }
+        return out
     }
 }
 

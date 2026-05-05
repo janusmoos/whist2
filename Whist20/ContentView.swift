@@ -3,12 +3,122 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
+
+    @State private var selectedTab: MainTab = .home
+    /// Delt med `HomeView`, så navigation bevares når I skifter fane og kommer tilbage til forsiden.
+    @State private var homeNavigationPath = NavigationPath()
+    @State private var showAddHandSheet = false
+    @State private var addHandAlertMessage: String?
+    @State private var toastMessage: String?
+    @State private var toastWorkItem: DispatchWorkItem?
+
+    private var activeGameDay: GameDay? {
+        GameDay.activeDay(in: gameDays)
+    }
+
+    private var hasActivePendingHand: Bool {
+        activeGameDay?.pendingHand != nil
+    }
 
     var body: some View {
-        HomeView()
-            .onAppear {
-                GameDayEndedAtMigration.runIfNeeded(modelContext: modelContext)
+        Group {
+            switch selectedTab {
+            case .home:
+                HomeView(navigationPath: $homeNavigationPath)
+            case .recentGames:
+                NavigationStack {
+                    SenesteSpilView()
+                        .navigationTitle("Seneste spil")
+                        .navigationBarTitleDisplayMode(.large)
+                }
+            case .activeGames:
+                ActiveSpilTabView(openMeldingSheet: openMeldingSheet)
+            case .statistics:
+                StatistikTabView()
             }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            MainTabBar(
+                selectedTab: $selectedTab,
+                hasActiveGameDay: activeGameDay != nil,
+                hasActivePendingHand: hasActivePendingHand,
+                onPlayTapped: openMeldingSheet,
+                onHomeTapped: { homeNavigationPath = NavigationPath() }
+            )
+        }
+        .sheet(isPresented: $showAddHandSheet) {
+            if let day = activeGameDay {
+                AddHandView(
+                    gameDay: day,
+                    onDismissSaveNotice: { message in showToast(message) },
+                    onSaved: { gameDayId in navigateToGameDayAfterSave(gameDayId) }
+                )
+            }
+        }
+        .alert("Bemærk", isPresented: Binding(
+            get: { addHandAlertMessage != nil },
+            set: { if !$0 { addHandAlertMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { addHandAlertMessage = nil }
+        } message: {
+            Text(addHandAlertMessage ?? "")
+        }
+        .overlay(alignment: .top) {
+            if let msg = toastMessage {
+                Text(msg)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial.opacity(0.85))
+                    .background(Color.primary.opacity(0.7))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onTapGesture { dismissToast() }
+                    .accessibilityAddTraits(.isStaticText)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: toastMessage != nil)
+        .onAppear {
+            GameDayEndedAtMigration.runIfNeeded(modelContext: modelContext)
+        }
+    }
+
+    /// «Nyt spil»/«Afslut spil» fra bundmenuen: åbner meldingen direkte. Kræver aktiv spilledag.
+    private func openMeldingSheet() {
+        guard activeGameDay != nil else {
+            addHandAlertMessage =
+                "Der er ingen aktiv spilledag. Opret en ny spilledag, eller genoptag en afsluttet under «Alle spilledage» på forsiden."
+            return
+        }
+        showAddHandSheet = true
+    }
+
+    private func showToast(_ message: String) {
+        toastWorkItem?.cancel()
+        withAnimation { toastMessage = message }
+        let item = DispatchWorkItem { [self] in
+            withAnimation { self.toastMessage = nil }
+        }
+        toastWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: item)
+    }
+
+    private func dismissToast() {
+        toastWorkItem?.cancel()
+        withAnimation { toastMessage = nil }
+    }
+
+    /// Efter gem: nulstil forsidenavigation, skub spilledagsoversigten (der viser tabellen).
+    private func navigateToGameDayAfterSave(_ gameDayId: UUID) {
+        homeNavigationPath = NavigationPath()
+        homeNavigationPath.append(HomeRoute.gameDay(gameDayId, openAddHand: false))
+        selectedTab = .home
     }
 }
 

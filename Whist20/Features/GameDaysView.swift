@@ -20,9 +20,8 @@ struct GameDaysView: View {
             } else {
                 List {
                     ForEach(gameDays, id: \.id) { day in
-                        NavigationLink {
-                            GameDayStartView(gameDay: day)
-                        } label: {
+                        /// Samme `NavigationPath` som forsiden — undgår kæde af implicitte `destination:`-lag.
+                        NavigationLink(value: HomeRoute.gameDay(day.id, openAddHand: false)) {
                             HStack(alignment: .firstTextBaseline) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(day.title)
@@ -113,11 +112,21 @@ struct GameDaysView: View {
 }
 
 #Preview("Spilledage") {
+    @Previewable @State var path = NavigationPath()
     let schema = Schema([GameDay.self, RecordedHand.self, PendingHand.self])
     let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [configuration])
-    return NavigationStack {
+    return NavigationStack(path: $path) {
         GameDaysView()
     }
+    .navigationDestination(for: HomeRoute.self) { route in
+        switch route {
+        case .gameDay(let id, _):
+            Text("Preview spilledag \(id.uuidString.prefix(8))…")
+        default:
+            Text(String(describing: route))
+        }
+    }
+    .environment(\.homeNavigationPath, $path)
     .modelContainer(container)
 }
