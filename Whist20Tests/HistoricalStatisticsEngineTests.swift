@@ -587,4 +587,122 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(thomas?.worstSession?.sessionId, "s2")
         XCTAssertEqual(thomas?.averageSessionScore, 10.0 / 3.0)
     }
+
+    func testGameTypeTrendSummariesIncludePlayerAveragesAndBidSuccessRate() {
+        let data = HistoricalWhistData(
+            version: "test",
+            generatedAt: "now",
+            players: [
+                HistoricalPlayer(id: "Thomas", name: "Thomas", displayOrder: 1, isActive: true),
+                HistoricalPlayer(id: "Peter", name: "Peter", displayOrder: 2, isActive: true),
+            ],
+            sessions: [
+                HistoricalSession(
+                    id: "s1",
+                    sessionNumber: "1",
+                    date: "2024-05-01",
+                    location: "Peter",
+                    sourceSheetName: "1",
+                    expectedGameCount: 3,
+                    importedGameCount: 3,
+                    missingScoreRows: 0,
+                    qualityStatus: "ok",
+                    cumulativeBlockStartColumn: nil,
+                    deltaBlockStartColumn: nil,
+                    preferredScoreBlockNumericRows: nil,
+                    headerRow: nil,
+                    columnMapping: nil
+                )
+            ],
+            games: [
+                HistoricalGame(
+                    id: "g1",
+                    sessionId: "s1",
+                    sessionNumber: "1",
+                    gameNumberInSession: 1,
+                    sourceGameMarker: 1,
+                    gameTypeRaw: "9 vip",
+                    gameTypeNormalized: "vip",
+                    bidTricks: 9,
+                    bidderId: "Thomas",
+                    bidderIds: ["Thomas"],
+                    winnerId: "Thomas",
+                    winnerIds: ["Thomas"],
+                    partnerId: nil,
+                    dealerId: nil,
+                    checksum: 0,
+                    scoreSource: "test",
+                    sourceSheetName: "1",
+                    sourceRow: 1,
+                    qualityFlags: []
+                ),
+                HistoricalGame(
+                    id: "g2",
+                    sessionId: "s1",
+                    sessionNumber: "1",
+                    gameNumberInSession: 2,
+                    sourceGameMarker: 2,
+                    gameTypeRaw: "10 vip",
+                    gameTypeNormalized: "vip",
+                    bidTricks: 10,
+                    bidderId: "Thomas",
+                    bidderIds: ["Thomas"],
+                    winnerId: "Peter",
+                    winnerIds: ["Peter"],
+                    partnerId: nil,
+                    dealerId: nil,
+                    checksum: 0,
+                    scoreSource: "test",
+                    sourceSheetName: "1",
+                    sourceRow: 2,
+                    qualityFlags: []
+                ),
+                HistoricalGame(
+                    id: "g3",
+                    sessionId: "s1",
+                    sessionNumber: "1",
+                    gameNumberInSession: 3,
+                    sourceGameMarker: 3,
+                    gameTypeRaw: "8 halve",
+                    gameTypeNormalized: "halve",
+                    bidTricks: 8,
+                    bidderId: "Peter",
+                    bidderIds: ["Peter"],
+                    winnerId: "Peter",
+                    winnerIds: ["Peter"],
+                    partnerId: nil,
+                    dealerId: nil,
+                    checksum: 0,
+                    scoreSource: "test",
+                    sourceSheetName: "1",
+                    sourceRow: 3,
+                    qualityFlags: []
+                ),
+            ],
+            playerResults: [
+                HistoricalPlayerResult(id: "t1", gameId: "g1", playerId: "Thomas", score: 10, sourceSheetName: "1", sourceRow: 1),
+                HistoricalPlayerResult(id: "p1", gameId: "g1", playerId: "Peter", score: -10, sourceSheetName: "1", sourceRow: 1),
+                HistoricalPlayerResult(id: "t2", gameId: "g2", playerId: "Thomas", score: -4, sourceSheetName: "1", sourceRow: 2),
+                HistoricalPlayerResult(id: "p2", gameId: "g2", playerId: "Peter", score: 4, sourceSheetName: "1", sourceRow: 2),
+                HistoricalPlayerResult(id: "t3", gameId: "g3", playerId: "Thomas", score: -6, sourceSheetName: "1", sourceRow: 3),
+                HistoricalPlayerResult(id: "p3", gameId: "g3", playerId: "Peter", score: 6, sourceSheetName: "1", sourceRow: 3),
+            ],
+            auditSummary: nil
+        )
+
+        let summaries = HistoricalStatisticsEngine.gameTypeTrendSummaries(from: data)
+        let vip = summaries.first { $0.gameType == "vip" }
+        let halve = summaries.first { $0.gameType == "halve" }
+
+        XCTAssertEqual(summaries.map(\.gameType), ["vip", "halve"])
+        XCTAssertEqual(vip?.games, 2)
+        XCTAssertEqual(vip?.bidOutcomeGames, 2)
+        XCTAssertEqual(vip?.successfulBidGames, 1)
+        XCTAssertEqual(vip?.successRate, 0.5)
+        XCTAssertEqual(vip?.playerAverages.first { $0.player.id == "Thomas" }?.totalScore, 6)
+        XCTAssertEqual(vip?.playerAverages.first { $0.player.id == "Thomas" }?.averageScore, 3)
+        XCTAssertEqual(vip?.playerAverages.first { $0.player.id == "Peter" }?.averageScore, -3)
+        XCTAssertEqual(halve?.successfulBidGames, 1)
+        XCTAssertEqual(halve?.successRate, 1)
+    }
 }

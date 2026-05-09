@@ -156,6 +156,7 @@ struct StatistikTabView: View {
 
     private func trendsContent(data: HistoricalWhistData, snapshot: HistoricalStatisticsSnapshot) -> some View {
         let trends = HistoricalStatisticsEngine.playerTrendSummaries(from: data)
+        let gameTypeTrends = HistoricalStatisticsEngine.gameTypeTrendSummaries(from: data)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -171,6 +172,7 @@ struct StatistikTabView: View {
                 recentLimitPicker(snapshot)
                 trendSummaryHeader(snapshot, trends: trends)
                 trendPlayerCards(trends)
+                gameTypeTrendSections(gameTypeTrends)
                 scoreTimeline(snapshot.timelinePoints)
             }
             .padding(.horizontal, 20)
@@ -259,6 +261,86 @@ struct StatistikTabView: View {
                 sessionMetric(title: "Bedste dag", session: trend.bestSession)
                 sessionMetric(title: "Værste dag", session: trend.worstSession)
                 miniMetric(title: "Snit/dag", value: averageText(trend.averageSessionScore))
+            }
+        }
+        .padding(14)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func gameTypeTrendSections(_ summaries: [HistoricalGameTypeTrendSummary]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Spiltyper")
+                    .font(.headline)
+                Text("Gennemsnit pr. spiller og hvor ofte meldingen går hjem i den valgte periode.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if summaries.isEmpty {
+                Text("Ingen spiltype-data i perioden.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(cardBackground)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(summaries) { summary in
+                        gameTypeTrendCard(summary)
+                    }
+                }
+            }
+        }
+    }
+
+    private func gameTypeTrendCard(_ summary: HistoricalGameTypeTrendSummary) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(summary.gameType.capitalized)
+                        .font(.body.weight(.semibold))
+                    Text("\(summary.games) spil · \(summary.bidOutcomeGames) med melder/vinder-data")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 12)
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(successRateText(summary.successRate))
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                    Text("\(summary.successfulBidGames) af \(summary.bidOutcomeGames) går hjem")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(summary.playerAverages) { average in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(average.player.name)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(signedAverageText(average.averageScore))
+                            .font(.caption.weight(.bold).monospacedDigit())
+                            .foregroundStyle(scoreForeground(average.averageScore))
+                        Text("\(average.games) spil")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.primary.opacity(0.04))
+                    }
+                }
             }
         }
         .padding(14)
@@ -1356,7 +1438,24 @@ struct StatistikTabView: View {
         value.formatted(.number.precision(.fractionLength(2)))
     }
 
+    private func signedAverageText(_ value: Double) -> String {
+        let formatted = averageText(value)
+        if value > 0 {
+            return "+\(formatted)"
+        }
+        return formatted
+    }
+
+    private func successRateText(_ value: Double?) -> String {
+        guard let value else { return "-" }
+        return value.formatted(.percent.precision(.fractionLength(0)))
+    }
+
     private func scoreForeground(_ value: Int) -> Color {
+        scoreForeground(Double(value))
+    }
+
+    private func scoreForeground(_ value: Double) -> Color {
         switch value {
         case let x where x > 0:
             return Color(red: 0.05, green: 0.45, blue: 0.18)

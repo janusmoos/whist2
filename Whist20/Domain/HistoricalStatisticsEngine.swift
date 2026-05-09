@@ -141,6 +141,29 @@ struct HistoricalPlayerTrendSummary: Equatable, Identifiable {
     var worstSession: HistoricalPlayerSessionScore?
 }
 
+struct HistoricalGameTypePlayerAverage: Equatable, Identifiable {
+    var id: String { "\(gameType)-\(player.id)" }
+    var gameType: String
+    var player: HistoricalPlayer
+    var games: Int
+    var totalScore: Int
+    var averageScore: Double
+}
+
+struct HistoricalGameTypeTrendSummary: Equatable, Identifiable {
+    var id: String { gameType }
+    var gameType: String
+    var games: Int
+    var playerAverages: [HistoricalGameTypePlayerAverage]
+    var bidOutcomeGames: Int
+    var successfulBidGames: Int
+
+    var successRate: Double? {
+        guard bidOutcomeGames > 0 else { return nil }
+        return Double(successfulBidGames) / Double(bidOutcomeGames)
+    }
+}
+
 enum HistoricalStatisticsEngine {
     static func scopedData(
         from data: HistoricalWhistData,
@@ -449,11 +472,85 @@ enum HistoricalStatisticsEngine {
             }
     }
 
+    static func gameTypeTrendSummaries(from data: HistoricalWhistData) -> [HistoricalGameTypeTrendSummary] {
+        let players = data.players.sorted { lhs, rhs in
+            if lhs.displayOrder != rhs.displayOrder {
+                return lhs.displayOrder < rhs.displayOrder
+            }
+            return lhs.name < rhs.name
+        }
+        let resultsByGame = Dictionary(grouping: data.playerResults, by: \.gameId)
+        let gamesByType = Dictionary(grouping: data.games) { game in
+            game.gameTypeNormalized?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+        }
+
+        return gamesByType
+            .filter { !$0.key.isEmpty }
+            .map { gameType, games in
+                var successfulBidGames = 0
+                var bidOutcomeGames = 0
+                var totalsByPlayer: [String: (games: Int, total: Int)] = [:]
+
+                for game in games {
+                    let bidderIds = normalizedPlayerIds(game.bidderIds, fallback: game.bidderId)
+                    let winnerIds = normalizedPlayerIds(game.winnerIds, fallback: game.winnerId)
+
+                    if !bidderIds.isEmpty, !winnerIds.isEmpty {
+                        bidOutcomeGames += 1
+                        if !Set(bidderIds).isDisjoint(with: Set(winnerIds)) {
+                            successfulBidGames += 1
+                        }
+                    }
+
+                    for result in resultsByGame[game.id] ?? [] {
+                        totalsByPlayer[result.playerId, default: (0, 0)].games += 1
+                        totalsByPlayer[result.playerId, default: (0, 0)].total += result.score
+                    }
+                }
+
+                return HistoricalGameTypeTrendSummary(
+                    gameType: gameType,
+                    games: games.count,
+                    playerAverages: players.map { player in
+                        let totals = totalsByPlayer[player.id] ?? (0, 0)
+                        return HistoricalGameTypePlayerAverage(
+                            gameType: gameType,
+                            player: player,
+                            games: totals.games,
+                            totalScore: totals.total,
+                            averageScore: totals.games > 0 ? Double(totals.total) / Double(totals.games) : 0
+                        )
+                    },
+                    bidOutcomeGames: bidOutcomeGames,
+                    successfulBidGames: successfulBidGames
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.games != rhs.games {
+                    return lhs.games > rhs.games
+                }
+                return lhs.gameType < rhs.gameType
+            }
+    }
+
     private static func sessionDisplayTitle(_ session: HistoricalSession) -> String {
         if let date = session.date, !date.isEmpty {
             return "#\(session.sessionNumber) · \(date)"
         }
         return "#\(session.sessionNumber) · \(session.sourceSheetName)"
+    }
+
+    private static func normalizedPlayerIds(_ ids: [String], fallback: String?) -> [String] {
+        let normalizedIds = ids
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        if !normalizedIds.isEmpty {
+            return normalizedIds
+        }
+        guard let fallback = fallback?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty else {
+            return []
+        }
+        return [fallback]
     }
 
     private static func gameDetails(from data: HistoricalWhistData) -> [HistoricalGameScoreDetail] {
