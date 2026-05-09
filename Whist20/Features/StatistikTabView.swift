@@ -1,3 +1,4 @@
+import Charts
 import SwiftUI
 
 struct StatistikTabView: View {
@@ -35,6 +36,7 @@ struct StatistikTabView: View {
             VStack(alignment: .leading, spacing: 18) {
                 summaryHeader(snapshot)
                 playerLeaderboard(snapshot.playerSummaries)
+                scoreTimeline(snapshot.timelinePoints)
                 dataQuality(snapshot)
             }
             .padding(.horizontal, 20)
@@ -87,6 +89,48 @@ struct StatistikTabView: View {
                     playerRow(summary, rank: index + 1)
                 }
             }
+        }
+    }
+
+    private func scoreTimeline(_ points: [HistoricalScoreTimelinePoint]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Udvikling over tid")
+                    .font(.headline)
+                Text("Kumulativ score efter hver historisk spilledag.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart(points) { point in
+                LineMark(
+                    x: .value("Spilledag", point.sessionIndex),
+                    y: .value("Point", point.cumulativeScore)
+                )
+                .foregroundStyle(by: .value("Spiller", point.playerName))
+                .interpolationMethod(.linear)
+
+                PointMark(
+                    x: .value("Spilledag", point.sessionIndex),
+                    y: .value("Point", point.cumulativeScore)
+                )
+                .foregroundStyle(by: .value("Spiller", point.playerName))
+                .symbolSize(22)
+            }
+            .frame(height: 260)
+            .chartLegend(position: .bottom, spacing: 8)
+            .chartXAxisLabel("Spilledag")
+            .chartYAxisLabel("Point")
+            .accessibilityLabel("Linjediagram for historisk kumulativ score pr. spiller")
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         }
     }
 

@@ -72,4 +72,109 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(summaries[0].worstSingleGame, -4)
         XCTAssertEqual(summaries[1].totalScore, -6)
     }
+
+    func testScoreTimelineAccumulatesBySession() {
+        let data = HistoricalWhistData(
+            version: "test",
+            generatedAt: "now",
+            players: [
+                HistoricalPlayer(id: "Thomas", name: "Thomas", displayOrder: 1, isActive: true),
+                HistoricalPlayer(id: "Peter", name: "Peter", displayOrder: 2, isActive: true),
+            ],
+            sessions: [
+                HistoricalSession(
+                    id: "s1",
+                    sessionNumber: "1",
+                    date: "2024-01-01",
+                    location: nil,
+                    sourceSheetName: "01",
+                    expectedGameCount: 1,
+                    importedGameCount: 1,
+                    missingScoreRows: 0,
+                    qualityStatus: "ok",
+                    cumulativeBlockStartColumn: nil,
+                    deltaBlockStartColumn: nil,
+                    preferredScoreBlockNumericRows: nil,
+                    headerRow: nil,
+                    columnMapping: nil
+                ),
+                HistoricalSession(
+                    id: "s2",
+                    sessionNumber: "2",
+                    date: "2024-01-02",
+                    location: nil,
+                    sourceSheetName: "02",
+                    expectedGameCount: 1,
+                    importedGameCount: 1,
+                    missingScoreRows: 0,
+                    qualityStatus: "ok",
+                    cumulativeBlockStartColumn: nil,
+                    deltaBlockStartColumn: nil,
+                    preferredScoreBlockNumericRows: nil,
+                    headerRow: nil,
+                    columnMapping: nil
+                ),
+            ],
+            games: [
+                HistoricalGame(
+                    id: "g1",
+                    sessionId: "s1",
+                    sessionNumber: "1",
+                    gameNumberInSession: 1,
+                    sourceGameMarker: 1,
+                    gameTypeRaw: nil,
+                    gameTypeNormalized: nil,
+                    bidTricks: nil,
+                    bidderId: nil,
+                    bidderIds: [],
+                    winnerId: nil,
+                    winnerIds: [],
+                    partnerId: nil,
+                    dealerId: nil,
+                    checksum: 0,
+                    scoreSource: "test",
+                    sourceSheetName: "01",
+                    sourceRow: 1,
+                    qualityFlags: []
+                ),
+                HistoricalGame(
+                    id: "g2",
+                    sessionId: "s2",
+                    sessionNumber: "2",
+                    gameNumberInSession: 1,
+                    sourceGameMarker: 1,
+                    gameTypeRaw: nil,
+                    gameTypeNormalized: nil,
+                    bidTricks: nil,
+                    bidderId: nil,
+                    bidderIds: [],
+                    winnerId: nil,
+                    winnerIds: [],
+                    partnerId: nil,
+                    dealerId: nil,
+                    checksum: 0,
+                    scoreSource: "test",
+                    sourceSheetName: "02",
+                    sourceRow: 1,
+                    qualityFlags: []
+                ),
+            ],
+            playerResults: [
+                HistoricalPlayerResult(id: "1", gameId: "g1", playerId: "Thomas", score: 5, sourceSheetName: "01", sourceRow: 1),
+                HistoricalPlayerResult(id: "2", gameId: "g1", playerId: "Peter", score: -5, sourceSheetName: "01", sourceRow: 1),
+                HistoricalPlayerResult(id: "3", gameId: "g2", playerId: "Thomas", score: -2, sourceSheetName: "02", sourceRow: 1),
+                HistoricalPlayerResult(id: "4", gameId: "g2", playerId: "Peter", score: 2, sourceSheetName: "02", sourceRow: 1),
+            ],
+            auditSummary: nil
+        )
+
+        let timeline = HistoricalStatisticsEngine.scoreTimeline(from: data)
+        let thomas = timeline.filter { $0.playerId == "Thomas" }
+        let peter = timeline.filter { $0.playerId == "Peter" }
+
+        XCTAssertEqual(thomas.map(\.cumulativeScore), [5, 3])
+        XCTAssertEqual(thomas.map(\.sessionScore), [5, -2])
+        XCTAssertEqual(peter.map(\.cumulativeScore), [-5, -3])
+        XCTAssertEqual(timeline.map(\.sessionIndex).max(), 2)
+    }
 }
