@@ -155,19 +155,118 @@ struct StatistikTabView: View {
     }
 
     private func trendsContent(data: HistoricalWhistData, snapshot: HistoricalStatisticsSnapshot) -> some View {
+        let trends = HistoricalStatisticsEngine.playerTrendSummaries(from: data)
+
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tendenser")
+                        .font(.largeTitle.weight(.bold))
+                    Text("Form og udvikling for den valgte periode.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
                 scopeSection
-                summaryHeader(snapshot)
                 recentLimitPicker(snapshot)
+                trendSummaryHeader(snapshot, trends: trends)
+                trendPlayerCards(trends)
                 scoreTimeline(snapshot.timelinePoints)
-                plannedStatisticsOverview
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
             .padding(.bottom, 12)
         }
         .background(Color(uiColor: .systemGroupedBackground))
+    }
+
+    private func trendSummaryHeader(
+        _ snapshot: HistoricalStatisticsSnapshot,
+        trends: [HistoricalPlayerTrendSummary]
+    ) -> some View {
+        let leader = trends.first
+        let latestLeader = trends.max { lhs, rhs in
+            if lhs.latestSessionScore != rhs.latestSessionScore {
+                return lhs.latestSessionScore < rhs.latestSessionScore
+            }
+            return lhs.periodScore < rhs.periodScore
+        }
+
+        return VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(scopeDescription(snapshot))
+                    .font(.headline)
+                Text("\(snapshot.sessionCount) spilledage · \(snapshot.gameCount) spil i perioden")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                statTile(title: "Formleder", value: leader.map { "\($0.player.name) \(scoreText($0.periodScore))" } ?? "-")
+                statTile(title: "Seneste dag", value: latestLeader.map { "\($0.player.name) \(scoreText($0.latestSessionScore))" } ?? "-")
+                statTile(title: "Spilledage", value: "\(snapshot.sessionCount)")
+                statTile(title: "Afvigelser", value: "\(snapshot.issueCount)")
+            }
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func trendPlayerCards(_ trends: [HistoricalPlayerTrendSummary]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Form pr. spiller")
+                    .font(.headline)
+                Text("Detaljer om konkrete spil ligger stadig under Spillere og Spilledage.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(Array(trends.enumerated()), id: \.element.id) { index, trend in
+                    trendPlayerRow(trend, rank: index + 1)
+                }
+            }
+        }
+    }
+
+    private func trendPlayerRow(_ trend: HistoricalPlayerTrendSummary, rank: Int) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                rankBadge(rank)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(trend.player.name)
+                        .font(.body.weight(.semibold))
+                    Text("\(trend.sessionsPlayed) spilledage · snit \(averageText(trend.averageSessionScore)) pr. dag")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 10)
+
+                Text(scoreText(trend.periodScore))
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(scoreForeground(trend.periodScore))
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                miniMetric(title: "Seneste dag", value: scoreText(trend.latestSessionScore))
+                sessionMetric(title: "Bedste dag", session: trend.bestSession)
+                sessionMetric(title: "Værste dag", session: trend.worstSession)
+                miniMetric(title: "Snit/dag", value: averageText(trend.averageSessionScore))
+            }
+        }
+        .padding(14)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
     }
 
     private func navigationCard(title: String, subtitle: String, systemImage: String, metric: String) -> some View {

@@ -511,4 +511,78 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(overview?.gamesWithPartner, 1)
         XCTAssertEqual(overview?.issueCount, 1)
     }
+
+    func testPlayerTrendSummariesRankByPeriodScore() {
+        let sessions = (1...3).map { index in
+            HistoricalSession(
+                id: "s\(index)",
+                sessionNumber: "\(index)",
+                date: "2024-04-0\(index)",
+                location: nil,
+                sourceSheetName: "\(index)",
+                expectedGameCount: 1,
+                importedGameCount: 1,
+                missingScoreRows: 0,
+                qualityStatus: "ok",
+                cumulativeBlockStartColumn: nil,
+                deltaBlockStartColumn: nil,
+                preferredScoreBlockNumericRows: nil,
+                headerRow: nil,
+                columnMapping: nil
+            )
+        }
+        let games = (1...3).map { index in
+            HistoricalGame(
+                id: "g\(index)",
+                sessionId: "s\(index)",
+                sessionNumber: "\(index)",
+                gameNumberInSession: 1,
+                sourceGameMarker: 1,
+                gameTypeRaw: nil,
+                gameTypeNormalized: nil,
+                bidTricks: nil,
+                bidderId: nil,
+                bidderIds: [],
+                winnerId: nil,
+                winnerIds: [],
+                partnerId: nil,
+                dealerId: nil,
+                checksum: 0,
+                scoreSource: "test",
+                sourceSheetName: "\(index)",
+                sourceRow: 1,
+                qualityFlags: []
+            )
+        }
+        let data = HistoricalWhistData(
+            version: "test",
+            generatedAt: "now",
+            players: [
+                HistoricalPlayer(id: "Thomas", name: "Thomas", displayOrder: 1, isActive: true),
+                HistoricalPlayer(id: "Peter", name: "Peter", displayOrder: 2, isActive: true),
+            ],
+            sessions: sessions,
+            games: games,
+            playerResults: [
+                HistoricalPlayerResult(id: "t1", gameId: "g1", playerId: "Thomas", score: 4, sourceSheetName: "1", sourceRow: 1),
+                HistoricalPlayerResult(id: "p1", gameId: "g1", playerId: "Peter", score: -4, sourceSheetName: "1", sourceRow: 1),
+                HistoricalPlayerResult(id: "t2", gameId: "g2", playerId: "Thomas", score: -2, sourceSheetName: "2", sourceRow: 1),
+                HistoricalPlayerResult(id: "p2", gameId: "g2", playerId: "Peter", score: 2, sourceSheetName: "2", sourceRow: 1),
+                HistoricalPlayerResult(id: "t3", gameId: "g3", playerId: "Thomas", score: 8, sourceSheetName: "3", sourceRow: 1),
+                HistoricalPlayerResult(id: "p3", gameId: "g3", playerId: "Peter", score: -8, sourceSheetName: "3", sourceRow: 1),
+            ],
+            auditSummary: nil
+        )
+
+        let trends = HistoricalStatisticsEngine.playerTrendSummaries(from: data)
+        let thomas = trends.first { $0.player.id == "Thomas" }
+
+        XCTAssertEqual(trends.map(\.player.id), ["Thomas", "Peter"])
+        XCTAssertEqual(thomas?.periodScore, 10)
+        XCTAssertEqual(thomas?.latestSessionScore, 8)
+        XCTAssertEqual(thomas?.sessionsPlayed, 3)
+        XCTAssertEqual(thomas?.bestSession?.sessionId, "s3")
+        XCTAssertEqual(thomas?.worstSession?.sessionId, "s2")
+        XCTAssertEqual(thomas?.averageSessionScore, 10.0 / 3.0)
+    }
 }

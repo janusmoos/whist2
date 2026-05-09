@@ -129,6 +129,17 @@ struct HistoricalSessionOverview: Equatable, Identifiable {
     var issueCount: Int
 }
 
+struct HistoricalPlayerTrendSummary: Equatable, Identifiable {
+    var id: String { player.id }
+    var player: HistoricalPlayer
+    var periodScore: Int
+    var latestSessionScore: Int
+    var averageSessionScore: Double
+    var sessionsPlayed: Int
+    var bestSession: HistoricalPlayerSessionScore?
+    var worstSession: HistoricalPlayerSessionScore?
+}
+
 enum HistoricalStatisticsEngine {
     static func scopedData(
         from data: HistoricalWhistData,
@@ -392,6 +403,47 @@ enum HistoricalStatisticsEngine {
                 issueCount: games.filter { !$0.qualityFlags.isEmpty }.count
             )
         }
+    }
+
+    static func playerTrendSummaries(from data: HistoricalWhistData) -> [HistoricalPlayerTrendSummary] {
+        let sessionScoresByPlayer = playerSessionScores(from: data)
+
+        return data.players
+            .sorted { lhs, rhs in
+                if lhs.displayOrder != rhs.displayOrder {
+                    return lhs.displayOrder < rhs.displayOrder
+                }
+                return lhs.name < rhs.name
+            }
+            .map { player in
+                let scores = sessionScoresByPlayer[player.id] ?? []
+                let periodScore = scores.map(\.score).reduce(0, +)
+                return HistoricalPlayerTrendSummary(
+                    player: player,
+                    periodScore: periodScore,
+                    latestSessionScore: scores.last?.score ?? 0,
+                    averageSessionScore: scores.isEmpty ? 0 : Double(periodScore) / Double(scores.count),
+                    sessionsPlayed: scores.count,
+                    bestSession: scores.max { lhs, rhs in
+                        if lhs.score != rhs.score {
+                            return lhs.score < rhs.score
+                        }
+                        return lhs.sessionIndex > rhs.sessionIndex
+                    },
+                    worstSession: scores.min { lhs, rhs in
+                        if lhs.score != rhs.score {
+                            return lhs.score < rhs.score
+                        }
+                        return lhs.sessionIndex > rhs.sessionIndex
+                    }
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.periodScore != rhs.periodScore {
+                    return lhs.periodScore > rhs.periodScore
+                }
+                return lhs.player.displayOrder < rhs.player.displayOrder
+            }
     }
 
     private static func sessionDisplayTitle(_ session: HistoricalSession) -> String {
