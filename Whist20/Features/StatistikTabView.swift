@@ -1,0 +1,224 @@
+import SwiftUI
+
+struct StatistikTabView: View {
+    private let snapshotResult: Result<HistoricalStatisticsSnapshot, Error>
+
+    init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
+        snapshotResult = Result {
+            let data = try loader.load()
+            return HistoricalStatisticsEngine.snapshot(from: data)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                switch snapshotResult {
+                case let .success(snapshot):
+                    statisticsContent(snapshot)
+                case let .failure(error):
+                    ContentUnavailableView {
+                        Label("Statistik kunne ikke indlæses", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(error.localizedDescription)
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Statistik")
+            .navigationBarTitleDisplayMode(.large)
+        }
+    }
+
+    private func statisticsContent(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                summaryHeader(snapshot)
+                playerLeaderboard(snapshot.playerSummaries)
+                dataQuality(snapshot)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .padding(.bottom, 12)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+    }
+
+    private func summaryHeader(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Historisk data")
+                    .font(.title2.weight(.bold))
+                Text("\(snapshot.sessionCount) spilledage · \(snapshot.gameCount) spil · \(snapshot.playerResultCount) spillerresultater")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                statTile(title: "Spil", value: "\(snapshot.gameCount)")
+                statTile(title: "Nulsum", value: "\(snapshot.zeroSumGameCount)")
+                statTile(title: "Afvigelser", value: "\(snapshot.issueCount)")
+                statTile(title: "Version", value: snapshot.dataVersion.replacingOccurrences(of: "whist_historical_data_", with: ""))
+            }
+
+            Text("Første statistikversion bruger kun pointdata. Spiltype, giver, melder og makker kommer senere med tydelig sample size.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Samlet stilling")
+                .font(.headline)
+
+            VStack(spacing: 10) {
+                ForEach(Array(summaries.enumerated()), id: \.element.id) { index, summary in
+                    playerRow(summary, rank: index + 1)
+                }
+            }
+        }
+    }
+
+    private func playerRow(_ summary: HistoricalPlayerScoreSummary, rank: Int) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                rankBadge(rank)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(summary.player.name)
+                        .font(.body.weight(.semibold))
+                    Text("\(summary.gamesPlayed) spil · snit \(averageText(summary.averageScore))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 10)
+
+                Text(scoreText(summary.totalScore))
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(scoreForeground(summary.totalScore))
+            }
+
+            HStack(spacing: 8) {
+                miniMetric(title: "Bedste", value: optionalScoreText(summary.bestSingleGame))
+                miniMetric(title: "Værste", value: optionalScoreText(summary.worstSingleGame))
+            }
+        }
+        .padding(14)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Rang \(rank), \(summary.player.name), \(scoreText(summary.totalScore)) point, gennemsnit \(averageText(summary.averageScore))"
+        )
+    }
+
+    private func dataQuality(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Datagrundlag")
+                .font(.headline)
+            Text("\(snapshot.zeroSumGameCount) af \(snapshot.gameCount) spil summerer til nul. \(snapshot.nonZeroSumGameCount) spil har scoreafvigelser og indgår stadig i pointstatistikken.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("Kilde: bundled historikdatasæt \(snapshot.dataVersion), genereret \(snapshot.generatedAt).")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .tertiarySystemGroupedBackground))
+        }
+    }
+
+    private func statTile(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.title3.weight(.bold).monospacedDigit())
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.primary.opacity(0.045))
+        }
+    }
+
+    private func miniMetric(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.bold).monospacedDigit())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        }
+    }
+
+    private func rankBadge(_ rank: Int) -> some View {
+        Text("\(rank)")
+            .font(.subheadline.weight(.bold))
+            .monospacedDigit()
+            .foregroundStyle(rank == 1 ? Color(red: 0.45, green: 0.32, blue: 0.05) : .secondary)
+            .frame(width: 32, height: 32)
+            .background {
+                Circle()
+                    .fill(rank == 1 ? Color.yellow.opacity(0.35) : Color.secondary.opacity(0.12))
+            }
+            .accessibilityHidden(true)
+    }
+
+    private func scoreText(_ value: Int) -> String {
+        if value > 0 { return "+\(value)" }
+        return "\(value)"
+    }
+
+    private func optionalScoreText(_ value: Int?) -> String {
+        guard let value else { return "-" }
+        return scoreText(value)
+    }
+
+    private func averageText(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(2)))
+    }
+
+    private func scoreForeground(_ value: Int) -> Color {
+        switch value {
+        case let x where x > 0:
+            return Color(red: 0.05, green: 0.45, blue: 0.18)
+        case let x where x < 0:
+            return Color(red: 0.55, green: 0.08, blue: 0.1)
+        default:
+            return Color.secondary
+        }
+    }
+}

@@ -1,0 +1,191 @@
+sheet,row,severity,issue,rawValue
+01_21-06-2016,7,warning,score_sum_not_zero,-2
+01_21-06-2016,10,warning,score_sum_not_zero,-4
+01_21-06-2016,11,warning,score_sum_not_zero,-8
+01_21-06-2016,15,warning,score_sum_not_zero,4
+01_21-06-2016,16,warning,score_sum_not_zero,-8
+02_2492016,15,warning,score_sum_not_zero,-100
+02_2492016,16,warning,score_sum_not_zero,-40
+02_2492016,18,warning,score_sum_not_zero,-10
+02_2492016,24,warning,score_sum_not_zero,-2
+02_2492016,25,warning,score_sum_not_zero,-2
+02_2492016,30,warning,score_sum_not_zero,22
+02_2492016,33,warning,score_sum_not_zero,-4
+02_2492016,34,warning,score_sum_not_zero,64
+02_2492016,37,warning,score_sum_not_zero,-2
+02_2492016,38,warning,score_sum_not_zero,-8
+02_2492016,41,warning,score_sum_not_zero,-2
+02_2492016,42,warning,score_sum_not_zero,-20
+02_2492016,46,warning,score_sum_not_zero,-2
+02_2492016,47,warning,score_sum_not_zero,-8
+03_25-02-2017,10,warning,score_sum_not_zero,40
+03_25-02-2017,11,warning,score_sum_not_zero,-40
+03_25-02-2017,17,warning,score_sum_not_zero,2
+03_25-02-2017,18,warning,score_sum_not_zero,18
+03_25-02-2017,19,warning,score_sum_not_zero,-6
+03_25-02-2017,24,warning,score_sum_not_zero,8
+03_25-02-2017,25,warning,score_sum_not_zero,34
+03_25-02-2017,,warning,expected_vs_imported_count_mismatch,"{'expected': 23, 'imported': 22}"
+04_Måske Berlin,21,warning,score_sum_not_zero,-2
+04_Måske Berlin,23,warning,score_sum_not_zero,2
+04_Måske Berlin,24,warning,score_sum_not_zero,-2
+04_Måske Berlin,25,warning,score_sum_not_zero,-2
+04_Måske Berlin,,warning,expected_vs_imported_count_mismatch,"{'expected': 30, 'imported': 29}"
+08_3-11-2018,,warning,expected_vs_imported_count_mismatch,"{'expected': 51, 'imported': 50}"
+09_26-01-2019,9,warning,unknown_bidder_name,Peter+Christian
+10_28-06-2019,3,warning,unknown_bidder_name,9 halve
+10_28-06-2019,4,warning,unknown_bidder_name,9 vip i 2.andet
+10_28-06-2019,5,warning,unknown_bidder_name,Sol
+10_28-06-2019,6,warning,unknown_bidder_name,9 halve
+10_28-06-2019,7,warning,unknown_bidder_name,9 vip i 1.
+10_28-06-2019,8,warning,unknown_bidder_name,ren sol
+10_28-06-2019,9,warning,unknown_bidder_name,9 vip 1. første
+10_28-06-2019,10,warning,unknown_bidder_name, 9 halve
+10_28-06-2019,11,warning,unknown_bidder_name,9 gode
+10_28-06-2019,12,warning,unknown_bidder_name,9 vip 1. første
+10_28-06-2019,13,warning,unknown_bidder_name,9 halve
+10_28-06-2019,14,warning,unknown_bidder_name,9 vip 1. første
+10_28-06-2019,15,warning,unknown_bidder_name,sol
+10_28-06-2019,16,warning,unknown_bidder_name,ren sol
+10_28-06-2019,17,warning,unknown_bidder_name,9. vip i 2.
+10_28-06-2019,18,warning,unknown_bidder_name,Sans
+10_28-06-2019,19,warning,unknown_bidder_name,Sol med 2
+10_28-06-2019,20,warning,unknown_bidder_name,ren sol
+10_28-06-2019,21,warning,unknown_bidder_name,ren sol
+10_28-06-2019,22,warning,unknown_bidder_name,9 halve
+10_28-06-2019,23,warning,unknown_bidder_name,8 gode
+10_28-06-2019,24,warning,unknown_bidder_name,10 vip i 2.anden
+10_28-06-2019,25,warning,unknown_bidder_name,10 halve
+10_28-06-2019,26,warning,unknown_bidder_name,9. 2 vip
+10_28-06-2019,27,warning,unknown_bidder_name,9 alm
+10_28-06-2019,28,warning,unknown_bidder_name,9 2. vip
+10_28-06-2019,29,warning,unknown_bidder_name,9 gode
+10_28-06-2019,30,warning,unknown_bidder_name,9 halve (selvmakker)
+10_28-06-2019,31,warning,unknown_bidder_name,ren sol
+10_28-06-2019,32,warning,unknown_bidder_name,ren sol
+10_28-06-2019,33,warning,unknown_bidder_name,9. vip i 2.
+10_28-06-2019,34,warning,unknown_bidder_name,9. halve
+11_29-11-2019,3,warning,unknown_bidder_name,10 almindelige
+11_29-11-2019,4,warning,unknown_bidder_name,8 vip
+11_29-11-2019,5,warning,unknown_bidder_name,9 sans
+11_29-11-2019,6,warning,unknown_bidder_name,9 vip  i 1.
+11_29-11-2019,7,warning,unknown_bidder_name,10 halve
+11_29-11-2019,8,warning,unknown_bidder_name,10 halve
+11_29-11-2019,9,warning,unknown_bidder_name,ren sol
+11_29-11-2019,10,warning,unknown_bidder_name,sol
+11_29-11-2019,11,warning,unknown_bidder_name,8 halve
+11_29-11-2019,12,warning,unknown_bidder_name,ren sol
+11_29-11-2019,13,warning,unknown_bidder_name,ren sol
+11_29-11-2019,14,warning,unknown_bidder_name,Halv bordlægger
+11_29-11-2019,15,warning,unknown_bidder_name,8 vip 1
+11_29-11-2019,16,warning,unknown_bidder_name,9 vip  i 1.
+11_29-11-2019,17,warning,unknown_bidder_name,Halv bordlægger
+11_29-11-2019,18,warning,unknown_bidder_name,9 vip i første
+11_29-11-2019,19,warning,unknown_bidder_name,sol
+11_29-11-2019,20,warning,unknown_bidder_name,11. alm
+11_29-11-2019,21,warning,unknown_bidder_name,ren sol
+11_29-11-2019,22,warning,unknown_bidder_name,10 vip i 1 vip
+11_29-11-2019,23,warning,unknown_bidder_name,9 alm
+11_29-11-2019,24,warning,unknown_bidder_name,9 halve
+11_29-11-2019,25,warning,unknown_bidder_name,9 vip i 3
+11_29-11-2019,26,warning,unknown_bidder_name,9 vip i 3
+11_29-11-2019,27,warning,unknown_bidder_name,9 vip i 2.
+11_29-11-2019,28,warning,unknown_bidder_name,Sol
+12_21-02-2020,,warning,expected_vs_imported_count_mismatch,"{'expected': 27, 'imported': 35}"
+13_22-02-2020,3,warning,unknown_bidder_name,Peter/Christian
+13_22-02-2020,18,warning,unknown_bidder_name,Thoms/Janus
+16_18-11-2021,5,warning,unknown_bidder_name,Christian /Janus
+19a_13-01-2023_Fredag,,warning,expected_vs_imported_count_mismatch,"{'expected': 8, 'imported': 40}"
+19c_13-01-2023_Brewdog fredag,,warning,expected_vs_imported_count_mismatch,"{'expected': 8, 'imported': 10}"
+20_14-01-2023_Stasi Lørdag,22,warning,unknown_dealer_name,Janiz
+20_14-01-2023_Stasi Lørdag,26,warning,unknown_dealer_name,Janiz
+20_14-01-2023_Stasi Lørdag,30,warning,unknown_dealer_name,Jansicz
+22_31-09-2023_RETTET,,warning,expected_vs_imported_count_mismatch,"{'expected': 39, 'imported': 38}"
+23_27-06-2024,3,warning,unknown_bidder_name,8 gode
+23_27-06-2024,4,warning,unknown_bidder_name,9 gode
+23_27-06-2024,5,warning,unknown_bidder_name,9 gode i vip 3.
+23_27-06-2024,6,warning,unknown_bidder_name,10 vip i 2
+23_27-06-2024,7,warning,unknown_bidder_name,Ren 10
+23_27-06-2024,8,warning,unknown_bidder_name,Sol
+23_27-06-2024,9,warning,unknown_bidder_name,10 halve
+23_27-06-2024,10,warning,unknown_bidder_name,ren sol
+23_27-06-2024,11,warning,unknown_bidder_name,8 vip i 3.
+23_27-06-2024,12,warning,unknown_bidder_name,Sol Peter og Janus
+23_27-06-2024,13,warning,unknown_bidder_name,10 halve
+23_27-06-2024,14,warning,unknown_bidder_name,sol
+23_27-06-2024,15,warning,unknown_bidder_name,9 vip i 3.
+23_27-06-2024,16,warning,unknown_bidder_name,9 vip i 2
+23_27-06-2024,17,warning,unknown_bidder_name,10 vip i 3 gode
+23_27-06-2024,18,warning,unknown_bidder_name,Sol
+23_27-06-2024,19,warning,unknown_bidder_name,10 alm
+23_27-06-2024,20,warning,unknown_bidder_name,Sol
+23_27-06-2024,21,warning,unknown_bidder_name,10 halve
+23_27-06-2024,25,warning,score_sum_not_zero,-508
+23_27-06-2024,25,warning,unknown_bidder_name,10 halve
+23_27-06-2024,,warning,expected_vs_imported_count_mismatch,"{'expected': 19, 'imported': 20}"
+24_6-8-2024,3,warning,unknown_bidder_name,Sol
+24_6-8-2024,4,warning,unknown_bidder_name,9 halve
+24_6-8-2024,5,warning,unknown_bidder_name,9 halve
+24_6-8-2024,6,warning,unknown_bidder_name,Ren sol
+24_6-8-2024,7,warning,unknown_bidder_name,sol
+24_6-8-2024,8,warning,unknown_bidder_name,9 vip i 3
+24_6-8-2024,9,warning,unknown_bidder_name,sol
+24_6-8-2024,10,warning,unknown_bidder_name,8 halve
+24_6-8-2024,11,warning,unknown_bidder_name,ren sol
+24_6-8-2024,12,warning,unknown_bidder_name,9 halve
+24_6-8-2024,13,warning,unknown_bidder_name,Ren sol
+24_6-8-2024,14,warning,unknown_bidder_name,8 gode
+24_6-8-2024,15,warning,unknown_bidder_name,9 alm
+24_6-8-2024,16,warning,unknown_bidder_name,9 vip i 3
+24_6-8-2024,17,warning,unknown_bidder_name,Sol
+24_6-8-2024,18,warning,unknown_bidder_name,9 vip i 3
+24_6-8-2024,19,warning,unknown_bidder_name,9 sans
+25_29-11-2024,3,warning,unknown_bidder_name,Ren sol
+25_29-11-2024,4,warning,unknown_bidder_name,9 ruder til klør
+25_29-11-2024,5,warning,unknown_bidder_name,9 gode
+25_29-11-2024,6,warning,unknown_bidder_name,10 gode
+25_29-11-2024,7,warning,unknown_bidder_name,9 gode
+25_29-11-2024,8,warning,unknown_bidder_name,9 vip i 1. Hjerte til spar
+25_29-11-2024,9,warning,unknown_bidder_name,9 vip i 3. Hjerte til spar
+25_29-11-2024,10,warning,unknown_bidder_name,Sol
+25_29-11-2024,11,warning,unknown_bidder_name,10 sang til ruder es
+25_29-11-2024,12,warning,unknown_bidder_name,10 spar tul hjerter es
+25_29-11-2024,13,warning,unknown_bidder_name,Ren sol
+25_29-11-2024,14,warning,unknown_bidder_name,10 alm
+25_29-11-2024,15,warning,unknown_bidder_name,9 gode til hjerter
+25_29-11-2024,16,warning,unknown_bidder_name,9 vip 3
+25_29-11-2024,17,warning,unknown_bidder_name,Ren sol
+25_29-11-2024,18,warning,unknown_bidder_name,Ren sol
+25_29-11-2024,19,warning,unknown_bidder_name,9 vip2
+25_29-11-2024,20,warning,unknown_bidder_name,J+T
+25_29-11-2024,21,warning,unknown_bidder_name,9 hjerter til hjerter es
+25_29-11-2024,22,warning,unknown_bidder_name,10 vip1
+26_30-11-2024,3,warning,unknown_bidder_name,9 halve
+26_30-11-2024,4,warning,unknown_bidder_name,Sol
+26_30-11-2024,5,warning,unknown_bidder_name,Sang
+26_30-11-2024,6,warning,unknown_bidder_name,Sol
+26_30-11-2024,7,warning,unknown_bidder_name,10 Alm
+26_30-11-2024,8,warning,unknown_bidder_name,Sol
+26_30-11-2024,9,warning,unknown_bidder_name,Halv bordlæggrer
+26_30-11-2024,10,warning,unknown_bidder_name,9 vip 1. Ruder til hjerter
+26_30-11-2024,11,warning,unknown_bidder_name,Sol
+26_30-11-2024,12,warning,unknown_bidder_name,10 Alm
+26_30-11-2024,13,warning,unknown_bidder_name,Ren sol
+26_30-11-2024,14,warning,unknown_bidder_name,Sol
+26_30-11-2024,15,warning,unknown_bidder_name,9 vip 2
+26_30-11-2024,16,warning,unknown_bidder_name,Ren sol
+26_30-11-2024,17,warning,unknown_bidder_name,Sol
+26_30-11-2024,18,warning,unknown_bidder_name,Sol
+26_30-11-2024,19,warning,unknown_bidder_name,9 vip i 3
+26_30-11-2024,20,warning,unknown_bidder_name,9 Alm
+26_30-11-2024,21,warning,unknown_bidder_name,Sol
+26_30-11-2024,22,warning,unknown_bidder_name,9 vip i 2
+26_30-11-2024,23,warning,unknown_bidder_name,9 vip i 1
+26_30-11-2024,24,warning,unknown_bidder_name,Ren sol
+26_30-11-2024,25,warning,unknown_bidder_name,9 vip i 2
+26_30-11-2024,26,warning,unknown_bidder_name,9 gode
+26_30-11-2024,27,warning,unknown_bidder_name,9 vip i 2
+26_30-11-2024,28,warning,unknown_bidder_name,9 vip i 2
+26_30-11-2024,29,warning,unknown_bidder_name,10. Halve
+26_30-11-2024,30,warning,unknown_bidder_name,9 halve
+26_30-11-2024,31,warning,unknown_bidder_name,10 sans
