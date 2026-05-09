@@ -217,7 +217,7 @@ struct StatistikTabView: View {
     }
 
     private func trendPlayerCards(_ trends: [HistoricalPlayerTrendSummary]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Form pr. spiller")
                     .font(.headline)
@@ -594,6 +594,8 @@ struct StatistikTabView: View {
     }
 
     private func sessionOverviewList(_ sessions: [HistoricalSessionOverview]) -> some View {
+        let newestFirst = sessions.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
+
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Alle spilledage")
@@ -604,7 +606,7 @@ struct StatistikTabView: View {
             }
 
             VStack(spacing: 10) {
-                ForEach(sessions) { overview in
+                ForEach(newestFirst) { overview in
                     NavigationLink {
                         sessionDetailView(overview)
                     } label: {
@@ -634,6 +636,8 @@ struct StatistikTabView: View {
                     miniMetric(title: "Værste spil", value: optionalScoreText(profile.worstGame?.selectedPlayerScore))
                 }
 
+                playerSessionPerformanceSection(profile)
+
                 if let bestGame = profile.bestGame {
                     gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
                 }
@@ -662,6 +666,70 @@ struct StatistikTabView: View {
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle(profile.player.name)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func playerSessionPerformanceSection(_ profile: HistoricalPlayerProfile) -> some View {
+        let newestFirst = profile.sessionScores.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
+
+        return VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Gevinst/tab pr. spilledag")
+                    .font(.headline)
+                Text("Søjler over nul er gevinst, søjler under nul er tab. Listen under grafen viser seneste spilledag først.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart {
+                ForEach(profile.sessionScores) { sessionScore in
+                    BarMark(
+                        x: .value("Spilledag", sessionScore.sessionIndex),
+                        y: .value("Point", sessionScore.score)
+                    )
+                    .foregroundStyle(sessionScore.score >= 0 ? Color.green : Color.red)
+                    .accessibilityLabel(sessionScore.sessionTitle)
+                    .accessibilityValue(scoreText(sessionScore.score))
+                }
+                RuleMark(y: .value("Nul", 0))
+                    .foregroundStyle(Color.secondary.opacity(0.45))
+            }
+            .frame(height: 220)
+            .chartXAxisLabel("Spilledag")
+            .chartYAxisLabel("Point")
+            .accessibilityLabel("Søjlediagram for \(profile.player.name)s gevinst og tab pr. spilledag")
+
+            VStack(spacing: 8) {
+                ForEach(newestFirst) { sessionScore in
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(sessionScore.sessionTitle)
+                                .font(.subheadline.weight(.semibold))
+                            Text("\(sessionScore.gamesInSession) spil")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer(minLength: 12)
+
+                        Text(scoreText(sessionScore.score))
+                            .font(.subheadline.weight(.bold).monospacedDigit())
+                            .foregroundStyle(scoreForeground(sessionScore.score))
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.primary.opacity(0.04))
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
     }
 
     private func playerBidSection(_ profile: HistoricalPlayerProfile) -> some View {

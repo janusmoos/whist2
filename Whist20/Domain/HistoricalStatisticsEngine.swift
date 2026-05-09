@@ -105,6 +105,7 @@ struct HistoricalPlayerProfile: Equatable, Identifiable {
     var id: String { player.id }
     var player: HistoricalPlayer
     var summary: HistoricalPlayerScoreSummary
+    var sessionScores: [HistoricalPlayerSessionScore]
     var bestDay: HistoricalPlayerSessionScore?
     var worstDay: HistoricalPlayerSessionScore?
     var bestGame: HistoricalGameScoreDetail?
@@ -307,6 +308,7 @@ enum HistoricalStatisticsEngine {
 
     static func playerProfiles(from data: HistoricalWhistData) -> [HistoricalPlayerProfile] {
         let summariesByPlayer = Dictionary(uniqueKeysWithValues: playerScoreSummaries(from: data).map { ($0.player.id, $0) })
+        let sessionScoresByPlayer = playerSessionScores(from: data)
         let gameDetailsByGameId = Dictionary(uniqueKeysWithValues: gameDetails(from: data).map { ($0.game.id, $0) })
         let resultsByPlayer = Dictionary(grouping: data.playerResults, by: \.playerId)
         let gamesById = Dictionary(uniqueKeysWithValues: data.games.map { ($0.id, $0) })
@@ -337,6 +339,7 @@ enum HistoricalStatisticsEngine {
                 return HistoricalPlayerProfile(
                     player: player,
                     summary: summary,
+                    sessionScores: sessionScoresByPlayer[player.id] ?? [],
                     bestDay: summary.bestSession,
                     worstDay: summary.worstSession,
                     bestGame: bestGame,

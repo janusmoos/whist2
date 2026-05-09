@@ -419,6 +419,8 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(profile?.mostSuccessfulBid?.gameType, "vip")
         XCTAssertEqual(profile?.leastSuccessfulBid?.gameType, "halve")
         XCTAssertEqual(profile?.bidSampleSize, 2)
+        XCTAssertEqual(profile?.sessionScores.map(\.sessionId), ["s1"])
+        XCTAssertEqual(profile?.sessionScores.first?.score, 4)
     }
 
     func testSessionOverviewsIncludeBestWorstGamesAndMetadataCounts() {
