@@ -10,5 +10,6 @@ enum HomeRoute: Hashable {
     case newGameDay
     case standings
     case settings
+    case scorecard
     case allGameDays
 }

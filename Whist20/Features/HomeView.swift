@@ -62,6 +62,8 @@ struct HomeView: View {
                     StandingsView()
                 case .settings:
                     AppSettingsView()
+                case .scorecard:
+                    ScorecardView()
                 case .allGameDays:
                     GameDaysView()
                 }
@@ -229,13 +231,7 @@ struct HomeView: View {
             guard hand.kindRaw == "normal", hand.partnerSeatRaw >= 0 else { return nil }
             return Seat(rawValue: hand.partnerSeatRaw)?.playerDisplayName
         }()
-        let kindLabel: String = {
-            switch hand.kindRaw {
-            case "duty": return "Duestraf"
-            case "sol": return "Sol"
-            default: return "Normal"
-            }
-        }()
+        let parsed = parseResumeDetails(hand)
 
         return AnyView(
             VStack(alignment: .leading, spacing: 10) {
@@ -255,14 +251,35 @@ struct HomeView: View {
                         if let name = bidderName {
                             infoTile(label: "Melder", value: name)
                         }
-                        infoTile(label: "Type", value: kindLabel)
+                        infoTile(label: "Type", value: parsed.typeLabel)
                     }
+
                     if hand.kindRaw != "duty" {
-                        HStack(spacing: 8) {
-                            if let p = partnerName {
-                                infoTile(label: "Makker", value: p)
+                        let hasTrump = parsed.trump != nil
+                        let hasBid = parsed.bidTricks != nil
+                        let hasPartner = partnerName != nil
+                        let hasStik = parsed.stikText != nil
+
+                        if hasTrump || hasBid || hasPartner || hasStik {
+                            HStack(spacing: 8) {
+                                if let p = partnerName {
+                                    infoTile(label: "Makker", value: p)
+                                }
+                                if let bid = parsed.bidTricks {
+                                    infoTile(label: "Meldt", value: "\(bid) stik")
+                                }
                             }
-                            infoTile(label: "Stik", value: stikLabel(for: hand))
+                        }
+
+                        if hasTrump || hasStik {
+                            HStack(spacing: 8) {
+                                if let trump = parsed.trump {
+                                    infoTile(label: "Trumf", value: trump)
+                                }
+                                if let stik = parsed.stikText {
+                                    infoTile(label: "Stik", value: stik)
+                                }
+                            }
                         }
                     }
                 }
@@ -323,17 +340,83 @@ struct HomeView: View {
         }
     }
 
-    private func stikLabel(for hand: RecordedHand) -> String {
+    private struct ResumeDetails {
+        var typeLabel: String
+        var bidTricks: Int?
+        var trump: String?
+        var stikText: String?
+    }
+
+    private func parseResumeDetails(_ hand: RecordedHand) -> ResumeDetails {
         let caption = hand.resumeCaption
-        guard let range = caption.range(of: "||") else { return "—" }
-        let code = String(caption[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-        guard let delta = Int(code.hasPrefix("+") ? String(code.dropFirst()) : code) else { return "—" }
-        guard let bidRange = caption.range(of: "meldte ", options: .backwards) else { return "—" }
-        let afterMeldte = caption[bidRange.upperBound...].trimmingCharacters(in: .whitespaces)
-        guard let bid = afterMeldte.split(separator: " ").first.flatMap({ Int($0) }) else { return "—" }
-        let actual = bid + delta
-        let sign = delta > 0 ? "+\(delta)" : delta < 0 ? "\(delta)" : "±0"
-        return "\(actual) (\(sign))"
+        var details = ResumeDetails(typeLabel: "—")
+
+        switch hand.kindRaw {
+        case "duty":
+            details.typeLabel = "Duestraf"
+            return details
+        case "sol":
+            details.typeLabel = parseSolType(caption)
+            return details
+        default:
+            break
+        }
+
+        details.typeLabel = parseNormalType(caption)
+        details.bidTricks = parseBidTricks(caption)
+        details.trump = parseTrump(caption)
+
+        if let range = caption.range(of: "||") {
+            let code = String(caption[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            if let delta = Int(code.hasPrefix("+") ? String(code.dropFirst()) : code),
+               let bid = details.bidTricks {
+                let actual = bid + delta
+                let sign = delta > 0 ? "+\(delta)" : delta < 0 ? "\(delta)" : "±0"
+                details.stikText = "\(actual) (\(sign))"
+            }
+        }
+
+        return details
+    }
+
+    private func parseNormalType(_ caption: String) -> String {
+        let lower = caption.lowercased()
+        if lower.contains("vip tredje") || lower.contains("vip 3") { return "VIP i 3." }
+        if lower.contains("vip anden") || lower.contains("vip 2") { return "VIP i 2." }
+        if lower.contains("vip første") || lower.contains("vip 1") || lower.contains("vip") { return "VIP i 1." }
+        if lower.contains("(gode)") { return "Gode" }
+        if lower.contains("halve") { return "Halve" }
+        if lower.contains("sans") { return "Sans" }
+        if lower.contains("almindelige") { return "Almindelig" }
+        return "Normal"
+    }
+
+    private func parseSolType(_ caption: String) -> String {
+        let lower = caption.lowercased()
+        if lower.contains("bordlægger") && !lower.contains("halv") { return "Hel bordlægger" }
+        if lower.contains("halv bordlægger") || lower.contains("halv-bordlægger") { return "Halv bordlægger" }
+        if lower.contains("ren sol") || lower.contains("ren-sol") { return "Ren sol" }
+        return "Sol"
+    }
+
+    private func parseBidTricks(_ caption: String) -> Int? {
+        guard let range = caption.range(of: "meldte ", options: [.backwards, .caseInsensitive]) else { return nil }
+        let after = caption[range.upperBound...].trimmingCharacters(in: .whitespaces)
+        return after.split(separator: " ").first.flatMap { Int($0) }
+    }
+
+    private func parseTrump(_ caption: String) -> String? {
+        let suitSymbols: [(symbol: String, name: String)] = [
+            ("♠", "Spar"), ("♥", "Hjerter"), ("♦", "Ruder"), ("♣", "Klør"),
+        ]
+        if caption.lowercased().contains("sans") { return nil }
+        if caption.lowercased().contains("(gode)") { return "♣" }
+        guard let range = caption.range(of: "som trumf", options: .caseInsensitive) else { return nil }
+        let before = caption[..<range.lowerBound]
+        for (symbol, _) in suitSymbols {
+            if before.contains(symbol) { return symbol }
+        }
+        return nil
     }
 
     private var emptyStatusBox: some View {
@@ -394,6 +477,12 @@ struct HomeView: View {
 private struct AppSettingsView: View {
     var body: some View {
         Form {
+            Section("Opslagsværk") {
+                NavigationLink(value: HomeRoute.scorecard) {
+                    Label("Scorecard", systemImage: "tablecells")
+                }
+            }
+
             Section {
                 Text("Her kommer snart valg for navne, regler, tema og mere.")
                     .font(.subheadline)
