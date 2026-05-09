@@ -7,11 +7,11 @@ alwaysApply: true
 
 ## Source of truth
 
-- Primær udvikling foregår i `whist 2.0/` (Whist20).
-- Mapperne under `App/` og ældre “Whist 1/2/3” betragtes som legacy/reference, medmindre opgaven eksplicit handler om dem.
+- Primær udvikling foregår i denne repo-rod: `Whist20.xcodeproj` og appkoden i `Whist20/`.
+- Der er ingen `whist 2.0/` undermappe i den officielle `janusmoos/whist2`-klon.
+- Ældre lokale kopier, fx `_whist 2026/whist 2.0/`, betragtes som legacy/reference, medmindre opgaven eksplicit handler om dem.
 
 ## Arbejdsflow
 
-- Når vi laver ændringer, så peg altid på de præcise filer under `whist 2.0/` og undgå at kopiere kode mellem versioner uden tydelig grund.
+- Når vi laver ændringer, så peg altid på de præcise filer under `Whist20/`, `Whist20Tests/`, `docs/` eller repo-rodens `Whist20.xcodeproj`.
 - Hvis der opstår tvivl om regelsæt eller adfærd: behandl `docs/` som produkt-/regel-reference, og Xcode som facit for build/signing.
-
