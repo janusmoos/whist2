@@ -22,7 +22,7 @@ enum HistoricalStatisticsScope: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .current: "Nuværende"
-        case .recent: "Seneste"
+        case .recent: "Seneste 10"
         case .all: "Alle"
         }
     }
