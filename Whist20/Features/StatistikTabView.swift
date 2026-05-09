@@ -2,9 +2,33 @@ import Charts
 import SwiftUI
 
 struct StatistikTabView: View {
-    @State private var selectedScope: HistoricalStatisticsScope = .all
+    @State private var selectedScope: HistoricalStatisticsScope = .current
+    @State private var recentSessionLimit = 10
 
     private let dataResult: Result<HistoricalWhistData, Error>
+    private let recentSessionLimitOptions = [5, 10, 15, 20, 25, 50]
+    private let plannedStatistics = [
+        PlannedStatistic(
+            title: "Spillerform",
+            description: "Udvikling pr. spiller over de seneste spilledage, bedste/værste streaks og stabilitet."
+        ),
+        PlannedStatistic(
+            title: "Meldinger og spiltype",
+            description: "Succesrate fordelt på vip, sol, halve og trumf, med tydelig sample size."
+        ),
+        PlannedStatistic(
+            title: "Makkerpar",
+            description: "Point og winrate for faste og skiftende makkerpar, når historikken kan bære det."
+        ),
+        PlannedStatistic(
+            title: "Rollefordeling",
+            description: "Melder, makker, modspiller og giver-effekt, adskilt fra ren totalscore."
+        ),
+        PlannedStatistic(
+            title: "Datakvalitet",
+            description: "Synlige afvigelser, manglende rækker og importerede felter pr. spilledag."
+        ),
+    ]
 
     init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
         dataResult = Result { try loader.load() }
@@ -15,7 +39,11 @@ struct StatistikTabView: View {
             Group {
                 switch dataResult {
                 case let .success(data):
-                    let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: selectedScope)
+                    let snapshot = HistoricalStatisticsEngine.snapshot(
+                        from: data,
+                        scope: selectedScope,
+                        recentSessionLimit: recentSessionLimit
+                    )
                     statisticsContent(snapshot)
                 case let .failure(error):
                     ContentUnavailableView {
@@ -34,10 +62,12 @@ struct StatistikTabView: View {
     private func statisticsContent(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                scopePicker
+                scopeSection
                 summaryHeader(snapshot)
+                recentLimitPicker(snapshot)
                 playerLeaderboard(snapshot.playerSummaries)
                 scoreTimeline(snapshot.timelinePoints)
+                plannedStatisticsOverview
                 dataQuality(snapshot)
             }
             .padding(.horizontal, 20)
@@ -47,14 +77,53 @@ struct StatistikTabView: View {
         .background(Color(uiColor: .systemGroupedBackground))
     }
 
-    private var scopePicker: some View {
-        Picker("Periode", selection: $selectedScope) {
-            ForEach(HistoricalStatisticsScope.allCases) { scope in
-                Text(scope.title).tag(scope)
+    private var scopeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Spilledage")
+                .font(.headline)
+            Picker("Spilledage", selection: $selectedScope) {
+                ForEach(HistoricalStatisticsScope.allCases) { scope in
+                    Text(scope.title).tag(scope)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Vælg spilledage til statistik")
+    }
+
+    @ViewBuilder
+    private func recentLimitPicker(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
+        if snapshot.scope == .recent {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Antal spilledage")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Vælg hvor langt tilbage den seneste periode går.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 12)
+
+                Picker("Antal spilledage", selection: $recentSessionLimit) {
+                    ForEach(recentSessionLimitOptions, id: \.self) { limit in
+                        Text("\(limit)").tag(limit)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityLabel("Vælg antal seneste spilledage")
+            }
+            .padding(14)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             }
         }
-        .pickerStyle(.segmented)
-        .accessibilityLabel("Vælg statistikperiode")
     }
 
     private func summaryHeader(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
@@ -62,7 +131,7 @@ struct StatistikTabView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Historisk data")
                     .font(.title2.weight(.bold))
-                Text("\(snapshot.scope.title) · \(snapshot.sessionCount) spilledage · \(snapshot.gameCount) spil · \(snapshot.playerResultCount) spillerresultater")
+                Text("\(scopeDescription(snapshot)) · \(snapshot.gameCount) spil · \(snapshot.playerResultCount) spillerresultater")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -86,6 +155,47 @@ struct StatistikTabView: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private var plannedStatisticsOverview: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Planlagte statistikfunktioner")
+                    .font(.headline)
+                Text("Næste versioner bør udvide fra ren pointvisning til forklarende statistik.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(plannedStatistics) { statistic in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "circle.dotted")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 18, height: 18)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(statistic.title)
+                                .font(.subheadline.weight(.semibold))
+                            Text(statistic.description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         }
     }
@@ -302,4 +412,21 @@ struct StatistikTabView: View {
             return Color.secondary
         }
     }
+
+    private func scopeDescription(_ snapshot: HistoricalStatisticsSnapshot) -> String {
+        switch snapshot.scope {
+        case .current:
+            return "Nuværende spilledag"
+        case .recent:
+            return "Seneste \(snapshot.sessionCount) spilledage"
+        case .all:
+            return "Alle \(snapshot.sessionCount) spilledage"
+        }
+    }
+}
+
+private struct PlannedStatistic: Identifiable {
+    var id: String { title }
+    var title: String
+    var description: String
 }

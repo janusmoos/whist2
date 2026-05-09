@@ -186,7 +186,7 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(thomasSummary?.worstSession?.sessionId, "s2")
     }
 
-    func testLatest10ScopeFiltersOlderSessionsOut() {
+    func testRecentScopeFiltersOlderSessionsOut() {
         let sessions = (1...11).map { index in
             HistoricalSession(
                 id: "s\(index)",
@@ -247,16 +247,88 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
             auditSummary: nil
         )
 
-        let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: .latest10)
+        let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: .recent, recentSessionLimit: 10)
         let thomas = snapshot.playerSummaries.first { $0.player.id == "Thomas" }
         let thomasTimeline = snapshot.timelinePoints.filter { $0.playerId == "Thomas" }
 
-        XCTAssertEqual(snapshot.scope, .latest10)
+        XCTAssertEqual(snapshot.scope, .recent)
         XCTAssertEqual(snapshot.sessionCount, 10)
         XCTAssertEqual(snapshot.gameCount, 10)
         XCTAssertEqual(snapshot.playerResultCount, 20)
         XCTAssertEqual(thomas?.totalScore, 65)
         XCTAssertEqual(thomasTimeline.first?.sessionId, "s2")
         XCTAssertEqual(thomasTimeline.last?.cumulativeScore, 65)
+    }
+
+    func testCurrentScopeUsesLatestSessionOnly() {
+        let sessions = (1...3).map { index in
+            HistoricalSession(
+                id: "s\(index)",
+                sessionNumber: "\(index)",
+                date: "2024-02-0\(index)",
+                location: nil,
+                sourceSheetName: "\(index)",
+                expectedGameCount: 1,
+                importedGameCount: 1,
+                missingScoreRows: 0,
+                qualityStatus: "ok",
+                cumulativeBlockStartColumn: nil,
+                deltaBlockStartColumn: nil,
+                preferredScoreBlockNumericRows: nil,
+                headerRow: nil,
+                columnMapping: nil
+            )
+        }
+        let games = (1...3).map { index in
+            HistoricalGame(
+                id: "g\(index)",
+                sessionId: "s\(index)",
+                sessionNumber: "\(index)",
+                gameNumberInSession: 1,
+                sourceGameMarker: 1,
+                gameTypeRaw: nil,
+                gameTypeNormalized: nil,
+                bidTricks: nil,
+                bidderId: nil,
+                bidderIds: [],
+                winnerId: nil,
+                winnerIds: [],
+                partnerId: nil,
+                dealerId: nil,
+                checksum: 0,
+                scoreSource: "test",
+                sourceSheetName: "\(index)",
+                sourceRow: 1,
+                qualityFlags: []
+            )
+        }
+        let results = (1...3).flatMap { index in
+            [
+                HistoricalPlayerResult(id: "t\(index)", gameId: "g\(index)", playerId: "Thomas", score: index * 10, sourceSheetName: "\(index)", sourceRow: 1),
+                HistoricalPlayerResult(id: "p\(index)", gameId: "g\(index)", playerId: "Peter", score: -(index * 10), sourceSheetName: "\(index)", sourceRow: 1),
+            ]
+        }
+        let data = HistoricalWhistData(
+            version: "test",
+            generatedAt: "now",
+            players: [
+                HistoricalPlayer(id: "Thomas", name: "Thomas", displayOrder: 1, isActive: true),
+                HistoricalPlayer(id: "Peter", name: "Peter", displayOrder: 2, isActive: true),
+            ],
+            sessions: sessions,
+            games: games,
+            playerResults: results,
+            auditSummary: nil
+        )
+
+        let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: .current)
+        let thomas = snapshot.playerSummaries.first { $0.player.id == "Thomas" }
+
+        XCTAssertEqual(snapshot.scope, .current)
+        XCTAssertEqual(snapshot.sessionCount, 1)
+        XCTAssertEqual(snapshot.gameCount, 1)
+        XCTAssertEqual(snapshot.playerResultCount, 2)
+        XCTAssertEqual(thomas?.totalScore, 30)
+        XCTAssertEqual(snapshot.timelinePoints.first { $0.playerId == "Thomas" }?.sessionId, "s3")
     }
 }

@@ -13,22 +13,25 @@ struct HistoricalPlayerScoreSummary: Equatable, Identifiable {
 }
 
 enum HistoricalStatisticsScope: String, CaseIterable, Identifiable {
+    case current
+    case recent
     case all
-    case latest10
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .current: "Nuværende"
+        case .recent: "Seneste"
         case .all: "Alle"
-        case .latest10: "Seneste 10"
         }
     }
 
-    var sessionLimit: Int? {
+    func sessionLimit(recentLimit: Int) -> Int? {
         switch self {
+        case .current: 1
+        case .recent: max(1, recentLimit)
         case .all: nil
-        case .latest10: 10
         }
     }
 }
@@ -75,9 +78,10 @@ struct HistoricalStatisticsSnapshot: Equatable {
 enum HistoricalStatisticsEngine {
     static func snapshot(
         from data: HistoricalWhistData,
-        scope: HistoricalStatisticsScope = .all
+        scope: HistoricalStatisticsScope = .all,
+        recentSessionLimit: Int = 10
     ) -> HistoricalStatisticsSnapshot {
-        let scopedData = data.filtered(for: scope)
+        let scopedData = data.filtered(for: scope, recentSessionLimit: recentSessionLimit)
         let summaries = playerScoreSummaries(from: scopedData)
         let zeroSumCount = scopedData.auditSummary?.fieldCounts.scoreSumZero
             ?? scopedData.games.filter { ($0.checksum ?? 0) == 0 }.count
@@ -237,8 +241,8 @@ enum HistoricalStatisticsEngine {
 }
 
 private extension HistoricalWhistData {
-    func filtered(for scope: HistoricalStatisticsScope) -> HistoricalWhistData {
-        guard let limit = scope.sessionLimit, sessions.count > limit else {
+    func filtered(for scope: HistoricalStatisticsScope, recentSessionLimit: Int) -> HistoricalWhistData {
+        guard let limit = scope.sessionLimit(recentLimit: recentSessionLimit), sessions.count > limit else {
             return self
         }
 
