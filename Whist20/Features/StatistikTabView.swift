@@ -596,11 +596,11 @@ struct StatistikTabView: View {
     private func sessionOverviewList(_ sessions: [HistoricalSessionOverview]) -> some View {
         let newestFirst = sessions.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
 
-        VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Alle spilledage")
                     .font(.headline)
-                Text("Dato, sted, antal spil og bedste/værste spil pr. spilledag.")
+                Text("Seneste spilledag øverst. Tryk for resultater, bedste/værste spil og datagrundlag.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -822,28 +822,30 @@ struct StatistikTabView: View {
     }
 
     private func sessionRow(_ overview: HistoricalSessionOverview) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Spilledag \(overview.session.sessionNumber)")
-                        .font(.body.weight(.semibold))
-                    Text(sessionSubtitle(overview.session))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Spilledag \(overview.session.sessionNumber)")
+                    .font(.body.weight(.semibold))
 
-                Spacer(minLength: 10)
+                Text(formattedSessionDate(overview.session))
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
 
-                Text("\(overview.gamesPlayed) spil")
-                    .font(.caption.weight(.semibold).monospacedDigit())
+                Text(formattedSessionLocation(overview.session))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                miniMetric(title: "Bedste spil", value: optionalScoreText(overview.bestGame?.playerScores.map(\.score).max()))
-                miniMetric(title: "Værste spil", value: optionalScoreText(overview.worstGame?.playerScores.map(\.score).min()))
-                miniMetric(title: "Spiltype-data", value: "\(overview.gamesWithType)")
-                miniMetric(title: "Afvigelser", value: "\(overview.issueCount)")
+            Spacer(minLength: 10)
+
+            VStack(alignment: .trailing, spacing: 5) {
+                Text("\(overview.gamesPlayed) spil")
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
         }
         .padding(14)
@@ -1218,12 +1220,37 @@ struct StatistikTabView: View {
     }
 
     private func sessionSubtitle(_ session: HistoricalSession) -> String {
-        [session.date, session.location]
+        [formattedSessionDate(session), formattedSessionLocation(session)]
             .compactMap { value in
-                guard let value, !value.isEmpty else { return nil }
-                return value
+                value == "-" ? nil : value
             }
             .joined(separator: " · ")
+    }
+
+    private func formattedSessionDate(_ session: HistoricalSession) -> String {
+        guard let date = session.date, !date.isEmpty else {
+            return "-"
+        }
+
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.dateFormat = "yyyy-MM-dd"
+
+        guard let parsedDate = parser.date(from: date) else {
+            return date
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "da_DK")
+        formatter.dateFormat = "d. MMMM yyyy"
+        return formatter.string(from: parsedDate)
+    }
+
+    private func formattedSessionLocation(_ session: HistoricalSession) -> String {
+        guard let location = session.location?.trimmingCharacters(in: .whitespacesAndNewlines), !location.isEmpty else {
+            return "-"
+        }
+        return location
     }
 
     private func gameSubtitle(_ detail: HistoricalGameScoreDetail) -> String {
