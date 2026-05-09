@@ -2,20 +2,20 @@ import Charts
 import SwiftUI
 
 struct StatistikTabView: View {
-    private let snapshotResult: Result<HistoricalStatisticsSnapshot, Error>
+    @State private var selectedScope: HistoricalStatisticsScope = .all
+
+    private let dataResult: Result<HistoricalWhistData, Error>
 
     init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
-        snapshotResult = Result {
-            let data = try loader.load()
-            return HistoricalStatisticsEngine.snapshot(from: data)
-        }
+        dataResult = Result { try loader.load() }
     }
 
     var body: some View {
         NavigationStack {
             Group {
-                switch snapshotResult {
-                case let .success(snapshot):
+                switch dataResult {
+                case let .success(data):
+                    let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: selectedScope)
                     statisticsContent(snapshot)
                 case let .failure(error):
                     ContentUnavailableView {
@@ -34,6 +34,7 @@ struct StatistikTabView: View {
     private func statisticsContent(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                scopePicker
                 summaryHeader(snapshot)
                 playerLeaderboard(snapshot.playerSummaries)
                 scoreTimeline(snapshot.timelinePoints)
@@ -46,12 +47,22 @@ struct StatistikTabView: View {
         .background(Color(uiColor: .systemGroupedBackground))
     }
 
+    private var scopePicker: some View {
+        Picker("Periode", selection: $selectedScope) {
+            ForEach(HistoricalStatisticsScope.allCases) { scope in
+                Text(scope.title).tag(scope)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("Vælg statistikperiode")
+    }
+
     private func summaryHeader(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Historisk data")
                     .font(.title2.weight(.bold))
-                Text("\(snapshot.sessionCount) spilledage · \(snapshot.gameCount) spil · \(snapshot.playerResultCount) spillerresultater")
+                Text("\(snapshot.scope.title) · \(snapshot.sessionCount) spilledage · \(snapshot.gameCount) spil · \(snapshot.playerResultCount) spillerresultater")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

@@ -12,6 +12,27 @@ struct HistoricalPlayerScoreSummary: Equatable, Identifiable {
     var worstSession: HistoricalPlayerSessionScore?
 }
 
+enum HistoricalStatisticsScope: String, CaseIterable, Identifiable {
+    case all
+    case latest10
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "Alle"
+        case .latest10: "Seneste 10"
+        }
+    }
+
+    var sessionLimit: Int? {
+        switch self {
+        case .all: nil
+        case .latest10: 10
+        }
+    }
+}
+
 struct HistoricalPlayerSessionScore: Equatable, Identifiable {
     var id: String { "\(playerId)-\(sessionId)" }
     var playerId: String
@@ -35,6 +56,7 @@ struct HistoricalScoreTimelinePoint: Equatable, Identifiable {
 }
 
 struct HistoricalStatisticsSnapshot: Equatable {
+    var scope: HistoricalStatisticsScope
     var playerSummaries: [HistoricalPlayerScoreSummary]
     var timelinePoints: [HistoricalScoreTimelinePoint]
     var sessionCount: Int
@@ -51,21 +73,28 @@ struct HistoricalStatisticsSnapshot: Equatable {
 }
 
 enum HistoricalStatisticsEngine {
-    static func snapshot(from data: HistoricalWhistData) -> HistoricalStatisticsSnapshot {
-        let summaries = playerScoreSummaries(from: data)
-        let zeroSumCount = data.auditSummary?.fieldCounts.scoreSumZero
-            ?? data.games.filter { ($0.checksum ?? 0) == 0 }.count
+    static func snapshot(
+        from data: HistoricalWhistData,
+        scope: HistoricalStatisticsScope = .all
+    ) -> HistoricalStatisticsSnapshot {
+        let scopedData = data.filtered(for: scope)
+        let summaries = playerScoreSummaries(from: scopedData)
+        let zeroSumCount = scopedData.auditSummary?.fieldCounts.scoreSumZero
+            ?? scopedData.games.filter { ($0.checksum ?? 0) == 0 }.count
+        let issueCount = scopedData.auditSummary?.issueCount
+            ?? scopedData.games.filter { !$0.qualityFlags.isEmpty }.count
 
         return HistoricalStatisticsSnapshot(
+            scope: scope,
             playerSummaries: summaries,
-            timelinePoints: scoreTimeline(from: data),
-            sessionCount: data.sessions.count,
-            gameCount: data.games.count,
-            playerResultCount: data.playerResults.count,
+            timelinePoints: scoreTimeline(from: scopedData),
+            sessionCount: scopedData.sessions.count,
+            gameCount: scopedData.games.count,
+            playerResultCount: scopedData.playerResults.count,
             zeroSumGameCount: zeroSumCount,
-            issueCount: data.auditSummary?.issueCount ?? 0,
-            generatedAt: data.generatedAt,
-            dataVersion: data.version
+            issueCount: issueCount,
+            generatedAt: scopedData.generatedAt,
+            dataVersion: scopedData.version
         )
     }
 
@@ -204,5 +233,29 @@ enum HistoricalStatisticsEngine {
             return "#\(session.sessionNumber) · \(date)"
         }
         return "#\(session.sessionNumber) · \(session.sourceSheetName)"
+    }
+}
+
+private extension HistoricalWhistData {
+    func filtered(for scope: HistoricalStatisticsScope) -> HistoricalWhistData {
+        guard let limit = scope.sessionLimit, sessions.count > limit else {
+            return self
+        }
+
+        let scopedSessions = Array(sessions.suffix(limit))
+        let sessionIds = Set(scopedSessions.map(\.id))
+        let scopedGames = games.filter { sessionIds.contains($0.sessionId) }
+        let gameIds = Set(scopedGames.map(\.id))
+        let scopedResults = playerResults.filter { gameIds.contains($0.gameId) }
+
+        return HistoricalWhistData(
+            version: version,
+            generatedAt: generatedAt,
+            players: players,
+            sessions: scopedSessions,
+            games: scopedGames,
+            playerResults: scopedResults,
+            auditSummary: nil
+        )
     }
 }
