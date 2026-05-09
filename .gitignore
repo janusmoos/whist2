@@ -5,3 +5,7 @@
 /Snapshots/Whist20-*/
 
 .DS_Store
+
+# Lokale editor-workspaces og scratchpads (ikke versionsført)
+*.code-workspace
+scratchpad*.txt

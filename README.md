@@ -47,6 +47,7 @@ gh pr create -R janusmoos/whist2 --title "Issue #1: Sol-type som wheel" --body "
 ```
 
 Se også:
+- `TECHNICAL_HANDOFF.md` (arkitektur, opstartstjek for Cursor/Codex, filer og kommandoer)
 - `VERSIONING.md` (marketing-version vs build-nummer, og foreslåede git-tags)
 - `MULTI_DEVICE.md` (overblik over fler-enheds-sync og anbefalet retning)
 

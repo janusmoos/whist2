@@ -1,0 +1,168 @@
+MANDAG 4/5
+- Pointfordeling: fra spilledagssiden/oversigtssiden har vi lavet en placeholder for "Pointfordeling". Tjek ideerne til den og lav en plan for implementering
+- Jeg vil gerne udvikle siden "Stilling", som bliver linket fra startskærmen. Her skal man både kunne se en oversigt over den nuværende spilledag og det samlede resultat på tværs af alle spilledage. DEt skal være enkelt og se lækkert og overskueligt ud. Og det skal være tydeligt, hvad der er spilledagens resultat og det samlede resultat. Tænk dig grundigt om og tjek på nettet, hvad best practise er for denne slags sider. Der må ligge nogle beskrivelser af særligt velfungerende sider i lignende apps.
+- Vi skal forbedre flowet ved oprettelse af ny spilledag fra startskærmen. Knappen skal føre til en side, hvor man navngiver den nye spilledag og eventuelt udfylder noter om spilledagen. Når man gemmer en spilledag skal den mest prominente knap være "start spilledagens første spil" – som fører hen til meldingssiden.
+- Det skal være muligt at afslutte en spilledag. Og der kan kun være én spilledag i gang ad gangen. På startskærmen skal knappen "Ny spilledag" erstattes af "Afslut spilledag", når der er en aktiv spilledag (og knappen skal her være orange i stedet for blå). Når der ikke er en aktiv spilledag skal de fungere som den gør nu. Det skal være muligt at afslutte den aktive spilledag fra alle de mest relevante steder i app'en. Kom med forslag til implementering inden du koder.
+På meldingssiden under solmeldinger skal vi ændre et par ting:
+a: Fjern overskriften "Sol" over scroll wheel-boksen
+b: fjern "Valgfrit" under "går med"
+
+- "Seneste spil" fra startskærmen skal forbedres. Øverst skal vises et detaljeret og visuelt lækkert resumé af det senest afsluttede spil. Under dette skal resten af spilledagens spil ligge i ultrakort form (ét spil pr. linje). Her skal det være knapper, der viser hvad hver spille fik i hvert spil. Det er det eneste der er synligt sammen med spillets nummer. Hvis man klikke på én af spillene skal den folde sig ud og give et resumé af dette spil (samme formuleringer som på spoilledags-siden)
+- Ikonerne for kulørerne skal have deres rigtige farve (klør og spar skal være sorte, ruder og hjerter skal være røde)
+- Under resumeet af hver af de seneste spil skal det også fremgå, hvem der vandt meldingen og hvem der var makker
+- Resuméteksten fungerer ikke helt efter hensigten. Alle dele skal være som en talesprogssætning – ikke flere linjer med fx "Vandt meldingen: Janus" eller "Går med: Thomas". Det skal være tætter på noget i denne stil: "Christain meldte sol og Thomas gik med". Eller "Janus meldte 9 halve til spar es, og Thomas valgte hjerter som trumf". Lav en grundig analyse af sproget og skriv derefter en række forskellige eksempler her i chatten (før du begynder at kode)
+- Resumeet: i solmeldinger: hvis der er nogen der er "gået med" skal det fremgå af resumeet
+- På spilledagssiden skal sorteringen af seneste spil være omvendt kronologisk (det seneste øverste, derefter fx 7,6,5,4,3,2,1)
+- "Aktivt spil" skal have sin egen knap på startskærmen – og den skal vise det aktuelle spil for alle de tre brugere af app'en, som ikke er ved at registrere spillet. Siden skal være meget, meget let aflæselig. Det vigtigste er: hvem har meldingen, hvad er der meldt, hvad er trumf og (hvis det er relevant) hvilket es der er meldt til 
+- Siden "Aktive spil" skal være endnu tydeligere. Lav dem som bokse med overskrifter. Øverst skal stå "melder" – og skal være i fuld bredde. Resten skal være to bokse pr. række. Men stadig meget store og tydelige.
+- Siden "Aktive spil" skal opdateres på alle telefoner, når meldingen ændres. Hvis der ikke er nogeet aktivt spil skal der kun være et link (på en knap) til senest afsluttede spil.
+- Bliver resuméteksten genbrugt alle de relevante steder for de samme spil?
+- "Aktivt spil" skal have sin egen knap på startskærmen – og den skal vise det aktuelle spil for alle de tre brugere af app'en, som ikke er ved at registrere spillet. Siden skal være meget, meget let aflæselig. Det vigtigste er: hvem har meldingen, hvad er der meldt, hvad er trumf og (hvis det er relevant) hvilket es der er meldt til 
+- På siden "Pointfordeling" skal rækkefølgen under "Forløb" også være omvendt kronologisk (fx 4,3,2,1)
+- Der er et problem med resumeteksten: når melder får flere stik end han har meldt skal der ikke stå fx "to stik for meget" – i stedet skal der bare stå antallet og så fx +1 i parentes. Altså fx (ved 8 meldte stik) "Christian og Thomas tog 10 stik (+2)"
+- Resuméteksten skal forbedres ved sol-spil, hvor nogen går med. Det skal fremgå, hvad alle meldere (og dem der går med) opnår.  Lige nu står der fx "Christian meldte sol, og Peter gik med, og melderen holdt solen". Det skal i stedet formuleres sådan her: "Christian meldte sol, Peter går med – Christian gik hjem, Peter gik ned."
+- Startskærm: knappen "Tilføj spil" skal hedde noget andet, når der er et igangværende/uafsluttet spil. I de situationer skal der stå: "Afslut spil"
+- Resultatside: scroll wheel på melding skal starte på det tal, som meldingen lød på. Efter hvert tal på scroll wheelet skal der stå hvor mange stik resultatet adskiller sig fra meldingen. Ved en melding på 10 stik, hvor resultatet blev 8 stik skal der fx stå "-2". Hvis samme melding resulterer i 11 stik skal der stå "+1". 
+- Knapperne til "Aktivt spil" skal være inaktive, hvis der ikke er et aktivt spil, og det skal også fremgå at teksten på knappen.
+- Når man vælger trumf kan man ikke også melde til et es i samme kulør. Dette makkeres skal være inaktivt.
+- I spillet "Halve" vælger man først makkeres, og derefter vælges trumf – så her skal logikken udvides. Når man først har valgt makkeres i spillet halve, skal man ikke kunne vælge samme kulør som trumf. Det gælder kun for spillet halve.
+- På meldingssiden skal det fremgå, hvilket spil-nummer meldingen starter (spil #3). Fjern den forklarende overskrift "Spiltype"
+- På meldingssiden: Ved duestraf – gør de fire personer til knapper. Når man klikker på én skal knappen blive rød. Slet teskten "spiller med duty"
+- Rettelse til resumetekst: Teksterne skal være tættere på talesporg. Fx "Christian meldte ren sol, Thomas gik med - Christian gik ned, Thomas gik ned". Her ville man nok nærmere sig "Christian meldte ren sol og Thomas gik med - Både Christian og Thomas gik ned." Find flere eksempler og lav en liste med forslag.
+- På "Ny spilledag" skal det være muligt at vise, hvilken rækkefølge spillerne sidder i. Det skal være en liste med de fire navne, hvor man kan trække hvert navn, så rækkefølgen ændrer sig. 
+- "Ny spilledag": funktionen med at trække spillere er fin, men den skal ikke ligge inde i en ramme. 
+- Vi skal tilføje en information på alle spil (både aktive, nuværende og under detaljer for hvert spil i arkivet): Dealer
+- Dealer skal følge rækkefølgen af spillere ved bordet, sådan som det er registreret på "Ny spilledag" – ved hvert spil er det den næste i rækken der bliver dealer. Det skal også vises på meldingssiden. Foreslå nogle gode visuelle løsninger før du går videre.
+- DEALER: Hvem giver kort? 
+- Spilledag: rækkefølge (skal bruges til dealer)
+- Spillernes rækkefølge på meldingsside og resultatside og alle andre relevante sider skal følge den rækkefølge, som er defineret på spilledagen. MEN det skal kun gælde for de sider, der er knyttet til selve spilledagen.
+- I resuméteksten skal det altid fremgå, hvis melderen bliver selvmakker
+- Under "nuværende melding" bliver trumf stadig skrevet som tekst – det er en fejl. Det skal vises som ikon (ligesom i boksen med makker-es)
+- De to ikoner skal være lige store. 
+- Jeg vil også gerne ændre Makker-boksen. I stedet for at skrive "Janus meldte til Peter" under spillerknapperne skal det fremgå af overskriften. Hvor der nu står "Makker" skal der i stedet stå "Makker til Janus" 
+- På meldingssiden: Ved duestraf skal man på samme side kunne vælge, hvem duestraffen skal tildeles. Det skal ikke være en skærm for sig. Når man har valgt personen skal man kunne gemme. 
+- På resultatsiden skal vi ikke bruge knappen med teksten "Tilbage" – funktionen er allerede dækket af knappen med pilen.
+- På resultatsiden skal duestrafboksen i bunden fjernes.
+- Der er stadig problemer med at gemme de aktive spil. Når jeg klikker gem kommer jeg tilbage til  oversigten, hvor knappen "Fortsæt aktivt spil" stadig er aktiv (det burde være muligt at starte et nyt spil)
+- Jeg vil gerne flytte datoen fra visning i oversigten ind i folde-ud-boksen (altså: datoen skal først vises, når man klikke på et spil, og det folder sig ud med flere detaljer.)
+- Jeg vil gerne lave en alternativ visning af denne side. Her skal det være en meget diskret tabel med så få streger som muligt. I headeren skal der stå spillernavne, og i hver rækker herunder skal kun spilleres resultat stå. Ingen pills. Kan vi starte med at lave det som en alternativ visning af samme data på samme side, som man kan vælge fra en lille menu i toppen af siden?
+- Tabellen ser lidt klodset ud. Den skal gøres lækrere. Tjek best practise fra Apple.  Og navigationen fra spil-detaljesiderne fungerer ikke efgter hensigten. Når man klikker på tilbage-knappen i toppen af siden går man side for side tilbage gennem spillene i stedet for at komme tilbage til oversigtssiden
+- Når jeg klikker fra tabellen til detaljesiden (fx "kamp #4") og klikker på pilen i øverste venstre hjørne bliver jeg først videre til næste kamp på listen (#5). Det er en fejl. Jeg skal tilbage til oversigtssiden med tabellen.
+- Samme problem igen. Lad os i stedet droppe, at man ser detaljesiderne. I stedet skal tabelvisningen fungere på samme måde som pills-visningen: når man klikke på en række skal rækken folde sig ud og vise resuméteskten af spillet
+- Jeg vil gerne tilføje en fast menu i bunden af app'en, hvor man får adgang til følgende sider:
+- Jeg vil gerne have en menu i bunden af appen, som altid er synlig. Menuen skal bestå af følgende 5 punkter (som alle skal have et ikon):
+    - Forside
+    - Stilling
+    - Nyt spil / afslut spil
+    - Aktive spil
+    - Statistik
+- Det midterste menupunkt skal være fremhævet (måske en anden farve eller med en kant)
+    A: Jeg vil ikke have et klassis popup vindue når jeg går væk fra meldingssiden uden af gemme (den hedder lige nu "Aktivt spil"). I stedet en kortvarig besked om, at kladden er gemt – men det skal være en mere diskret besked, som forsvinder efter et par sekunder.
+    B: På resultatsiden under nuværende melding skal ikonerne under trumf og makker-es have deres naturlige farve (hjerter og ruder skal være røde)
+    C: Når man gemmer et spil skal næste skærm være oversigten med tabellen over de seneste spil
+    D: I bundmenuen skal "Stilling" erstattes af "Seneste spil"
+- Jeg vil gerne bruge tabelvisningen (i stedet for pills) som standard på Nyt Spil-siden
+- Når man har gemt et spil og er blevet ført tilbage på "Nyt spil"-siden kan man ikke komme tilbage til forsiden via bundmenuen.
+- Siden "Seneste spil" som linkes fra bundmenuen skal også bruge tabelvisningen
+- Startsiden skal være mere indbydende og der skal kun være fire knapper i et kompakt 2x2 grid:
+    - Ny spilledag / afslut spilledag
+    - Alle spilledage
+    - Stilling
+    - Indstillinger
+    Der skal desuden være en boks med en visning af "Aktive spil / Seneste spil" (med en oversigt a la den på resultatsiden – men mere kompakt). Denne del af forsiden skal hele tiden være up-to-date med de andre apps, så man altid kan se, hvilket spil der er i gang (eller netop afsluttet, hvis der endnu ikke er ét igang)
+- Vi skal tilpasse resumetekst igen, så vi undgår, at samme navn bliver nævnt to gange lige efter hinanden. Fx:
+    "Thomas meldte 8 * (gode), og Thomas og Christian tog 10 stik (+2)"
+    Det er bedre med:
+    "Thomas meldte 8 * (gode). Han og Christian tog 10 stik (+2)"
+    Eller endnu bedre (hvis du kan finde en logik som kan bruges andre steder):
+    "Thomas meldte 8 * (gode), og sammen med Christian tog han 10 stik (+2)"
+- På forsiden skal kun de seneste (1) spil vises – ikke listen over alle de seneste spil. Og opsætningen skal ligne "Nuværende melding" (se screenshot)
+- Resumetekst: Der mangler et "han" til sidste i teksten her "
+- Under aktive spil skal vi bruge en anden logik for sproget. For det første skal der ikke nævnes noget resultat – som fx "de gik alle hjem" (det er ikke afgjort endnu). For det andet skal meldingen skrive i nutid (fx "Christian melder sol og Thomas går med")
+- På resultatsiden vil jeg gerne ændre opsætningen af den nederste boks, hvor der står resulatet. Denne boks skal fjerne og i stedet skal der indsættes en lille pill/badge med hver spillers resultat på makker-knapperne (de blå knapper med spillernes navne)
+- Bundmenuen: omdøb "Aktive spil" til "Aktivt spil"
+- Jeg vil oprette en ny side, som hedder "Scorecard". Det skal være en oversigt over alle de forskellige meldinger, hvor meget hvert stik koster i dem – og hvordan de rangeres. Kig på denne illustration og foreslå en meget ren og overskuelig version. 
+- Resumeet på forsiden ("Seneste spil"):
+    A: Type skal være mere specifik (altså fx "Vip i 3." eller "Ren sol")
+    B: Det skal fremgå, hvor mange stik der blev meld (i de relevante spil)
+    C: Det skal fremgå hvilken trumf, der blev valgt
+    D: Boksen med stik skal kun vises i de relevante spil
+- Jeg vil også gerne have 1. vip ind i samme kolonne som sans/halve/gode (nederst: sans/halve/gode/vip 1.) 
+- Sol-navnene skal stå på én lnje (de må gerne merge en del af cellerne på deres række)
+- Beskrivelsen "sans/halve/gode/vip 1." skal være uden "/" – en melding pr. linje
+- Rettelse på scorecard:
+    A: "Point pr. stik" skal hedde "Pris pr. stik & rangering" 
+    B: Overskrifterne skal være større ("Pris pr. stik & rangering", "Specielle regler")
+    C: Vi skal have tilføjet en kort beskrivelse af, hvordan det giver et ekstra point at gå hjem (tjek )
+
+    
+-----
+Jeg skal til at lukke Cursor. Hvordan sikrer jeg mig, at jeg kan komme videre herfra, når jeg genåbner?
+
+-----
+
+Det skal være muligt at lægge et foto op på hver spilledag, som kan bruges som thumbnail. Det skal også være muligt at se på et kort, hvor spilledagen foregik (geografisk)
+
+Jeg skal importere en masse gamle spildage, som ligger i et google docs. Men data skal organiseres og renses, før det importeres til app'en. Hvordan gør jeg bedst det? Ken jeg give dig adgang til et Google Sheet?
+
+Det skal være muligt at rette et spil – men kun fra oversigten "seneste spil"
+
+Melding: Ved "halve" skal der være en ekstra side, hvor man indtaster trumf (som går videre til reultatsiden OG som registreres på "Aktive spil"-siden)
+
+
+
+INTERFACE
+Jeg vil gerne have et ikon ved hvert spil, som viser, hvilken type spil der vandt meldingen. Et hjerter 10, hvis det var 10 almindelige med hjerter som trumf. Et kort med en sol på (findes vist som joker eller i hvert fald som skæbnekort). Og den slags. Men hvad med de andre?
+- Halve?
+- VIP (måske tre kort ved siden af hinanden, hvor det ene er vendt ved 1. vip osv.?)
+- Sans
+- Ren sol
+- Halv bordlægger
+- Bordlægger
+
+
+BÅND / MENU i bunden
+Jeg vil gerne have en menu i bunden af appen, som altid er synlig. Menuen skal bestå af følgende punkter (som alle skal have et ikon):
+- Nyt spil (afslut spil)
+- Aktive spil
+- Statistik
+- Forside
+
+FORSIDE
+- Stilling
+- Seneste spil
+- Spilpriser
+
+STATISTIK
+- Alle spilledage
+- PERSONER (?)
+    - måske skal det bare være en top-menu på alle statistiksiderner (så man filtrerer C / T / P / J / alle)
+
+- Indstillinger
+    - Backup
+    - Eksport
+
+
+
+STARTSKÆRM
+- INGEN AKTIVE SPILLEDAGE
+    - Start spilledag
+    - Statistik
+    - Indstillinger
+- AKTIV SPILLEDAG
+    - Start spil 
+    - Se aktivt spil
+    - Seneste spil
+    - Statistik
+    - Stilling
+
+
+Jeg vil gerne prøve at ændre udseende på pills i seneste spil. I stedet for at de farves røde/grønne skal de være hvide, men med en 1px border i den farve, der markerer om det er plus eller minus.
+
+
+SKINS
+- Det kunne være sjovt med forskellige skins, som er opkaldt efter vores efternavne (Rudlang70, Bahn90, Due80, Moos60) – og som tilpasser designet, så det ligner ChatGPT-ideerne til kort fra forskellige tidsperioder.
+- hver af dem er prydet af en graifk, som ligner den person, som designet er opkaldt efter, men selvfølelige tilpasset stilen.
+
+
+Jeg vil nu prøve at udvikle videre på denne app i et andet program (Codex). Men jeg vil have mulighed for at gå tilbage til app'en, sådan som den ser ud her og nu. Og jeg vil også gerne have mulighed for at udvikle både her og i Codex fremover. Hvordan gør jeg bedst det?
