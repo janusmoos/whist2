@@ -70,6 +70,8 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(summaries[0].averageScore, 3)
         XCTAssertEqual(summaries[0].bestSingleGame, 10)
         XCTAssertEqual(summaries[0].worstSingleGame, -4)
+        XCTAssertNil(summaries[0].bestSession)
+        XCTAssertNil(summaries[0].worstSession)
         XCTAssertEqual(summaries[1].totalScore, -6)
     }
 
@@ -169,12 +171,18 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         )
 
         let timeline = HistoricalStatisticsEngine.scoreTimeline(from: data)
+        let summaries = HistoricalStatisticsEngine.playerScoreSummaries(from: data)
         let thomas = timeline.filter { $0.playerId == "Thomas" }
         let peter = timeline.filter { $0.playerId == "Peter" }
+        let thomasSummary = summaries.first { $0.player.id == "Thomas" }
 
         XCTAssertEqual(thomas.map(\.cumulativeScore), [5, 3])
         XCTAssertEqual(thomas.map(\.sessionScore), [5, -2])
         XCTAssertEqual(peter.map(\.cumulativeScore), [-5, -3])
         XCTAssertEqual(timeline.map(\.sessionIndex).max(), 2)
+        XCTAssertEqual(thomasSummary?.bestSession?.score, 5)
+        XCTAssertEqual(thomasSummary?.bestSession?.sessionId, "s1")
+        XCTAssertEqual(thomasSummary?.worstSession?.score, -2)
+        XCTAssertEqual(thomasSummary?.worstSession?.sessionId, "s2")
     }
 }

@@ -8,6 +8,18 @@ struct HistoricalPlayerScoreSummary: Equatable, Identifiable {
     var averageScore: Double
     var bestSingleGame: Int?
     var worstSingleGame: Int?
+    var bestSession: HistoricalPlayerSessionScore?
+    var worstSession: HistoricalPlayerSessionScore?
+}
+
+struct HistoricalPlayerSessionScore: Equatable, Identifiable {
+    var id: String { "\(playerId)-\(sessionId)" }
+    var playerId: String
+    var sessionId: String
+    var sessionTitle: String
+    var sessionIndex: Int
+    var score: Int
+    var gamesInSession: Int
 }
 
 struct HistoricalScoreTimelinePoint: Equatable, Identifiable {
@@ -59,6 +71,7 @@ enum HistoricalStatisticsEngine {
 
     static func playerScoreSummaries(from data: HistoricalWhistData) -> [HistoricalPlayerScoreSummary] {
         let groupedResults = Dictionary(grouping: data.playerResults, by: \.playerId)
+        let sessionScoresByPlayer = playerSessionScores(from: data)
 
         return data.players
             .sorted { lhs, rhs in
@@ -78,7 +91,19 @@ enum HistoricalStatisticsEngine {
                     gamesPlayed: count,
                     averageScore: count > 0 ? Double(total) / Double(count) : 0,
                     bestSingleGame: scores.max(),
-                    worstSingleGame: scores.min()
+                    worstSingleGame: scores.min(),
+                    bestSession: sessionScoresByPlayer[player.id]?.max { lhs, rhs in
+                        if lhs.score != rhs.score {
+                            return lhs.score < rhs.score
+                        }
+                        return lhs.sessionIndex > rhs.sessionIndex
+                    },
+                    worstSession: sessionScoresByPlayer[player.id]?.min { lhs, rhs in
+                        if lhs.score != rhs.score {
+                            return lhs.score < rhs.score
+                        }
+                        return lhs.sessionIndex > rhs.sessionIndex
+                    }
                 )
             }
             .sorted { lhs, rhs in
@@ -87,6 +112,44 @@ enum HistoricalStatisticsEngine {
                 }
                 return lhs.player.displayOrder < rhs.player.displayOrder
             }
+    }
+
+    static func playerSessionScores(from data: HistoricalWhistData) -> [String: [HistoricalPlayerSessionScore]] {
+        let players = data.players.sorted { lhs, rhs in
+            if lhs.displayOrder != rhs.displayOrder {
+                return lhs.displayOrder < rhs.displayOrder
+            }
+            return lhs.name < rhs.name
+        }
+        let gameById = Dictionary(uniqueKeysWithValues: data.games.map { ($0.id, $0) })
+        let gamesBySession = Dictionary(grouping: data.games, by: \.sessionId)
+        let sessionOrder = Dictionary(uniqueKeysWithValues: data.sessions.enumerated().map { ($0.element.id, $0.offset + 1) })
+
+        var totalsBySessionAndPlayer: [String: [String: Int]] = [:]
+        for result in data.playerResults {
+            guard let game = gameById[result.gameId] else { continue }
+            totalsBySessionAndPlayer[game.sessionId, default: [:]][result.playerId, default: 0] += result.score
+        }
+
+        var output: [String: [HistoricalPlayerSessionScore]] = [:]
+        for session in data.sessions {
+            let index = sessionOrder[session.id] ?? 0
+            let gamesInSession = gamesBySession[session.id]?.count ?? session.importedGameCount
+            let sessionTotals = totalsBySessionAndPlayer[session.id] ?? [:]
+            for player in players {
+                output[player.id, default: []].append(
+                    HistoricalPlayerSessionScore(
+                        playerId: player.id,
+                        sessionId: session.id,
+                        sessionTitle: sessionDisplayTitle(session),
+                        sessionIndex: index,
+                        score: sessionTotals[player.id] ?? 0,
+                        gamesInSession: gamesInSession
+                    )
+                )
+            }
+        }
+        return output
     }
 
     static func scoreTimeline(from data: HistoricalWhistData) -> [HistoricalScoreTimelinePoint] {

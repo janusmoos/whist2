@@ -154,9 +154,11 @@ struct StatistikTabView: View {
                     .foregroundStyle(scoreForeground(summary.totalScore))
             }
 
-            HStack(spacing: 8) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 miniMetric(title: "Bedste", value: optionalScoreText(summary.bestSingleGame))
                 miniMetric(title: "Værste", value: optionalScoreText(summary.worstSingleGame))
+                sessionMetric(title: "Bedste dag", session: summary.bestSession)
+                sessionMetric(title: "Værste dag", session: summary.worstSession)
             }
         }
         .padding(14)
@@ -218,6 +220,30 @@ struct StatistikTabView: View {
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.caption.weight(.bold).monospacedDigit())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        }
+    }
+
+    private func sessionMetric(title: String, session: HistoricalPlayerSessionScore?) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(optionalScoreText(session?.score))
+                .font(.caption.weight(.bold).monospacedDigit())
+            if let session {
+                Text(session.sessionTitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 8)
