@@ -75,7 +75,69 @@ struct HistoricalStatisticsSnapshot: Equatable {
     }
 }
 
+struct HistoricalGameScoreDetail: Equatable, Identifiable {
+    var id: String { game.id }
+    var game: HistoricalGame
+    var session: HistoricalSession
+    var playerScores: [HistoricalPlayerGameScore]
+    var selectedPlayerScore: Int?
+
+    var title: String {
+        "Spil \(game.gameNumberInSession)"
+    }
+}
+
+struct HistoricalPlayerGameScore: Equatable, Identifiable {
+    var id: String { player.id }
+    var player: HistoricalPlayer
+    var score: Int
+}
+
+struct HistoricalPlayerBidStatistic: Equatable, Identifiable {
+    var id: String { gameType }
+    var gameType: String
+    var games: Int
+    var totalScore: Int
+    var averageScore: Double
+}
+
+struct HistoricalPlayerProfile: Equatable, Identifiable {
+    var id: String { player.id }
+    var player: HistoricalPlayer
+    var summary: HistoricalPlayerScoreSummary
+    var bestDay: HistoricalPlayerSessionScore?
+    var worstDay: HistoricalPlayerSessionScore?
+    var bestGame: HistoricalGameScoreDetail?
+    var worstGame: HistoricalGameScoreDetail?
+    var mostSuccessfulBid: HistoricalPlayerBidStatistic?
+    var leastSuccessfulBid: HistoricalPlayerBidStatistic?
+    var bidSampleSize: Int
+    var gamesWithMetadata: Int
+}
+
+struct HistoricalSessionOverview: Equatable, Identifiable {
+    var id: String { session.id }
+    var session: HistoricalSession
+    var sessionIndex: Int
+    var gamesPlayed: Int
+    var playerTotals: [HistoricalPlayerGameScore]
+    var bestGame: HistoricalGameScoreDetail?
+    var worstGame: HistoricalGameScoreDetail?
+    var gamesWithType: Int
+    var gamesWithBidder: Int
+    var gamesWithPartner: Int
+    var issueCount: Int
+}
+
 enum HistoricalStatisticsEngine {
+    static func scopedData(
+        from data: HistoricalWhistData,
+        scope: HistoricalStatisticsScope,
+        recentSessionLimit: Int = 10
+    ) -> HistoricalWhistData {
+        data.filtered(for: scope, recentSessionLimit: recentSessionLimit)
+    }
+
     static func snapshot(
         from data: HistoricalWhistData,
         scope: HistoricalStatisticsScope = .all,
@@ -232,11 +294,184 @@ enum HistoricalStatisticsEngine {
         return points
     }
 
+    static func playerProfiles(from data: HistoricalWhistData) -> [HistoricalPlayerProfile] {
+        let summariesByPlayer = Dictionary(uniqueKeysWithValues: playerScoreSummaries(from: data).map { ($0.player.id, $0) })
+        let gameDetailsByGameId = Dictionary(uniqueKeysWithValues: gameDetails(from: data).map { ($0.game.id, $0) })
+        let resultsByPlayer = Dictionary(grouping: data.playerResults, by: \.playerId)
+        let gamesById = Dictionary(uniqueKeysWithValues: data.games.map { ($0.id, $0) })
+
+        return data.players
+            .sorted { lhs, rhs in
+                if lhs.displayOrder != rhs.displayOrder {
+                    return lhs.displayOrder < rhs.displayOrder
+                }
+                return lhs.name < rhs.name
+            }
+            .compactMap { player in
+                guard let summary = summariesByPlayer[player.id] else { return nil }
+                let playerResults = resultsByPlayer[player.id] ?? []
+                let playerGameDetails = playerResults.compactMap { result -> HistoricalGameScoreDetail? in
+                    guard var detail = gameDetailsByGameId[result.gameId] else { return nil }
+                    detail.selectedPlayerScore = result.score
+                    return detail
+                }
+                let bestGame = playerGameDetails.max { lhs, rhs in
+                    gameScore(lhs) < gameScore(rhs)
+                }
+                let worstGame = playerGameDetails.min { lhs, rhs in
+                    gameScore(lhs) < gameScore(rhs)
+                }
+                let bidStats = bidStatistics(for: player, playerResults: playerResults, gamesById: gamesById)
+
+                return HistoricalPlayerProfile(
+                    player: player,
+                    summary: summary,
+                    bestDay: summary.bestSession,
+                    worstDay: summary.worstSession,
+                    bestGame: bestGame,
+                    worstGame: worstGame,
+                    mostSuccessfulBid: bidStats.max { lhs, rhs in
+                        if lhs.averageScore != rhs.averageScore {
+                            return lhs.averageScore < rhs.averageScore
+                        }
+                        return lhs.games < rhs.games
+                    },
+                    leastSuccessfulBid: bidStats.min { lhs, rhs in
+                        if lhs.averageScore != rhs.averageScore {
+                            return lhs.averageScore < rhs.averageScore
+                        }
+                        return lhs.games < rhs.games
+                    },
+                    bidSampleSize: bidStats.map(\.games).reduce(0, +),
+                    gamesWithMetadata: playerResults.filter { result in
+                        guard let game = gamesById[result.gameId] else { return false }
+                        return game.gameTypeNormalized != nil || game.bidderId != nil || !game.bidderIds.isEmpty
+                    }.count
+                )
+            }
+    }
+
+    static func sessionOverviews(from data: HistoricalWhistData) -> [HistoricalSessionOverview] {
+        let players = data.players.sorted { lhs, rhs in
+            if lhs.displayOrder != rhs.displayOrder {
+                return lhs.displayOrder < rhs.displayOrder
+            }
+            return lhs.name < rhs.name
+        }
+        let gamesBySession = Dictionary(grouping: data.games, by: \.sessionId)
+        let gameDetailsById = Dictionary(uniqueKeysWithValues: gameDetails(from: data).map { ($0.game.id, $0) })
+        let gameById = Dictionary(uniqueKeysWithValues: data.games.map { ($0.id, $0) })
+        var totalsBySessionAndPlayer: [String: [String: Int]] = [:]
+
+        for result in data.playerResults {
+            guard let game = gameById[result.gameId] else { continue }
+            totalsBySessionAndPlayer[game.sessionId, default: [:]][result.playerId, default: 0] += result.score
+        }
+
+        return data.sessions.enumerated().map { offset, session in
+            let games = gamesBySession[session.id] ?? []
+            let details = games.compactMap { gameDetailsById[$0.id] }
+            let totals = totalsBySessionAndPlayer[session.id] ?? [:]
+
+            return HistoricalSessionOverview(
+                session: session,
+                sessionIndex: offset + 1,
+                gamesPlayed: games.count,
+                playerTotals: players.map { player in
+                    HistoricalPlayerGameScore(player: player, score: totals[player.id] ?? 0)
+                },
+                bestGame: details.max { lhs, rhs in
+                    bestScore(lhs) < bestScore(rhs)
+                },
+                worstGame: details.min { lhs, rhs in
+                    worstScore(lhs) < worstScore(rhs)
+                },
+                gamesWithType: games.filter { $0.gameTypeNormalized != nil }.count,
+                gamesWithBidder: games.filter { $0.bidderId != nil || !$0.bidderIds.isEmpty }.count,
+                gamesWithPartner: games.filter { $0.partnerId != nil }.count,
+                issueCount: games.filter { !$0.qualityFlags.isEmpty }.count
+            )
+        }
+    }
+
     private static func sessionDisplayTitle(_ session: HistoricalSession) -> String {
         if let date = session.date, !date.isEmpty {
             return "#\(session.sessionNumber) · \(date)"
         }
         return "#\(session.sessionNumber) · \(session.sourceSheetName)"
+    }
+
+    private static func gameDetails(from data: HistoricalWhistData) -> [HistoricalGameScoreDetail] {
+        let playersById = Dictionary(uniqueKeysWithValues: data.players.map { ($0.id, $0) })
+        let sessionsById = Dictionary(uniqueKeysWithValues: data.sessions.map { ($0.id, $0) })
+        let resultsByGame = Dictionary(grouping: data.playerResults, by: \.gameId)
+
+        return data.games.compactMap { game in
+            guard let session = sessionsById[game.sessionId] else { return nil }
+            let scores = (resultsByGame[game.id] ?? [])
+                .compactMap { result -> HistoricalPlayerGameScore? in
+                    guard let player = playersById[result.playerId] else { return nil }
+                    return HistoricalPlayerGameScore(player: player, score: result.score)
+                }
+                .sorted { lhs, rhs in
+                    if lhs.player.displayOrder != rhs.player.displayOrder {
+                        return lhs.player.displayOrder < rhs.player.displayOrder
+                    }
+                    return lhs.player.name < rhs.player.name
+                }
+            return HistoricalGameScoreDetail(
+                game: game,
+                session: session,
+                playerScores: scores,
+                selectedPlayerScore: nil
+            )
+        }
+    }
+
+    private static func bidStatistics(
+        for player: HistoricalPlayer,
+        playerResults: [HistoricalPlayerResult],
+        gamesById: [String: HistoricalGame]
+    ) -> [HistoricalPlayerBidStatistic] {
+        var totalsByType: [String: (games: Int, total: Int)] = [:]
+
+        for result in playerResults {
+            guard let game = gamesById[result.gameId],
+                  let gameType = game.gameTypeNormalized?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !gameType.isEmpty,
+                  game.bidderIds.contains(player.id) || game.bidderId == player.id else {
+                continue
+            }
+            totalsByType[gameType, default: (0, 0)].games += 1
+            totalsByType[gameType, default: (0, 0)].total += result.score
+        }
+
+        return totalsByType.map { gameType, values in
+            HistoricalPlayerBidStatistic(
+                gameType: gameType,
+                games: values.games,
+                totalScore: values.total,
+                averageScore: values.games > 0 ? Double(values.total) / Double(values.games) : 0
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.averageScore != rhs.averageScore {
+                return lhs.averageScore > rhs.averageScore
+            }
+            return lhs.gameType < rhs.gameType
+        }
+    }
+
+    private static func gameScore(_ detail: HistoricalGameScoreDetail) -> Int {
+        detail.selectedPlayerScore ?? 0
+    }
+
+    private static func bestScore(_ detail: HistoricalGameScoreDetail) -> Int {
+        detail.playerScores.map(\.score).max() ?? 0
+    }
+
+    private static func worstScore(_ detail: HistoricalGameScoreDetail) -> Int {
+        detail.playerScores.map(\.score).min() ?? 0
     }
 }
 

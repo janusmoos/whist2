@@ -39,12 +39,17 @@ struct StatistikTabView: View {
             Group {
                 switch dataResult {
                 case let .success(data):
+                    let scopedData = HistoricalStatisticsEngine.scopedData(
+                        from: data,
+                        scope: selectedScope,
+                        recentSessionLimit: recentSessionLimit
+                    )
                     let snapshot = HistoricalStatisticsEngine.snapshot(
                         from: data,
                         scope: selectedScope,
                         recentSessionLimit: recentSessionLimit
                     )
-                    statisticsContent(snapshot)
+                    statisticsContent(data: scopedData, snapshot: snapshot)
                 case let .failure(error):
                     ContentUnavailableView {
                         Label("Statistik kunne ikke indlæses", systemImage: "exclamationmark.triangle")
@@ -59,13 +64,17 @@ struct StatistikTabView: View {
         }
     }
 
-    private func statisticsContent(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
-        ScrollView {
+    private func statisticsContent(data: HistoricalWhistData, snapshot: HistoricalStatisticsSnapshot) -> some View {
+        let playerProfiles = HistoricalStatisticsEngine.playerProfiles(from: data)
+        let sessionOverviews = HistoricalStatisticsEngine.sessionOverviews(from: data)
+
+        return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 scopeSection
                 summaryHeader(snapshot)
                 recentLimitPicker(snapshot)
-                playerLeaderboard(snapshot.playerSummaries)
+                playerLeaderboard(snapshot.playerSummaries, profiles: playerProfiles)
+                sessionOverviewList(sessionOverviews)
                 scoreTimeline(snapshot.timelinePoints)
                 plannedStatisticsOverview
                 dataQuality(snapshot)
@@ -160,7 +169,7 @@ struct StatistikTabView: View {
     }
 
     private var plannedStatisticsOverview: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Planlagte statistikfunktioner")
                     .font(.headline)
@@ -200,17 +209,265 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Samlet stilling")
-                .font(.headline)
+    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary], profiles: [HistoricalPlayerProfile]) -> some View {
+        let profilesByPlayerId = Dictionary(uniqueKeysWithValues: profiles.map { ($0.player.id, $0) })
+
+        return VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Spillere")
+                    .font(.headline)
+                Text("Tryk på en spiller for bedste/værste dag, bedste/værste spil og meldingsstatistik.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
 
             VStack(spacing: 10) {
                 ForEach(Array(summaries.enumerated()), id: \.element.id) { index, summary in
-                    playerRow(summary, rank: index + 1)
+                    if let profile = profilesByPlayerId[summary.player.id] {
+                        NavigationLink {
+                            playerProfileView(profile)
+                        } label: {
+                            playerRow(summary, rank: index + 1)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        playerRow(summary, rank: index + 1)
+                    }
                 }
             }
         }
+    }
+
+    private func sessionOverviewList(_ sessions: [HistoricalSessionOverview]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Alle spilledage")
+                    .font(.headline)
+                Text("Dato, sted, antal spil og bedste/værste spil pr. spilledag.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(sessions) { overview in
+                    NavigationLink {
+                        sessionDetailView(overview)
+                    } label: {
+                        sessionRow(overview)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func playerProfileView(_ profile: HistoricalPlayerProfile) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(profile.player.name)
+                        .font(.largeTitle.weight(.bold))
+                    Text("\(profile.summary.gamesPlayed) spil · \(scoreText(profile.summary.totalScore)) point · snit \(averageText(profile.summary.averageScore))")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    sessionMetric(title: "Bedste dag", session: profile.bestDay)
+                    sessionMetric(title: "Værste dag", session: profile.worstDay)
+                    miniMetric(title: "Bedste spil", value: optionalScoreText(profile.bestGame?.selectedPlayerScore))
+                    miniMetric(title: "Værste spil", value: optionalScoreText(profile.worstGame?.selectedPlayerScore))
+                }
+
+                if let bestGame = profile.bestGame {
+                    gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                }
+
+                if let worstGame = profile.worstGame {
+                    gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                }
+
+                playerBidSection(profile)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Andre relevante nøgletal")
+                        .font(.headline)
+                    metricLine("Spil med brugbare metadata", "\(profile.gamesWithMetadata) af \(profile.summary.gamesPlayed)")
+                    metricLine("Meldingssample", "\(profile.bidSampleSize) spil")
+                    metricLine("Samlet score", scoreText(profile.summary.totalScore))
+                    metricLine("Gennemsnit pr. spil", averageText(profile.summary.averageScore))
+                }
+                .padding(16)
+                .background(cardBackground)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .padding(.bottom, 12)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle(profile.player.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func playerBidSection(_ profile: HistoricalPlayerProfile) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Meldinger")
+                    .font(.headline)
+                Text("Baseret på spil hvor spilleren er registreret som melder/vinder, og spiltypen er importeret.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let best = profile.mostSuccessfulBid {
+                bidStatRow("Mest succesfuld", stat: best)
+            } else {
+                Text("Ingen brugbare meldingsdata for denne spiller endnu.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let worst = profile.leastSuccessfulBid, worst.id != profile.mostSuccessfulBid?.id {
+                bidStatRow("Mindst succesfuld", stat: worst)
+            }
+        }
+        .padding(16)
+        .background(cardBackground)
+    }
+
+    private func sessionDetailView(_ overview: HistoricalSessionOverview) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Spilledag \(overview.session.sessionNumber)")
+                        .font(.largeTitle.weight(.bold))
+                    Text(sessionSubtitle(overview.session))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    statTile(title: "Spil", value: "\(overview.gamesPlayed)")
+                    statTile(title: "Afvigelser", value: "\(overview.issueCount)")
+                    statTile(title: "Spiltype", value: "\(overview.gamesWithType)")
+                    statTile(title: "Makker", value: "\(overview.gamesWithPartner)")
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Resultat")
+                        .font(.headline)
+                    ForEach(overview.playerTotals.sorted { lhs, rhs in lhs.score > rhs.score }) { score in
+                        HStack {
+                            Text(score.player.name)
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text(scoreText(score.score))
+                                .font(.subheadline.weight(.bold).monospacedDigit())
+                                .foregroundStyle(scoreForeground(score.score))
+                        }
+                    }
+                }
+                .padding(16)
+                .background(cardBackground)
+
+                if let bestGame = overview.bestGame {
+                    gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: nil)
+                }
+
+                if let worstGame = overview.worstGame {
+                    gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: nil)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Datagrundlag")
+                        .font(.headline)
+                    metricLine("Kildeark", overview.session.sourceSheetName)
+                    metricLine("Forventede spil", overview.session.expectedGameCount.map(String.init) ?? "-")
+                    metricLine("Importerede spil", "\(overview.session.importedGameCount)")
+                    metricLine("Status", overview.session.qualityStatus)
+                }
+                .padding(16)
+                .background(cardBackground)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .padding(.bottom, 12)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Spilledag \(overview.session.sessionNumber)")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func sessionRow(_ overview: HistoricalSessionOverview) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Spilledag \(overview.session.sessionNumber)")
+                        .font(.body.weight(.semibold))
+                    Text(sessionSubtitle(overview.session))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 10)
+
+                Text("\(overview.gamesPlayed) spil")
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                miniMetric(title: "Bedste spil", value: optionalScoreText(overview.bestGame?.playerScores.map(\.score).max()))
+                miniMetric(title: "Værste spil", value: optionalScoreText(overview.worstGame?.playerScores.map(\.score).min()))
+                miniMetric(title: "Spiltype-data", value: "\(overview.gamesWithType)")
+                miniMetric(title: "Afvigelser", value: "\(overview.issueCount)")
+            }
+        }
+        .padding(14)
+        .background(cardBackground)
+    }
+
+    private func gameDetailCard(_ title: String, detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                Text(gameSubtitle(detail))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                ForEach(detail.playerScores) { score in
+                    VStack(spacing: 2) {
+                        Text(score.player.name)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                        Text(scoreText(score.score))
+                            .font(.caption.weight(.bold).monospacedDigit())
+                            .foregroundStyle(scoreForeground(score.score))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(score.player.id == highlightedPlayerId ? Color.accentColor.opacity(0.16) : Color.primary.opacity(0.04))
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                metricLine("Dato", detail.session.date ?? "-")
+                metricLine("Sted", detail.session.location ?? "-")
+                metricLine("Melding", gameTypeText(detail.game))
+                metricLine("Melder/vinder", playerListText(detail.game.bidderIds, fallback: detail.game.bidderId))
+                metricLine("Makker", detail.game.partnerId ?? "-")
+                metricLine("Giver", detail.game.dealerId ?? "-")
+            }
+        }
+        .padding(16)
+        .background(cardBackground)
     }
 
     private func scoreTimeline(_ points: [HistoricalScoreTimelinePoint]) -> some View {
@@ -386,6 +643,85 @@ struct StatistikTabView: View {
                     .fill(rank == 1 ? Color.yellow.opacity(0.35) : Color.secondary.opacity(0.12))
             }
             .accessibilityHidden(true)
+    }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+    }
+
+    private func metricLine(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    private func bidStatRow(_ title: String, stat: HistoricalPlayerBidStatistic) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(stat.gameType.capitalized)
+                    .font(.subheadline.weight(.semibold))
+            }
+
+            Spacer(minLength: 12)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(scoreText(stat.totalScore))
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                    .foregroundStyle(scoreForeground(stat.totalScore))
+                Text("\(stat.games) spil · snit \(averageText(stat.averageScore))")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(10)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        }
+    }
+
+    private func sessionSubtitle(_ session: HistoricalSession) -> String {
+        [session.date, session.location]
+            .compactMap { value in
+                guard let value, !value.isEmpty else { return nil }
+                return value
+            }
+            .joined(separator: " · ")
+    }
+
+    private func gameSubtitle(_ detail: HistoricalGameScoreDetail) -> String {
+        let session = "Spilledag \(detail.session.sessionNumber)"
+        let game = "spil \(detail.game.gameNumberInSession)"
+        let place = detail.session.location.map { "· \($0)" } ?? ""
+        let date = detail.session.date.map { "· \($0)" } ?? ""
+        return "\(session), \(game) \(date) \(place)"
+    }
+
+    private func gameTypeText(_ game: HistoricalGame) -> String {
+        if let raw = game.gameTypeRaw, !raw.isEmpty {
+            return raw
+        }
+        if let normalized = game.gameTypeNormalized, !normalized.isEmpty {
+            return normalized.capitalized
+        }
+        return "-"
+    }
+
+    private func playerListText(_ players: [String], fallback: String?) -> String {
+        if !players.isEmpty {
+            return players.joined(separator: ", ")
+        }
+        return fallback ?? "-"
     }
 
     private func scoreText(_ value: Int) -> String {
