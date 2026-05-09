@@ -508,6 +508,15 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(overview?.playerTotals.first { $0.player.id == "Thomas" }?.score, 4)
         XCTAssertEqual(overview?.bestGame?.game.id, "g1")
         XCTAssertEqual(overview?.worstGame?.game.id, "g2")
+        XCTAssertEqual(overview?.gameDetails.map(\.game.id), ["g1", "g2"])
+        XCTAssertEqual(
+            overview?.progressPoints.filter { $0.player.id == "Thomas" }.map(\.cumulativeScore),
+            [12, 4]
+        )
+        XCTAssertEqual(
+            overview?.progressPoints.filter { $0.player.id == "Peter" }.map(\.cumulativeScore),
+            [-12, -5]
+        )
         XCTAssertEqual(overview?.gamesWithType, 1)
         XCTAssertEqual(overview?.gamesWithBidder, 1)
         XCTAssertEqual(overview?.gamesWithPartner, 1)

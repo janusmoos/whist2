@@ -122,12 +122,23 @@ struct HistoricalSessionOverview: Equatable, Identifiable {
     var sessionIndex: Int
     var gamesPlayed: Int
     var playerTotals: [HistoricalPlayerGameScore]
+    var gameDetails: [HistoricalGameScoreDetail]
+    var progressPoints: [HistoricalSessionProgressPoint]
     var bestGame: HistoricalGameScoreDetail?
     var worstGame: HistoricalGameScoreDetail?
     var gamesWithType: Int
     var gamesWithBidder: Int
     var gamesWithPartner: Int
     var issueCount: Int
+}
+
+struct HistoricalSessionProgressPoint: Equatable, Identifiable {
+    var id: String { "\(player.id)-\(gameId)" }
+    var player: HistoricalPlayer
+    var gameId: String
+    var gameNumber: Int
+    var gameScore: Int
+    var cumulativeScore: Int
 }
 
 struct HistoricalPlayerTrendSummary: Equatable, Identifiable {
@@ -398,6 +409,7 @@ enum HistoricalStatisticsEngine {
         let gamesBySession = Dictionary(grouping: data.games, by: \.sessionId)
         let gameDetailsById = Dictionary(uniqueKeysWithValues: gameDetails(from: data).map { ($0.game.id, $0) })
         let gameById = Dictionary(uniqueKeysWithValues: data.games.map { ($0.id, $0) })
+        let resultsByGame = Dictionary(grouping: data.playerResults, by: \.gameId)
         var totalsBySessionAndPlayer: [String: [String: Int]] = [:]
 
         for result in data.playerResults {
@@ -406,9 +418,29 @@ enum HistoricalStatisticsEngine {
         }
 
         return data.sessions.enumerated().map { offset, session in
-            let games = gamesBySession[session.id] ?? []
+            let games = (gamesBySession[session.id] ?? [])
+                .sorted { lhs, rhs in lhs.gameNumberInSession < rhs.gameNumberInSession }
             let details = games.compactMap { gameDetailsById[$0.id] }
             let totals = totalsBySessionAndPlayer[session.id] ?? [:]
+            var runningTotals = Dictionary(uniqueKeysWithValues: players.map { ($0.id, 0) })
+            var progressPoints: [HistoricalSessionProgressPoint] = []
+
+            for game in games {
+                let scoresByPlayer = Dictionary(uniqueKeysWithValues: (resultsByGame[game.id] ?? []).map { ($0.playerId, $0.score) })
+                for player in players {
+                    let score = scoresByPlayer[player.id] ?? 0
+                    runningTotals[player.id, default: 0] += score
+                    progressPoints.append(
+                        HistoricalSessionProgressPoint(
+                            player: player,
+                            gameId: game.id,
+                            gameNumber: game.gameNumberInSession,
+                            gameScore: score,
+                            cumulativeScore: runningTotals[player.id] ?? 0
+                        )
+                    )
+                }
+            }
 
             return HistoricalSessionOverview(
                 session: session,
@@ -417,6 +449,8 @@ enum HistoricalStatisticsEngine {
                 playerTotals: players.map { player in
                     HistoricalPlayerGameScore(player: player, score: totals[player.id] ?? 0)
                 },
+                gameDetails: details,
+                progressPoints: progressPoints,
                 bestGame: details.max { lhs, rhs in
                     bestScore(lhs) < bestScore(rhs)
                 },
