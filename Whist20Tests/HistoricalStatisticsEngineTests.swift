@@ -507,7 +507,7 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(overview?.gamesPlayed, 2)
         XCTAssertEqual(overview?.playerTotals.first { $0.player.id == "Thomas" }?.score, 4)
         XCTAssertEqual(overview?.bestGame?.game.id, "g1")
-        XCTAssertEqual(overview?.worstGame?.game.id, "g2")
+        XCTAssertEqual(overview?.worstGame?.game.id, "g1")
         XCTAssertEqual(overview?.gameDetails.map(\.game.id), ["g1", "g2"])
         XCTAssertEqual(
             overview?.progressPoints.filter { $0.player.id == "Thomas" }.map(\.cumulativeScore),
@@ -713,5 +713,113 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(vip?.playerAverages.first { $0.player.id == "Peter" }?.averageScore, -3)
         XCTAssertEqual(halve?.successfulBidGames, 1)
         XCTAssertEqual(halve?.successRate, 1)
+    }
+
+    func testTeamScoreMismatchFlagsOrdinaryPartnerGames() {
+        let game = historicalGame(
+            gameTypeNormalized: "sans/sang",
+            bidderId: "Peter",
+            winnerId: "Peter",
+            partnerId: "Janus"
+        )
+        let scores = playerScores([
+            ("Thomas", -92),
+            ("Peter", 84),
+            ("Janus", 84),
+            ("Christian", -76),
+        ])
+
+        let flags = HistoricalStatisticsEngine.qualityFlags(for: game, playerScores: scores)
+
+        XCTAssertTrue(flags.contains(HistoricalDataQualityFlag.teamScoreMismatch.rawValue))
+    }
+
+    func testTeamScoreMismatchDoesNotFlagBalancedPartnerGames() {
+        let game = historicalGame(
+            gameTypeNormalized: "gode",
+            bidderId: "Peter",
+            winnerId: "Peter",
+            partnerId: "Janus"
+        )
+        let scores = playerScores([
+            ("Thomas", -84),
+            ("Peter", 84),
+            ("Janus", 84),
+            ("Christian", -84),
+        ])
+
+        let flags = HistoricalStatisticsEngine.qualityFlags(for: game, playerScores: scores)
+
+        XCTAssertFalse(flags.contains(HistoricalDataQualityFlag.teamScoreMismatch.rawValue))
+    }
+
+    func testTeamScoreMismatchSkipsSoloAndSelfPartnerGames() {
+        let soloGame = historicalGame(
+            gameTypeNormalized: "ren sol",
+            bidderId: "Peter",
+            winnerId: "Peter",
+            partnerId: "Janus"
+        )
+        let selfPartnerGame = historicalGame(
+            gameTypeNormalized: "alm",
+            bidderId: "Peter",
+            winnerId: "Peter",
+            partnerId: "Selvmakker"
+        )
+        let unevenScores = playerScores([
+            ("Thomas", -92),
+            ("Peter", 84),
+            ("Janus", 84),
+            ("Christian", -76),
+        ])
+
+        let soloFlags = HistoricalStatisticsEngine.qualityFlags(for: soloGame, playerScores: unevenScores)
+        let selfPartnerFlags = HistoricalStatisticsEngine.qualityFlags(for: selfPartnerGame, playerScores: unevenScores)
+
+        XCTAssertFalse(soloFlags.contains(HistoricalDataQualityFlag.teamScoreMismatch.rawValue))
+        XCTAssertFalse(selfPartnerFlags.contains(HistoricalDataQualityFlag.teamScoreMismatch.rawValue))
+    }
+
+    private func historicalGame(
+        gameTypeNormalized: String?,
+        bidderId: String?,
+        winnerId: String?,
+        partnerId: String?
+    ) -> HistoricalGame {
+        HistoricalGame(
+            id: "g1",
+            sessionId: "s1",
+            sessionNumber: "1",
+            gameNumberInSession: 1,
+            sourceGameMarker: 1,
+            gameTypeRaw: gameTypeNormalized,
+            gameTypeNormalized: gameTypeNormalized,
+            bidTricks: nil,
+            bidderId: bidderId,
+            bidderIds: bidderId.map { [$0] } ?? [],
+            winnerId: winnerId,
+            winnerIds: winnerId.map { [$0] } ?? [],
+            partnerId: partnerId,
+            dealerId: nil,
+            checksum: 0,
+            scoreSource: "test",
+            sourceSheetName: "1",
+            sourceRow: 1,
+            qualityFlags: []
+        )
+    }
+
+    private func playerScores(_ values: [(String, Int)]) -> [HistoricalPlayerGameScore] {
+        values.enumerated().map { index, value in
+            HistoricalPlayerGameScore(
+                player: HistoricalPlayer(
+                    id: value.0,
+                    name: value.0,
+                    displayOrder: index + 1,
+                    isActive: true
+                ),
+                score: value.1
+            )
+        }
     }
 }

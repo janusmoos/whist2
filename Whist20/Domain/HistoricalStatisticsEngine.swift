@@ -69,9 +69,21 @@ struct HistoricalStatisticsSnapshot: Equatable {
     var issueCount: Int
     var generatedAt: String
     var dataVersion: String
+    var derivedIssueCounts: [String: Int]
 
     var nonZeroSumGameCount: Int {
         max(0, gameCount - zeroSumGameCount)
+    }
+}
+
+enum HistoricalDataQualityFlag: String {
+    case teamScoreMismatch = "team_score_mismatch"
+
+    var title: String {
+        switch self {
+        case .teamScoreMismatch:
+            return "Holdscore stemmer ikke"
+        }
     }
 }
 
@@ -81,9 +93,14 @@ struct HistoricalGameScoreDetail: Equatable, Identifiable {
     var session: HistoricalSession
     var playerScores: [HistoricalPlayerGameScore]
     var selectedPlayerScore: Int?
+    var qualityFlags: [String]
 
     var title: String {
         "Spil \(game.gameNumberInSession)"
+    }
+
+    var hasQualityIssues: Bool {
+        !qualityFlags.isEmpty
     }
 }
 
@@ -191,10 +208,10 @@ enum HistoricalStatisticsEngine {
     ) -> HistoricalStatisticsSnapshot {
         let scopedData = data.filtered(for: scope, recentSessionLimit: recentSessionLimit)
         let summaries = playerScoreSummaries(from: scopedData)
+        let derivedIssueCounts = dataQualityIssueCounts(from: scopedData)
         let zeroSumCount = scopedData.auditSummary?.fieldCounts.scoreSumZero
             ?? scopedData.games.filter { ($0.checksum ?? 0) == 0 }.count
-        let issueCount = scopedData.auditSummary?.issueCount
-            ?? scopedData.games.filter { !$0.qualityFlags.isEmpty }.count
+        let issueCount = gamesWithQualityIssues(from: scopedData).count
 
         return HistoricalStatisticsSnapshot(
             scope: scope,
@@ -206,7 +223,8 @@ enum HistoricalStatisticsEngine {
             zeroSumGameCount: zeroSumCount,
             issueCount: issueCount,
             generatedAt: scopedData.generatedAt,
-            dataVersion: scopedData.version
+            dataVersion: scopedData.version,
+            derivedIssueCounts: derivedIssueCounts
         )
     }
 
@@ -460,7 +478,10 @@ enum HistoricalStatisticsEngine {
                 gamesWithType: games.filter { $0.gameTypeNormalized != nil }.count,
                 gamesWithBidder: games.filter { $0.bidderId != nil || !$0.bidderIds.isEmpty }.count,
                 gamesWithPartner: games.filter { $0.partnerId != nil }.count,
-                issueCount: games.filter { !$0.qualityFlags.isEmpty }.count
+                issueCount: games.filter { game in
+                    let detail = gameDetailsById[game.id]
+                    return !(detail?.qualityFlags ?? game.qualityFlags).isEmpty
+                }.count
             )
         }
     }
@@ -587,6 +608,33 @@ enum HistoricalStatisticsEngine {
         return [fallback]
     }
 
+    static func qualityFlags(
+        for game: HistoricalGame,
+        playerScores: [HistoricalPlayerGameScore]
+    ) -> [String] {
+        var flags = game.qualityFlags
+        if hasTeamScoreMismatch(game: game, playerScores: playerScores),
+           !flags.contains(HistoricalDataQualityFlag.teamScoreMismatch.rawValue) {
+            flags.append(HistoricalDataQualityFlag.teamScoreMismatch.rawValue)
+        }
+        return flags
+    }
+
+    static func dataQualityIssueCounts(from data: HistoricalWhistData) -> [String: Int] {
+        let details = gameDetails(from: data)
+        var counts: [String: Int] = [:]
+        for detail in details {
+            for flag in detail.qualityFlags {
+                counts[flag, default: 0] += 1
+            }
+        }
+        return counts
+    }
+
+    private static func gamesWithQualityIssues(from data: HistoricalWhistData) -> [HistoricalGameScoreDetail] {
+        gameDetails(from: data).filter(\.hasQualityIssues)
+    }
+
     private static func gameDetails(from data: HistoricalWhistData) -> [HistoricalGameScoreDetail] {
         let playersById = Dictionary(uniqueKeysWithValues: data.players.map { ($0.id, $0) })
         let sessionsById = Dictionary(uniqueKeysWithValues: data.sessions.map { ($0.id, $0) })
@@ -609,9 +657,81 @@ enum HistoricalStatisticsEngine {
                 game: game,
                 session: session,
                 playerScores: scores,
-                selectedPlayerScore: nil
+                selectedPlayerScore: nil,
+                qualityFlags: qualityFlags(for: game, playerScores: scores)
             )
         }
+    }
+
+    private static func hasTeamScoreMismatch(
+        game: HistoricalGame,
+        playerScores: [HistoricalPlayerGameScore]
+    ) -> Bool {
+        guard shouldValidateTeamScoreBalance(game) else { return false }
+
+        let scoreByPlayerId = Dictionary(uniqueKeysWithValues: playerScores.map { ($0.player.id, $0.score) })
+        let allPlayerIds = Set(playerScores.map(\.player.id))
+        guard allPlayerIds.count == 4 else { return false }
+
+        guard let partnerId = normalizedPartnerId(game.partnerId, allPlayerIds: allPlayerIds) else {
+            return false
+        }
+
+        let bidderIds = normalizedPlayerIds(game.bidderIds, fallback: game.bidderId)
+            .filter { allPlayerIds.contains($0) }
+        let winnerIds = normalizedPlayerIds(game.winnerIds, fallback: game.winnerId)
+            .filter { allPlayerIds.contains($0) }
+        let anchorIds = bidderIds.isEmpty ? winnerIds : bidderIds
+
+        guard anchorIds.count == 1,
+              let anchorId = anchorIds.first,
+              anchorId != partnerId else {
+            return false
+        }
+
+        let teamIds = Set([anchorId, partnerId])
+        let opponentIds = allPlayerIds.subtracting(teamIds)
+        guard opponentIds.count == 2,
+              let anchorScore = scoreByPlayerId[anchorId],
+              let partnerScore = scoreByPlayerId[partnerId] else {
+            return false
+        }
+
+        let opponentScores = opponentIds.compactMap { scoreByPlayerId[$0] }
+        guard opponentScores.count == 2 else { return false }
+
+        return anchorScore != partnerScore || opponentScores[0] != opponentScores[1]
+    }
+
+    private static func shouldValidateTeamScoreBalance(_ game: HistoricalGame) -> Bool {
+        guard let partner = game.partnerId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !partner.isEmpty else {
+            return false
+        }
+
+        let partnerText = partner.lowercased()
+        if partnerText.contains("selv") {
+            return false
+        }
+
+        let type = (game.gameTypeNormalized ?? game.gameTypeRaw ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        let soloTypeMarkers = ["sol", "bordlægger", "storslem"]
+        if soloTypeMarkers.contains(where: { type.contains($0) }) {
+            return false
+        }
+
+        return true
+    }
+
+    private static func normalizedPartnerId(_ partnerId: String?, allPlayerIds: Set<String>) -> String? {
+        guard let partnerId = partnerId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !partnerId.isEmpty,
+              allPlayerIds.contains(partnerId) else {
+            return nil
+        }
+        return partnerId
     }
 
     private static func bidStatistics(

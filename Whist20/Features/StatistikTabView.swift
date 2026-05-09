@@ -751,13 +751,17 @@ struct StatistikTabView: View {
         let slices = [
             DataQualitySlice(title: "Nulsum", count: snapshot.zeroSumGameCount),
             DataQualitySlice(title: "Afvigelser", count: snapshot.nonZeroSumGameCount),
+            DataQualitySlice(
+                title: "Holdscore",
+                count: snapshot.derivedIssueCounts[HistoricalDataQualityFlag.teamScoreMismatch.rawValue] ?? 0
+            ),
         ].filter { $0.count > 0 }
 
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Scorekvalitet")
                     .font(.headline)
-                Text("Andel af spil der summerer til nul i importen.")
+                Text("Nulsum og afledte advarsler fra importen.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -1177,8 +1181,16 @@ struct StatistikTabView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Spil \(detail.game.gameNumberInSession)")
-                        .font(.body.weight(.semibold))
+                    HStack(spacing: 6) {
+                        Text("Spil \(detail.game.gameNumberInSession)")
+                            .font(.body.weight(.semibold))
+                        if detail.hasQualityIssues {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .accessibilityLabel("Dataadvarsel")
+                        }
+                    }
                     Text(gameTypeText(detail.game))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -1211,6 +1223,10 @@ struct StatistikTabView: View {
                 gameScoreStrip(detail, highlightedPlayerId: nil)
                     .padding(16)
                     .background(cardBackground)
+
+                if detail.hasQualityIssues {
+                    gameQualityWarning(detail)
+                }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Resume")
@@ -1289,6 +1305,30 @@ struct StatistikTabView: View {
         .background(cardBackground)
     }
 
+    private func gameQualityWarning(_ detail: HistoricalGameScoreDetail) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Dataadvarsel", systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+
+            ForEach(detail.qualityFlags, id: \.self) { flag in
+                Text(qualityFlagText(flag))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.orange.opacity(0.11))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.orange.opacity(0.24), lineWidth: 1)
+        }
+    }
+
     private func gameScoreStrip(_ detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
         HStack(spacing: 8) {
             ForEach(detail.playerScores) { score in
@@ -1309,6 +1349,13 @@ struct StatistikTabView: View {
                 }
             }
         }
+    }
+
+    private func qualityFlagText(_ flag: String) -> String {
+        if flag == HistoricalDataQualityFlag.teamScoreMismatch.rawValue {
+            return "Holdscore stemmer ikke: et almindeligt makkerspil har ikke samme gevinst/tab på begge spillere på samme side. Sol og selvmakker er undtaget fra dette tjek."
+        }
+        return flag.replacingOccurrences(of: "_", with: " ")
     }
 
     private func gameTypeRow(_ overview: HistoricalGameTypeOverview) -> some View {
@@ -1808,7 +1855,8 @@ struct StatistikTabView: View {
                     game: game,
                     session: session,
                     playerScores: scores,
-                    selectedPlayerScore: nil
+                    selectedPlayerScore: nil,
+                    qualityFlags: HistoricalStatisticsEngine.qualityFlags(for: game, playerScores: scores)
                 )
             )
         })
