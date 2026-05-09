@@ -408,6 +408,7 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                sessionVolatilityChart(overviews)
                 sessionOverviewList(overviews)
             }
             .padding(.horizontal, 20)
@@ -433,6 +434,7 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                playerLeaderboardChart(snapshot.playerSummaries)
                 playerLeaderboard(snapshot.playerSummaries, profiles: profiles)
             }
             .padding(.horizontal, 20)
@@ -460,6 +462,8 @@ struct StatistikTabView: View {
                 if overviews.isEmpty {
                     ContentUnavailableView("Ingen spiltyper", systemImage: "rectangle.stack.badge.play")
                 } else {
+                    gameTypePopularityChart(overviews)
+
                     VStack(spacing: 10) {
                         ForEach(overviews) { overview in
                             NavigationLink {
@@ -511,6 +515,7 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                dataQualityChart(snapshot)
                 dataQuality(snapshot)
                 plannedStatisticsOverview
             }
@@ -640,6 +645,137 @@ struct StatistikTabView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
         }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func sessionVolatilityChart(_ sessions: [HistoricalSessionOverview]) -> some View {
+        let newestFirst = sessions.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
+        let recentSessions = Array(newestFirst.prefix(12)).reversed()
+
+        return VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Udsving pr. spilledag")
+                    .font(.headline)
+                Text("Forskellen mellem dagens største gevinst og største tab for de seneste spilledage.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart(Array(recentSessions)) { overview in
+                BarMark(
+                    x: .value("Spilledag", "Dag \(overview.session.sessionNumber)"),
+                    y: .value("Udsving", sessionSpread(overview))
+                )
+                .foregroundStyle(Color.accentColor)
+            }
+            .frame(height: 220)
+            .chartXAxisLabel("Spilledag")
+            .chartYAxisLabel("Point")
+            .accessibilityLabel("Søjlediagram for pointudsving pr. spilledag")
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func playerLeaderboardChart(_ summaries: [HistoricalPlayerScoreSummary]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Samlet stilling")
+                    .font(.headline)
+                Text("Historisk nettoscore pr. spiller.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart(summaries) { summary in
+                BarMark(
+                    x: .value("Point", summary.totalScore),
+                    y: .value("Spiller", summary.player.name)
+                )
+                .foregroundStyle(scoreForeground(summary.totalScore))
+
+                RuleMark(x: .value("Nul", 0))
+                    .foregroundStyle(Color.secondary.opacity(0.45))
+            }
+            .frame(height: 220)
+            .chartXAxisLabel("Point")
+            .chartYAxisLabel("Spiller")
+            .accessibilityLabel("Søjlediagram for samlet historisk score pr. spiller")
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func gameTypePopularityChart(_ overviews: [HistoricalGameTypeOverview]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Mest populære spiltyper")
+                    .font(.headline)
+                Text("Fordeling af registrerede spil med importeret spiltype.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart(overviews) { overview in
+                SectorMark(
+                    angle: .value("Spil", overview.games),
+                    innerRadius: .ratio(0.58),
+                    angularInset: 1.5
+                )
+                .foregroundStyle(by: .value("Spiltype", overview.title))
+            }
+            .frame(height: 260)
+            .chartLegend(position: .bottom, spacing: 8)
+            .accessibilityLabel("Cirkeldiagram over mest populære spiltyper")
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func dataQualityChart(_ snapshot: HistoricalStatisticsSnapshot) -> some View {
+        let slices = [
+            DataQualitySlice(title: "Nulsum", count: snapshot.zeroSumGameCount),
+            DataQualitySlice(title: "Afvigelser", count: snapshot.nonZeroSumGameCount),
+        ].filter { $0.count > 0 }
+
+        return VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Scorekvalitet")
+                    .font(.headline)
+                Text("Andel af spil der summerer til nul i importen.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Chart(slices) { slice in
+                SectorMark(
+                    angle: .value("Spil", slice.count),
+                    innerRadius: .ratio(0.58),
+                    angularInset: 1.5
+                )
+                .foregroundStyle(by: .value("Status", slice.title))
+            }
+            .frame(height: 220)
+            .chartLegend(position: .bottom, spacing: 8)
+            .accessibilityLabel("Cirkeldiagram over scorekvalitet i historiske data")
+        }
+        .padding(16)
+        .background(cardBackground)
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
@@ -1659,12 +1795,26 @@ struct StatistikTabView: View {
             return "Alle \(snapshot.sessionCount) spilledage"
         }
     }
+
+    private func sessionSpread(_ overview: HistoricalSessionOverview) -> Int {
+        let scores = overview.playerTotals.map(\.score)
+        guard let maxScore = scores.max(), let minScore = scores.min() else {
+            return 0
+        }
+        return maxScore - minScore
+    }
 }
 
 private struct PlannedStatistic: Identifiable {
     var id: String { title }
     var title: String
     var description: String
+}
+
+private struct DataQualitySlice: Identifiable {
+    var id: String { title }
+    var title: String
+    var count: Int
 }
 
 private struct HistoricalGameTypeOverview: Identifiable {
