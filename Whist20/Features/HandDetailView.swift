@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HandDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
 
     let hand: RecordedHand
     /// Bruges til migration af `handNumber` på ældre gemte kampe.
@@ -12,21 +13,33 @@ struct HandDetailView: View {
         HandScorePersistence.decodeScores(hand.scoresBySeatJSON)
     }
 
+    private var orderedSeats: [Seat] {
+        gameDay?.seatOrder ?? Seat.all.sorted { $0.rawValue < $1.rawValue }
+    }
+
     private var navigationTitleText: String {
         hand.handNumber > 0 ? "Kamp #\(hand.handNumber)" : "Kamp"
     }
 
     var body: some View {
         List {
+            if let day = gameDay, hand.handNumber > 0 {
+                Section("Dealer") {
+                    Text(day.dealerSeat(forHandNumber: hand.handNumber).playerDisplayName)
+                        .font(.headline)
+                }
+            }
             Section {
-                Text(hand.summaryLine)
-                    .font(.subheadline)
+                SuitColoredInlineText.build(hand.displayResumeNarrative, colorScheme: colorScheme)
+                    .font(.body)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(hand.playedAt.formatted(date: .abbreviated, time: .shortened))
                     .foregroundStyle(.secondary)
             }
 
             Section("Point") {
-                ForEach(Seat.all, id: \.self) { seat in
+                ForEach(orderedSeats, id: \.self) { seat in
                     HStack {
                         Text(seat.playerDisplayName)
                         Spacer()

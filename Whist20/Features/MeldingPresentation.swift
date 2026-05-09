@@ -18,7 +18,7 @@ struct MeldingPresentation {
             var r: [(String, String)] = [
                 ("Type", "Sol"),
                 ("Variant", solTypeDanish(draft.solType)),
-                ("Melder", draft.solBidder.playerDisplayName),
+                ("Melder", draft.solBidder?.playerDisplayName ?? "Ikke valgt"),
             ]
             if !draft.goingWith.isEmpty {
                 let names = draft.goingWith.sorted(by: { $0.rawValue < $1.rawValue }).map(\.playerDisplayName).joined(separator: ", ")
@@ -29,18 +29,29 @@ struct MeldingPresentation {
             return MeldingPresentation(rows: r, statusFootnote: foot)
         case .normal:
             var r: [(String, String)] = [
-                ("Melder", draft.bidder.playerDisplayName),
+                ("Melder", draft.bidder?.playerDisplayName ?? "Ikke valgt"),
                 ("Spiltype", draft.normalSubtype.title),
                 ("Meldt", "\(draft.bidTricks) stik"),
             ]
             if draft.normalSubtype == .alm, let t = draft.trumpAlm {
-                r.append(("Trumf (bud)", t.rawValue))
+                r.append(("Trumf (bud)", t.cardSymbol))
             }
             if draft.normalSubtype == .gode {
                 r.append(("Bemærk", "Gode i klør"))
             }
-            if draft.normalSubtype == .halve || draft.normalSubtype == .vip {
-                r.append(("Trumf", "Vælges efter spillet"))
+            if draft.normalSubtype == .halve {
+                if let t = draft.trumpAfterPlay {
+                    r.append(("Trumf", t.cardSymbol))
+                } else {
+                    r.append(("Trumf", "Vælges på næste trin"))
+                }
+            }
+            if draft.normalSubtype == .vip {
+                if let t = draft.trumpAfterPlay {
+                    r.append(("Trumf", t.cardSymbol))
+                } else {
+                    r.append(("Trumf", "Vælges ved halve"))
+                }
             }
             if draft.requiresPartnerAceForBid, let ace = draft.partnerAceSuit {
                 r.append(("Makker-es", ace.shortSymbol))
@@ -58,8 +69,9 @@ struct MeldingPresentation {
         let kind = AddHandKind(rawValue: snapshot.kindRaw) ?? .normal
         let step: String? = {
             switch snapshot.navigationStep {
-            case HandDraftPersistence.stepResultat: return "Trin: resultat (efter spillet)"
+            case HandDraftPersistence.stepResultat: return "Trin: resultat"
             case HandDraftPersistence.stepMelding: return "Trin: melding"
+            case HandDraftPersistence.stepHalveTrumf: return "Trin: trumf (halve)"
             default: return nil
             }
         }()
@@ -83,6 +95,8 @@ struct MeldingPresentation {
 struct MeldingStatusCard: View {
     let presentation: MeldingPresentation
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(presentation.sectionTitle)
@@ -90,17 +104,10 @@ struct MeldingStatusCard: View {
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
-            ForEach(Array(presentation.rows.enumerated()), id: \.offset) { _, row in
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(row.0)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 100, alignment: .leading)
-                    Text(row.1)
-                        .font(row.0 == "Melder" ? .body.weight(.bold) : .body.weight(.semibold))
-                        .textCase(row.0 == "Melder" ? .uppercase : nil)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .multilineTextAlignment(.leading)
-                }
+            if presentation.rows.contains(where: { $0.0 == "Melder" }) {
+                tilesLayout
+            } else {
+                fallbackRowsLayout
             }
 
             if let foot = presentation.statusFootnote {
@@ -118,6 +125,103 @@ struct MeldingStatusCard: View {
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+    }
+
+    private var rowsByKey: [String: String] {
+        Dictionary(uniqueKeysWithValues: presentation.rows.map { ($0.0, $0.1) })
+    }
+
+    @ViewBuilder
+    private var tilesLayout: some View {
+        let melder = rowsByKey["Melder"]
+        let trump =
+            rowsByKey["Trumf (bud)"] ?? rowsByKey["Trumf"] ?? rowsByKey["Trumf (bud)"]
+        let ace = rowsByKey["Makker-es"]
+        let bid = rowsByKey["Meldt"]
+        let subtype = rowsByKey["Spiltype"] ?? rowsByKey["Type"]
+
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                if let melder {
+                    tile(label: "Melder", value: melder)
+                }
+                if let subtype {
+                    tile(label: "Spiltype", value: subtype)
+                }
+            }
+
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 8
+            ) {
+                if let trump {
+                    tile(label: "Trumf", value: trump)
+                }
+                if let ace {
+                    tile(label: "Makker-es", value: ace)
+                }
+                if let bid {
+                    tile(label: "Meldt", value: bid)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var fallbackRowsLayout: some View {
+        ForEach(Array(presentation.rows.enumerated()), id: \.offset) { _, row in
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(row.0)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 100, alignment: .leading)
+                SuitColoredInlineText.build(row.1, colorScheme: colorScheme)
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+    }
+
+    private func tile(label: String, value: String) -> some View {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isSuitIcon = (label == "Trumf" || label == "Makker-es") && ["♠", "♥", "♦", "♣"].contains(trimmed)
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            if isSuitIcon {
+                Text(trimmed)
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(suitIconColor(trimmed))
+                    .frame(width: 26, height: 26, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityLabel("\(label): \(trimmed)")
+            } else {
+                SuitColoredInlineText.build(value, colorScheme: colorScheme)
+                    .font(.subheadline.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.thinMaterial)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func suitIconColor(_ symbol: String) -> Color {
+        switch symbol {
+        case "♥", "♦": return .red
+        case "♠", "♣":
+            return colorScheme == .dark ? Color(white: 0.95) : Color(white: 0.05)
+        default: return .primary
         }
     }
 }
@@ -208,11 +312,14 @@ struct NormalBidTricksWheelPicker: View {
 
 struct ActualTricksWheelPicker: View {
     @Binding var actualTricks: Int
+    /// Meldt antal stik — hjulet viser afvigelse pr. valg, fx «8 stik (-2)» ved melding 10.
+    var bidTricks: Int
 
     var body: some View {
         Picker("Vundne stik", selection: $actualTricks) {
             ForEach(Array(0 ... 13), id: \.self) { n in
-                Text("\(n) stik").tag(n)
+                Text("\(n) stik \(Self.deltaSuffix(n, bid: bidTricks))")
+                    .tag(n)
             }
         }
         .pickerStyle(.wheel)
@@ -220,7 +327,14 @@ struct ActualTricksWheelPicker: View {
         .frame(height: 128)
         .clipped()
         .frame(maxWidth: .infinity)
-        .accessibilityLabel("Antal vundne stik for kontrakt-holdet")
+        .accessibilityLabel("Vundne stik for kontrakt-holdet, relativt til meldingen på \(bidTricks)")
+    }
+
+    private static func deltaSuffix(_ actual: Int, bid: Int) -> String {
+        let d = actual - bid
+        if d > 0 { return "(+\(d))" }
+        if d < 0 { return "(\(d))" }
+        return "(0)"
     }
 }
 

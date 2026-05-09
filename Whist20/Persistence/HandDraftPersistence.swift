@@ -5,7 +5,9 @@ import SwiftData
 enum HandDraftPersistence {
     /// Brugeren er stadig på meldingssiden (gemmes ikke automatisk under redigering).
     static let stepMelding = "melding"
-    /// Melding er afsluttet med «Næste»; brugeren kan være på resultat eller appen kan være crashet.
+    /// Halve: melding afsluttet; brugeren vælger trumf før resultat.
+    static let stepHalveTrumf = "halve_trumf"
+    /// Brugeren er på resultat (eller appen kan være crashet dér).
     static let stepResultat = "resultat"
 
     struct Snapshot: Codable {
@@ -13,14 +15,14 @@ enum HandDraftPersistence {
         var navigationStep: String
 
         var kindRaw: String
-        var bidderRaw: Int
+        var bidderRaw: Int?
         var bidTricks: Int
         var normalSubtypeRaw: String
         var trumpAlmRaw: String?
         var partnerAceSuitRaw: String?
 
         var solTypeRaw: String
-        var solBidderRaw: Int
+        var solBidderRaw: Int?
         var goingWithRaw: [Int]
 
         var partnerRaw: Int?
@@ -30,7 +32,7 @@ enum HandDraftPersistence {
         var vip3IsClubs: Bool
 
         var isDuty: Bool
-        var dutySeatRaw: Int
+        var dutySeatRaw: Int?
         var solTricksRaw: [String: Int]
     }
 
@@ -41,13 +43,13 @@ enum HandDraftPersistence {
         return Snapshot(
             navigationStep: navigationStep,
             kindRaw: draft.kind.rawValue,
-            bidderRaw: draft.bidder.rawValue,
+            bidderRaw: draft.bidder?.rawValue,
             bidTricks: draft.bidTricks,
             normalSubtypeRaw: draft.normalSubtype.rawValue,
             trumpAlmRaw: draft.trumpAlm?.rawValue,
             partnerAceSuitRaw: draft.partnerAceSuit?.rawValue,
             solTypeRaw: draft.solType.persistenceKey,
-            solBidderRaw: draft.solBidder.rawValue,
+            solBidderRaw: draft.solBidder?.rawValue,
             goingWithRaw: draft.goingWith.map(\.rawValue).sorted(),
             partnerRaw: draft.partner?.rawValue,
             actualTricks: draft.actualTricks,
@@ -55,21 +57,21 @@ enum HandDraftPersistence {
             vipLevelRaw: draft.vipLevel.rawValue,
             vip3IsClubs: draft.vipTripleClubsDoubleActive,
             isDuty: draft.isDuty,
-            dutySeatRaw: draft.dutySeat.rawValue,
+            dutySeatRaw: draft.dutySeat?.rawValue,
             solTricksRaw: solTricks
         )
     }
 
     static func apply(_ snapshot: Snapshot, to draft: HandInputDraft) {
         draft.kind = AddHandKind(rawValue: snapshot.kindRaw) ?? .normal
-        draft.bidder = Seat(rawValue: snapshot.bidderRaw) ?? .north
+        draft.bidder = snapshot.bidderRaw.flatMap { Seat(rawValue: $0) }
         draft.bidTricks = snapshot.bidTricks
         draft.normalSubtype = NormalBidSubtype(rawValue: snapshot.normalSubtypeRaw) ?? .alm
         draft.trumpAlm = snapshot.trumpAlmRaw.flatMap { Suit(rawValue: $0) }
         draft.partnerAceSuit = snapshot.partnerAceSuitRaw.flatMap { Suit(rawValue: $0) }
 
         draft.solType = SolType(persistenceKey: snapshot.solTypeRaw)
-        draft.solBidder = Seat(rawValue: snapshot.solBidderRaw) ?? .north
+        draft.solBidder = snapshot.solBidderRaw.flatMap { Seat(rawValue: $0) }
         draft.goingWith = Set(snapshot.goingWithRaw.compactMap { Seat(rawValue: $0) })
 
         draft.partner = snapshot.partnerRaw.flatMap { Seat(rawValue: $0) }
@@ -80,7 +82,7 @@ enum HandDraftPersistence {
         draft.vip3IsClubs =
             draft.normalSubtype == .vip && draft.vipLevel == .triple && draft.trumpAfterPlay == .clubs
         draft.isDuty = snapshot.isDuty
-        draft.dutySeat = Seat(rawValue: snapshot.dutySeatRaw) ?? .south
+        draft.dutySeat = snapshot.dutySeatRaw.flatMap { Seat(rawValue: $0) }
 
         var tricks: [Seat: Int] = [:]
         for seat in Seat.all {
@@ -121,8 +123,12 @@ enum HandDraftPersistence {
 
     static func deletePending(context: ModelContext, gameDay: GameDay) {
         guard let pending = gameDay.pendingHand else { return }
-        context.delete(pending)
+        // Ryd både forward- og invers-referencen FØR vi sletter, så SwiftData
+        // ikke kan ende i en mellemtilstand hvor `gameDay.pendingHand` stadig
+        // peger på et soft-deleted objekt mens UI’en re-renderer.
         gameDay.pendingHand = nil
+        pending.gameDay = nil
+        context.delete(pending)
         try? context.save()
     }
 }

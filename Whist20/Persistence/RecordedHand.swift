@@ -7,6 +7,7 @@ final class RecordedHand {
     var playedAt: Date
     /// "normal" | "sol" | "duty"
     var kindRaw: String
+    /// Synkroniseret med den viste resumé (`HandResumeCaption.displayResumeLine`); ældre rækker kan være punkt‑oversigt.
     var summaryLine: String
     /// JSON: seat rawValue (0…3) som string-nøgle → point
     var scoresBySeatJSON: String
@@ -16,6 +17,12 @@ final class RecordedHand {
 
     /// Melders plads (`Seat.rawValue`). `-1` = ukendt (ældre kampe).
     var bidderSeatRaw: Int = -1
+
+    /// Makkers plads ved normale spil (`Seat.rawValue`). Lig med `bidderSeatRaw` ved selvmakker. `-1` = ukendt / ikke relevant (sol, duestraf, ældre data).
+    var partnerSeatRaw: Int = -1
+
+    /// JSON-array af makkersæders `rawValue` for sol (`goingWith`), fx `[1,2]`. Tom `[]` uden for sol.
+    var solAlliesSeatsJSON: String = "[]"
 
     /// Løbenummer pr. spilledag (#1, #2, …). Sættes ved gem; ældre data får tal via `GameDay.migrateLegacyHandNumbersIfNeeded()`.
     var handNumber: Int = 0
@@ -30,6 +37,8 @@ final class RecordedHand {
         scoresBySeatJSON: String,
         resumeCaption: String = "",
         bidderSeatRaw: Int = -1,
+        partnerSeatRaw: Int = -1,
+        solAlliesSeatsJSON: String = "[]",
         handNumber: Int = 0,
         gameDay: GameDay? = nil
     ) {
@@ -40,8 +49,26 @@ final class RecordedHand {
         self.scoresBySeatJSON = scoresBySeatJSON
         self.resumeCaption = resumeCaption
         self.bidderSeatRaw = bidderSeatRaw
+        self.partnerSeatRaw = partnerSeatRaw
+        self.solAlliesSeatsJSON = solAlliesSeatsJSON
         self.handNumber = handNumber
         self.gameDay = gameDay
+    }
+}
+
+extension RecordedHand {
+    /// Én indgang: samme resumétekst som «Seneste spil» og kampdetaljer (bygger på `resumeCaption` + metadata).
+    var displayResumeNarrative: String {
+        HandResumeCaption.displayResumeLine(for: self)
+    }
+
+    /// Til summering af point pr. spilledag eller på tværs af dage.
+    var scoreContribution: HandScoreContribution {
+        HandScoreContribution(
+            handNumber: handNumber,
+            playedAt: playedAt,
+            scoresBySeat: HandScorePersistence.decodeScores(scoresBySeatJSON)
+        )
     }
 }
 
@@ -78,22 +105,5 @@ enum HandScorePersistence {
             }
         }
         return out
-    }
-
-    static func makeSummaryLine(kind: String, scores: [Seat: Int]) -> String {
-        let bits = Seat.all.map { seat in
-            let v = scores[seat] ?? 0
-            let sign = v > 0 ? "+" : ""
-            return "\(seat.playerDisplayName) \(sign)\(v)"
-        }
-        let prefix: String = {
-            switch kind {
-            case "normal": return "Normal"
-            case "sol": return "Sol"
-            case "duty": return "Duestraf"
-            default: return "Spil"
-            }
-        }()
-        return "\(prefix): \(bits.joined(separator: ", "))"
     }
 }

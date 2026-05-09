@@ -7,7 +7,7 @@ Projektet bruger **to tal**, som Xcode også skelner mellem:
 | **Marketing version** | `MARKETING_VERSION` | Det brugerne ser (App Store, Om appen). Semantisk versioning: **MAJOR.MINOR.PATCH**. |
 | **Build-nummer** | `CURRENT_PROJECT_VERSION` | Entydigt monotont heltal pr. upload til App Store Connect (og pr. TestFlight-build). |
 
-**Aktuel marketing-version i Xcode-projektet:** **2.0.1** (minor: meldings-UI, aktivt-spil-visning, dokumentation for flere enheder).
+**Aktuel marketing-version i Xcode-projektet:** **2.1.0** (bundmenu, tabelvisning, forside-redesign, UI-polish).
 
 Startværdier i dette repo var oprindeligt: **2.0.0** (marketing) og **1** (build), så 2.0-linjen er tydeligt adskilt fra Whist 0.6 / 1.0.
 

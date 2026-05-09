@@ -6,6 +6,14 @@ final class GameDay {
     @Attribute(.unique) var id: UUID
     var createdAt: Date
     var title: String
+    /// Fritekst (sted, aftaler m.m.) — kun til visning i appen.
+    var notes: String = ""
+    /// `nil` = aktiv spilledag; sat dato = afsluttet (kan genoptages hvis ingen anden er aktiv).
+    var endedAt: Date?
+
+    /// Rækkefølge spillerne sidder i (Seat.rawValue JSON-array), fx `[0,1,2,3]`.
+    /// Bruges til visning og senere flows; defaults til standard-orden.
+    var seatOrderJSON: String = "[0,1,2,3]"
 
     @Relationship(deleteRule: .cascade, inverse: \RecordedHand.gameDay)
     var hands: [RecordedHand] = []
@@ -14,9 +22,75 @@ final class GameDay {
     @Relationship(deleteRule: .cascade, inverse: \PendingHand.gameDay)
     var pendingHand: PendingHand?
 
-    init(id: UUID = UUID(), createdAt: Date = Date(), title: String = "Spilledag") {
+    init(
+        id: UUID = UUID(),
+        createdAt: Date = Date(),
+        title: String = "Spilledag",
+        notes: String = "",
+        endedAt: Date? = nil,
+        seatOrderJSON: String = "[0,1,2,3]"
+    ) {
         self.id = id
         self.createdAt = createdAt
         self.title = title
+        self.notes = notes
+        self.endedAt = endedAt
+        self.seatOrderJSON = seatOrderJSON
+    }
+}
+
+extension GameDay {
+    var seatOrder: [Seat] {
+        guard let data = seatOrderJSON.data(using: .utf8),
+              let raw = try? JSONDecoder().decode([Int].self, from: data) else {
+            return Seat.all
+        }
+        let seats = raw.compactMap { Seat(rawValue: $0) }
+        return seats.count == 4 ? seats : Seat.all
+    }
+
+    /// Dealer til kampnummer (#1 → første i `seatOrder`, #2 → næste, osv.).
+    func dealerSeat(forHandNumber handNumber: Int) -> Seat {
+        let order = seatOrder
+        guard !order.isEmpty else { return .north }
+        let idx = max(0, handNumber - 1) % order.count
+        return order[idx]
+    }
+}
+
+extension GameDay {
+    /// Akkumuleret score for alle gemte kampe på denne spilledag.
+    var scoreStanding: GameDayStanding {
+        GameDayScoreAggregation.standing(from: hands.map(\.scoreContribution))
+    }
+
+    /// Den spilledag der typisk er «aktuel»: seneste `playedAt` blandt kampe; ellers senest oprettede dag.
+    static func focusForStandings(in days: [GameDay]) -> GameDay? {
+        days.max { d1, d2 in
+            let latest1 = d1.hands.map(\.playedAt).max()
+            let latest2 = d2.hands.map(\.playedAt).max()
+            switch (latest1, latest2) {
+            case let (l1?, l2?) where l1 != l2:
+                return l1 < l2
+            case (_?, nil):
+                return false
+            case (nil, _?):
+                return true
+            default:
+                return d1.createdAt < d2.createdAt
+            }
+        }
+    }
+
+    /// Sum af alle spilledages kamp-point pr. plads (nul-sum bevares pr. kamp, ikke nødvendigvis på tværs af dage).
+    static func allTimeSeatTotals(days: [GameDay]) -> [Seat: Int] {
+        var totals = Dictionary(uniqueKeysWithValues: Seat.all.map { ($0, 0) })
+        for day in days {
+            let dayTotals = day.scoreStanding.totalsBySeat
+            for seat in Seat.all {
+                totals[seat] = (totals[seat] ?? 0) + (dayTotals[seat] ?? 0)
+            }
+        }
+        return totals
     }
 }
