@@ -1306,27 +1306,7 @@ struct StatistikTabView: View {
     }
 
     private func gameQualityWarning(_ detail: HistoricalGameScoreDetail) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Dataadvarsel", systemImage: "exclamationmark.triangle.fill")
-                .font(.headline)
-                .foregroundStyle(.orange)
-
-            ForEach(detail.qualityFlags, id: \.self) { flag in
-                Text(qualityFlagText(flag))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.orange.opacity(0.11))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.orange.opacity(0.24), lineWidth: 1)
-        }
+        CollapsibleDataWarning(messages: detail.qualityFlags.map(qualityFlagText))
     }
 
     private func gameScoreStrip(_ detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
@@ -1363,6 +1343,18 @@ struct StatistikTabView: View {
         }
         if flag == "source_explicit_score_sum_not_zero" {
             return "Den eksplicitte scoreblok i regnearket summerer ikke til nul. Spillet kræver manuel kildeafklaring."
+        }
+        if flag == "missing_game_type" {
+            return "Spiltypen mangler i den historiske kilde."
+        }
+        if flag == "missing_bidder_or_winner" {
+            return "Melder eller vinder mangler i den historiske kilde."
+        }
+        if flag == "missing_dealer" {
+            return "Giver mangler i den historiske kilde."
+        }
+        if flag == "missing_partner" {
+            return "Makker mangler i den historiske kilde."
         }
         return flag.replacingOccurrences(of: "_", with: " ")
     }
@@ -1969,6 +1961,59 @@ struct StatistikTabView: View {
             return 0
         }
         return maxScore - minScore
+    }
+}
+
+private struct CollapsibleDataWarning: View {
+    var messages: [String]
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy(duration: 0.18)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Advarsel om data")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isExpanded ? "Skjul advarsel om data" : "Vis advarsel om data")
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(messages.enumerated()), id: \.offset) { _, message in
+                        Text(message)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.orange.opacity(0.11))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.orange.opacity(0.24), lineWidth: 1)
+        }
     }
 }
 
