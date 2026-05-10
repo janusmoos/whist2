@@ -397,6 +397,8 @@ struct StatistikTabView: View {
 
     private func allSessionsView(_ data: HistoricalWhistData) -> some View {
         let overviews = HistoricalStatisticsEngine.sessionOverviews(from: data)
+        let standingSummaries = HistoricalStatisticsEngine.playerScoreSummaries(from: data)
+        let allSessionsTimeline = HistoricalStatisticsEngine.scoreTimeline(from: data)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -408,7 +410,11 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                sessionVolatilityChart(overviews)
+                playerLeaderboardChart(
+                    standingSummaries,
+                    subtitle: "Summen af alle spil på tværs af \(overviews.count) spilledage — nuværende placering."
+                )
+                allSessionsProgressChart(allSessionsTimeline)
                 sessionOverviewList(overviews)
             }
             .padding(.horizontal, 20)
@@ -651,45 +657,15 @@ struct StatistikTabView: View {
         }
     }
 
-    private func sessionVolatilityChart(_ sessions: [HistoricalSessionOverview]) -> some View {
-        let newestFirst = sessions.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
-        let recentSessions = Array(newestFirst.prefix(12)).reversed()
-
-        return VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Udsving pr. spilledag")
-                    .font(.headline)
-                Text("Forskellen mellem dagens største gevinst og største tab for de seneste spilledage.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Chart(Array(recentSessions)) { overview in
-                BarMark(
-                    x: .value("Spilledag", "Dag \(overview.session.sessionNumber)"),
-                    y: .value("Udsving", sessionSpread(overview))
-                )
-                .foregroundStyle(Color.accentColor)
-            }
-            .frame(height: 220)
-            .chartXAxisLabel("Spilledag")
-            .chartYAxisLabel("Point")
-            .accessibilityLabel("Søjlediagram for pointudsving pr. spilledag")
-        }
-        .padding(16)
-        .background(cardBackground)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-    }
-
-    private func playerLeaderboardChart(_ summaries: [HistoricalPlayerScoreSummary]) -> some View {
+    private func playerLeaderboardChart(
+        _ summaries: [HistoricalPlayerScoreSummary],
+        subtitle: String = "Historisk nettoscore pr. spiller."
+    ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Samlet stilling")
                     .font(.headline)
-                Text("Historisk nettoscore pr. spiller.")
+                Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -1039,6 +1015,47 @@ struct StatistikTabView: View {
             .chartXAxisLabel("Spil")
             .chartYAxisLabel("Point")
             .accessibilityLabel("Linjediagram for spillerens samlede gevinst og tab i løbet af spilledagen")
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    /// Kumulativ nettoscore efter hver spilledag — samme graftype som på en enkelt spilledag (`sessionProgressChart`), men med historisk akse.
+    private func allSessionsProgressChart(_ points: [HistoricalScoreTimelinePoint]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Udvikling henover alle spilledage")
+                .font(.headline)
+
+            if points.isEmpty {
+                Text("Ingen spilledage at vise endnu.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                Chart(points) { point in
+                    LineMark(
+                        x: .value("Spilledag", point.sessionIndex),
+                        y: .value("Point", point.cumulativeScore)
+                    )
+                    .foregroundStyle(by: .value("Spiller", point.playerName))
+                    .interpolationMethod(.linear)
+
+                    PointMark(
+                        x: .value("Spilledag", point.sessionIndex),
+                        y: .value("Point", point.cumulativeScore)
+                    )
+                    .foregroundStyle(by: .value("Spiller", point.playerName))
+                    .symbolSize(18)
+                }
+                .frame(height: 240)
+                .chartLegend(position: .bottom, alignment: .center, spacing: 8)
+                .chartXAxisLabel("Spilledag")
+                .chartYAxisLabel("Point")
+                .accessibilityLabel("Linjediagram for kumulativ score henover alle spilledage")
+            }
         }
         .padding(16)
         .background(cardBackground)
@@ -1955,13 +1972,6 @@ struct StatistikTabView: View {
         }
     }
 
-    private func sessionSpread(_ overview: HistoricalSessionOverview) -> Int {
-        let scores = overview.playerTotals.map(\.score)
-        guard let maxScore = scores.max(), let minScore = scores.min() else {
-            return 0
-        }
-        return maxScore - minScore
-    }
 }
 
 private struct CollapsibleDataWarning: View {

@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var addHandAlertMessage: String?
     @State private var toastMessage: String?
     @State private var toastWorkItem: DispatchWorkItem?
+    /// Reserverer plads til den faste bundmenu (`MainTabBar`). Måles ved layout — `safeAreaInset` alene gav ofte skjult bund på indlejrede navigationer.
+    @State private var mainTabBarOverlapHeight: CGFloat = 62
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -38,7 +40,8 @@ struct ContentView: View {
                 StatistikTabView()
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .padding(.bottom, mainTabBarOverlapHeight)
+        .overlay(alignment: .bottom) {
             MainTabBar(
                 selectedTab: $selectedTab,
                 hasActiveGameDay: activeGameDay != nil,
@@ -46,6 +49,19 @@ struct ContentView: View {
                 onPlayTapped: openMeldingSheet,
                 onHomeTapped: { homeNavigationPath = NavigationPath() }
             )
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: MainTabBarMeasuredHeightKey.self,
+                        value: proxy.size.height
+                    )
+                }
+            )
+        }
+        .onPreferenceChange(MainTabBarMeasuredHeightKey.self) { height in
+            if height > 1 {
+                mainTabBarOverlapHeight = height
+            }
         }
         .sheet(isPresented: $showAddHandSheet) {
             if let day = activeGameDay {
@@ -119,6 +135,14 @@ struct ContentView: View {
         homeNavigationPath = NavigationPath()
         homeNavigationPath.append(HomeRoute.gameDay(gameDayId, openAddHand: false))
         selectedTab = .home
+    }
+}
+
+/// Bruges til at matche indholdets bund-padding med den faktiske højde af `MainTabBar` i `ContentView`.
+private enum MainTabBarMeasuredHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
