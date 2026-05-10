@@ -1,6 +1,6 @@
 {
   "version": "whist_historical_data_v2_corrected",
-  "generatedAt": "2026-05-10T19:41:08",
+  "generatedAt": "2026-05-10T20:08:11",
   "players": [
     {
       "id": "Thomas",
@@ -1580,8 +1580,8 @@
       "winnerIds": [],
       "partnerId": null,
       "dealerId": null,
-      "checksum": -100,
-      "scoreSource": "derived_from_cumulative",
+      "checksum": 0,
+      "scoreSource": "corrected_from_source_note",
       "sourceSheetName": "02_2492016",
       "sourceRow": 15,
       "qualityFlags": [
@@ -1589,7 +1589,7 @@
         "missing_bidder_or_winner",
         "missing_dealer",
         "missing_partner",
-        "score_sum_not_zero"
+        "corrected_from_source_note"
       ]
     },
     {
@@ -1607,8 +1607,8 @@
       "winnerIds": [],
       "partnerId": null,
       "dealerId": null,
-      "checksum": -40,
-      "scoreSource": "derived_from_cumulative",
+      "checksum": 0,
+      "scoreSource": "corrected_from_source_note",
       "sourceSheetName": "02_2492016",
       "sourceRow": 16,
       "qualityFlags": [
@@ -1616,7 +1616,7 @@
         "missing_bidder_or_winner",
         "missing_dealer",
         "missing_partner",
-        "score_sum_not_zero"
+        "corrected_from_source_note"
       ]
     },
     {
@@ -21263,7 +21263,7 @@
       "id": "session_2_2016-09-24_game_013_Janus",
       "gameId": "session_2_2016-09-24_game_013",
       "playerId": "Janus",
-      "score": -104,
+      "score": -4,
       "sourceSheetName": "02_2492016",
       "sourceRow": 15
     },
@@ -21303,7 +21303,7 @@
       "id": "session_2_2016-09-24_game_014_Christian",
       "gameId": "session_2_2016-09-24_game_014",
       "playerId": "Christian",
-      "score": -20,
+      "score": 20,
       "sourceSheetName": "02_2492016",
       "sourceRow": 16
     },
@@ -43909,21 +43909,22 @@
     "playerTotals": {
       "Thomas": -492,
       "Peter": -3104,
-      "Janus": 3802,
-      "Christian": -286
+      "Janus": 3902,
+      "Christian": -246
     },
     "fieldCounts": {
       "gameType": 469,
       "dealer": 515,
       "bidder_or_winner": 532,
       "partner": 165,
-      "score_sum_zero": 714
+      "score_sum_zero": 716
     },
     "issueCount": 47,
     "issueCounts": {
+      "corrected_from_source_note": 2,
       "expected_vs_imported_count_mismatch": 3,
       "game_marker_without_scores": 13,
-      "score_sum_not_zero": 30,
+      "score_sum_not_zero": 28,
       "source_explicit_score_sum_not_zero": 1
     }
   }

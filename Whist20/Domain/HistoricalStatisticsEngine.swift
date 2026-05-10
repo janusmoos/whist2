@@ -78,11 +78,14 @@ struct HistoricalStatisticsSnapshot: Equatable {
 
 enum HistoricalDataQualityFlag: String {
     case teamScoreMismatch = "team_score_mismatch"
+    case correctedFromSourceNote = "corrected_from_source_note"
 
     var title: String {
         switch self {
         case .teamScoreMismatch:
             return "Holdscore stemmer ikke"
+        case .correctedFromSourceNote:
+            return "Rettet fra kilde-note"
         }
     }
 }

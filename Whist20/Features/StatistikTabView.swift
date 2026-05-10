@@ -1355,6 +1355,15 @@ struct StatistikTabView: View {
         if flag == HistoricalDataQualityFlag.teamScoreMismatch.rawValue {
             return "Holdscore stemmer ikke: et almindeligt makkerspil har ikke samme gevinst/tab på begge spillere på samme side. Sol og selvmakker er undtaget fra dette tjek."
         }
+        if flag == HistoricalDataQualityFlag.correctedFromSourceNote.rawValue {
+            return "Rettet fra kilde-note: regnearket indeholder en konkret note, og rettelsen får spillet til at summere til nul."
+        }
+        if flag == "score_sum_not_zero" {
+            return "Resultatet summerer ikke til nul i den historiske kilde. Spillet vises, men bør læses som usikker historik."
+        }
+        if flag == "source_explicit_score_sum_not_zero" {
+            return "Den eksplicitte scoreblok i regnearket summerer ikke til nul. Spillet kræver manuel kildeafklaring."
+        }
         return flag.replacingOccurrences(of: "_", with: " ")
     }
 
