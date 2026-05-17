@@ -186,9 +186,15 @@ struct GameDayStartView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAddHand) {
-            AddHandView(gameDay: gameDay) { message in
-                showBriefToast(message)
-            }
+            AddHandView(
+                gameDay: gameDay,
+                onDismissSaveNotice: { message in showBriefToast(message) },
+                onSaved: { _, backupMessage in
+                    if backupMessage != "Lokal backup gemt" {
+                        showBriefToast(backupMessage)
+                    }
+                }
+            )
         }
         .overlay(alignment: .top) {
             if let msg = toastMessage {

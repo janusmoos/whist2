@@ -68,7 +68,12 @@ struct ContentView: View {
                 AddHandView(
                     gameDay: day,
                     onDismissSaveNotice: { message in showToast(message) },
-                    onSaved: { gameDayId in navigateToGameDayAfterSave(gameDayId) }
+                    onSaved: { gameDayId, backupMessage in
+                        navigateToGameDayAfterSave(gameDayId)
+                        if backupMessage != "Lokal backup gemt" {
+                            showToast(backupMessage)
+                        }
+                    }
                 )
             }
         }

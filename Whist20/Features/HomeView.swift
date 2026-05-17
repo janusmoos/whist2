@@ -520,11 +520,55 @@ struct HomeView: View {
 // MARK: - Indstillinger
 
 private struct AppSettingsView: View {
+    @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
+    @State private var backupInfo: LocalBackupInfo?
+    @State private var shareFileURLs: [URL] = []
+    @State private var backupMessage: String?
+
+    private var backupGameDay: GameDay? {
+        if let active = GameDay.activeDay(in: gameDays) {
+            return active
+        }
+        return GameDay.focusForStandings(in: gameDays)
+    }
+
     var body: some View {
         Form {
             Section("Opslagsværk") {
                 NavigationLink(value: HomeRoute.scorecard) {
                     Label("Scorecard", systemImage: "tablecells")
+                }
+            }
+
+            Section("Backup") {
+                if let day = backupGameDay {
+                    LabeledContent("Session") {
+                        Text(day.title)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Lokal kopi") {
+                        Text(backupStatusText)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    Text("Gemmes automatisk efter hvert spil. Filerne ligger i Filer > På min iPhone > Whist 2.0 > \(LocalGameBackupService.directoryName).")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    if shareFileURLs.isEmpty {
+                        Button {
+                            prepareShareFiles(for: day, showSuccess: true)
+                        } label: {
+                            Label("Klargør eksport", systemImage: "arrow.clockwise")
+                        }
+                    } else {
+                        ShareLink(items: shareFileURLs) {
+                            Label("Eksporter session", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                } else {
+                    Text("Når der findes en spilledag, kan den lokale backup eksporteres herfra.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -536,5 +580,45 @@ private struct AppSettingsView: View {
         }
         .navigationTitle("Indstillinger")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Backup", isPresented: Binding(
+            get: { backupMessage != nil },
+            set: { if !$0 { backupMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { backupMessage = nil }
+        } message: {
+            Text(backupMessage ?? "")
+        }
+        .onAppear {
+            if let day = backupGameDay {
+                refreshBackupInfo(for: day)
+                if backupInfo != nil {
+                    prepareShareFiles(for: day, showSuccess: false)
+                }
+            }
+        }
+    }
+
+    private var backupStatusText: String {
+        guard let backupInfo else {
+            return "Ingen fil endnu"
+        }
+        return backupInfo.modifiedAt.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private func refreshBackupInfo(for day: GameDay) {
+        backupInfo = LocalGameBackupService.latestBackupInfo(for: day)
+    }
+
+    private func prepareShareFiles(for day: GameDay, showSuccess: Bool) {
+        do {
+            shareFileURLs = try LocalGameBackupService.shareFiles(for: day)
+            refreshBackupInfo(for: day)
+            if showSuccess {
+                backupMessage = "Backup er klar til eksport."
+            }
+        } catch {
+            shareFileURLs = []
+            backupMessage = "Kun gemt i appen. Lokal backup kunne ikke skrives."
+        }
     }
 }
