@@ -9,6 +9,20 @@ private enum HandRoute: Hashable {
     case resultat
 }
 
+private enum AddHandLocalBackupNotice {
+    static func message(afterWritingBackupFor gameDay: GameDay) -> String {
+        do {
+            _ = try LocalGameBackupService.writeBackup(for: gameDay)
+            return "Lokal backup gemt"
+        } catch {
+            #if DEBUG
+            print("[LocalGameBackup] Fejl: \(error.localizedDescription)")
+            #endif
+            return "Kun gemt i appen. Lokal backup kunne ikke skrives."
+        }
+    }
+}
+
 // MARK: - Session (delt mellem AddHandView og dens del-views)
 
 /// Centralt status-objekt for ét «Tilføj spil»-flow. Når `didCompleteSave`
@@ -300,7 +314,7 @@ private struct BidStepView: View {
     @Environment(\.dismiss) private var dismissSheet
     @Environment(\.modelContext) private var modelContext
     @Bindable var draft: HandInputDraft
-    var onSaved: ((UUID) -> Void)?
+    var onSaved: ((UUID, String) -> Void)?
     @Binding var path: NavigationPath
     let session: AddHandSession
     let gameDay: GameDay
@@ -483,10 +497,11 @@ private struct BidStepView: View {
         modelContext.insert(hand)
         HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
         try? modelContext.save()
+        let backupMessage = AddHandLocalBackupNotice.message(afterWritingBackupFor: gameDay)
         #if DEBUG
         print("[AddHand] saveDutyFromBidStep: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
         #endif
-        onSaved?(gameDay.id)
+        onSaved?(gameDay.id, backupMessage)
         dismissSheet()
     }
 
@@ -662,7 +677,7 @@ private struct ResultStepView: View {
     @Binding var navigationPath: NavigationPath
     var dismissSheet: DismissAction
     let session: AddHandSession
-    var onSaved: ((UUID) -> Void)?
+    var onSaved: ((UUID, String) -> Void)?
     @State private var pendingAutosaveTask: Task<Void, Never>?
 
     var body: some View {
@@ -952,10 +967,11 @@ private struct ResultStepView: View {
         modelContext.insert(hand)
         HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
         try? modelContext.save()
+        let backupMessage = AddHandLocalBackupNotice.message(afterWritingBackupFor: gameDay)
         #if DEBUG
         print("[AddHand] save: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
         #endif
-        onSaved?(gameDay.id)
+        onSaved?(gameDay.id, backupMessage)
         dismissSheet()
     }
 }
@@ -975,12 +991,12 @@ struct AddHandView: View {
     /// Kaldes når arket lukkes uden «Annuller» og uden fuld «Gem» — typisk træk-ned.
     var onDismissSaveNotice: ((String) -> Void)?
     /// Kaldes umiddelbart efter «Gem» (inden dismiss), med den gemte spilledags id.
-    var onSaved: ((UUID) -> Void)?
+    var onSaved: ((UUID, String) -> Void)?
 
     init(
         gameDay: GameDay,
         onDismissSaveNotice: ((String) -> Void)? = nil,
-        onSaved: ((UUID) -> Void)? = nil
+        onSaved: ((UUID, String) -> Void)? = nil
     ) {
         self.gameDay = gameDay
         self.onDismissSaveNotice = onDismissSaveNotice
@@ -1735,4 +1751,3 @@ private extension Array where Element: Hashable {
         return out
     }
 }
-
