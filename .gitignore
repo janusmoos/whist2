@@ -9,3 +9,8 @@
 # Lokale editor-workspaces og scratchpads (ikke versionsført)
 *.code-workspace
 scratchpad*.txt
+
+web/node_modules/
+web/.next/
+web/.env
+web/.env.local
