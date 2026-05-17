@@ -1,0 +1,28 @@
+sessionNumber,sourceSheetName,date,location,expectedGameCount,importedGameCount,delta,qualityStatus,scoreSource,headerRow,scoreBlockStartColumn,issueCount,recommendedAction
+1,01_21-06-2016,2016-06-21,"Thomas, Vanløse",24,24,0,ok,delta_columns,3,11,5,accept_scores_review_metadata_or_checksum
+2,02_2492016,2016-09-24,"Christian, Østerbro",46,46,0,ok,derived_from_cumulative,2,2,14,accept_scores_review_metadata_or_checksum
+3,03_25-02-2017,2017-02-25,Måske 25/2/2017 hos Peter (Lundtoftevej 208),23,22,-1,warning,delta_columns,3,11,8,review_parser_or_source_rows
+4,04_Måske Berlin,,?,30,29,-1,warning,delta_columns,3,11,5,review_parser_or_source_rows
+6,06_23-09-2017,2017-09-23,"Janus, Berlin",26,26,0,ok,derived_from_cumulative,2,2,0,accept
+7,07_24-09-2017,2017-09-24,"Janus, Berlin",11,11,0,ok,derived_from_cumulative,2,2,0,accept
+8,08_3-11-2018,2018-11-03,Thomas,51,50,-1,warning,delta_columns,2,14,1,review_parser_or_source_rows
+9,09_26-01-2019,2019-01-26,"Peter, Lyngby",41,41,0,ok,delta_columns,3,20,1,accept_scores_review_metadata_or_checksum
+10,10_28-06-2019,2019-06-28,"Peter, Lyngby (Pool)",32,32,0,ok,delta_columns,2,14,32,accept_scores_review_metadata_or_checksum
+11,11_29-11-2019,2019-11-29,"Dyrehaven, Vesterbro",26,26,0,ok,delta_columns,2,12,26,accept_scores_review_metadata_or_checksum
+12b,12_21-02-2020,2020-02-21,"Peter, Løkken",27,35,8,warning,delta_columns,2,12,1,review_parser_or_source_rows
+13,13_22-02-2020,2020-02-22,"Peter, Løkken",31,31,0,ok,delta_columns,2,14,2,accept_scores_review_metadata_or_checksum
+14,14_02-10-2020,2020-10-02,"Christian, Østerbro",27,27,0,ok,delta_columns,2,12,0,accept
+15,15_18-06-2021,2021-06-18,"Thomas, Valby",18,18,0,ok,delta_columns,2,12,0,accept
+16,16_18-11-2021,2021-11-18,"Stempel, Vesterbro",27,27,0,ok,delta_columns,2,12,1,accept_scores_review_metadata_or_checksum
+17,17_25-02-2022,2022-02-25,"Peter, Løkken",25,25,0,ok,derived_from_cumulative,2,5,0,accept
+18,18_26-02-2022,2022-02-26,"Peter, Løkken",40,40,0,ok,derived_from_cumulative,2,5,0,accept
+19,19a_13-01-2023_Fredag,2023-01-13,"Janus, Berlin",8,40,32,warning,derived_from_cumulative,2,2,1,review_parser_or_source_rows
+19,19b_13-01-2023_Færge mod Tyskla,2023-01-13,"Janus, Berlin",8,8,0,ok,derived_from_cumulative,2,2,0,accept
+19,19c_13-01-2023_Brewdog fredag,2023-01-13,"Janus, Berlin",8,10,2,warning,derived_from_cumulative,2,2,1,review_parser_or_source_rows
+20,20_14-01-2023_Stasi Lørdag,2023-01-14,"Janus, Berlin",30,30,0,ok,delta_columns,2,14,3,accept_scores_review_metadata_or_checksum
+21,21_08-06-2023,2023-06-08,Kayak Bar,22,22,0,ok,derived_from_cumulative,2,2,0,accept
+22,22_31-09-2023_RETTET,2023-09-30,"Peter, Lyngby",39,38,-1,warning,delta_columns,2,27,1,review_parser_or_source_rows
+23,23_27-06-2024,2024-06-27,Kayak Bar,19,20,1,warning,derived_from_cumulative,2,2,22,review_parser_or_source_rows
+24,24_6-8-2024,2024-08-06,"Thomas, Valby",17,17,0,ok,derived_from_cumulative,2,2,17,accept_scores_review_metadata_or_checksum
+25,25_29-11-2024,2024-11-29,"Janus, Berlin",20,20,0,ok,delta_columns,2,28,20,accept_scores_review_metadata_or_checksum
+26,26_30-11-2024,2024-11-30,"Janus, Berlin",29,29,0,ok,derived_from_cumulative,2,2,29,accept_scores_review_metadata_or_checksum

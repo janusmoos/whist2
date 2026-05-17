@@ -1,0 +1,48 @@
+severity,issue,sheet,row,session,detail
+warning,score_sum_not_zero,01_21-06-2016,7,1,"game marker 4, score sum -2"
+warning,score_sum_not_zero,01_21-06-2016,10,1,"game marker 7, score sum -4"
+warning,score_sum_not_zero,01_21-06-2016,11,1,"game marker 8, score sum -8"
+warning,score_sum_not_zero,01_21-06-2016,15,1,"game marker 12, score sum 4"
+warning,score_sum_not_zero,01_21-06-2016,16,1,"game marker 13, score sum -8"
+info,individual_sheet_limited_source,01_21-06-2016,,1,importable games 24
+warning,score_sum_not_zero,02_2492016,15,2,"game marker 13, score sum -100"
+warning,score_sum_not_zero,02_2492016,16,2,"game marker 14, score sum -40"
+warning,score_sum_not_zero,02_2492016,18,2,"game marker 16, score sum -10"
+warning,score_sum_not_zero,02_2492016,24,2,"game marker 22, score sum -2"
+warning,score_sum_not_zero,02_2492016,25,2,"game marker 23, score sum -2"
+warning,score_sum_not_zero,02_2492016,30,2,"game marker 28, score sum 22"
+warning,score_sum_not_zero,02_2492016,33,2,"game marker 31, score sum -4"
+warning,score_sum_not_zero,02_2492016,34,2,"game marker 32, score sum 64"
+warning,score_sum_not_zero,02_2492016,37,2,"game marker 35, score sum -2"
+warning,score_sum_not_zero,02_2492016,38,2,"game marker 36, score sum -8"
+warning,score_sum_not_zero,02_2492016,41,2,"game marker 39, score sum -2"
+warning,score_sum_not_zero,02_2492016,42,2,"game marker 40, score sum -20"
+warning,score_sum_not_zero,02_2492016,46,2,"game marker 44, score sum -2"
+warning,score_sum_not_zero,02_2492016,47,2,"game marker 45, score sum -8"
+info,individual_sheet_limited_source,02_2492016,,2,importable games 46
+warning,score_sum_not_zero,03_25-02-2017,10,3,"game marker 7, score sum 40"
+warning,score_sum_not_zero,03_25-02-2017,11,3,"game marker 8, score sum -40"
+warning,score_sum_not_zero,03_25-02-2017,17,3,"game marker 14, score sum 2"
+warning,score_sum_not_zero,03_25-02-2017,18,3,"game marker 15, score sum 18"
+warning,score_sum_not_zero,03_25-02-2017,19,3,"game marker 16, score sum -6"
+warning,score_sum_not_zero,03_25-02-2017,24,3,"game marker 21, score sum 8"
+warning,score_sum_not_zero,03_25-02-2017,25,3,"game marker 22, score sum 34"
+info,individual_sheet_limited_source,03_25-02-2017,,3,importable games 22
+warning,score_sum_not_zero,04_Måske Berlin,21,4,"game marker 18, score sum -2"
+warning,score_sum_not_zero,04_Måske Berlin,23,4,"game marker 20, score sum 2"
+warning,score_sum_not_zero,04_Måske Berlin,24,4,"game marker 21, score sum -2"
+warning,score_sum_not_zero,04_Måske Berlin,25,4,"game marker 22, score sum -2"
+info,individual_sheet_limited_source,04_Måske Berlin,,4,importable games 29
+info,empty_source_sheet,05_22-09-2017_TOM,,5,importable games 0
+info,individual_sheet_limited_source,06_23-09-2017,,6,importable games 26
+info,individual_sheet_limited_source,07_24-09-2017,,7,importable games 11
+warning,expected_vs_imported_count_mismatch,SAMLET_alle regnskab_16-5-2026,,19,"expected 8, imported 58"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,23,"control date 2024-06-27, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,24,"control date 2024-08-06, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,25,"control date 2024-11-29, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,26,"control date 2024-11-30, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,28,"control date 2025-06-14, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,29,"control date 2025-09-26, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,30,"control date 2025-11-21, primary dates 2023-09-30"
+warning,date_mismatch,SAMLET_alle regnskab_16-5-2026,,31,"control date 2025-11-22, primary dates 2023-09-30"
+warning,session19_manual_review_required,session19_combined_order.csv,,19,"duplicate markers 50, 51, 52, 53; zero-delta sequences 49"

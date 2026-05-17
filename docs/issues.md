@@ -1,6 +1,6 @@
 # Issues (auto-opdateret)
 
-_Genereret: 2026-05-04 21:08:05_
+_Genereret: 2026-05-10 20:52:16_
 
 Repo: https://github.com/janusmoos/whist2
 
@@ -9,7 +9,6 @@ Repo: https://github.com/janusmoos/whist2
 4	OPEN	Feature: Statistikskærm med første chart (vundet/tabt pr. spilledag)	enhancement, ui, stats	2026-05-04T18:46:09Z
 3	OPEN	Feature: Automatisk backup/eksport efter hvert gemt spil (ekstern destination)	enhancement, integration, tech-debt	2026-05-04T18:46:07Z
 2	OPEN	Feature: Gem spillested (GPS) pr. spil	enhancement, persistence	2026-05-04T18:46:05Z
-1	OPEN	UI: Sol-type skal være wheel picker på Meldingssiden	enhancement, ui	2026-05-04T18:46:03Z
 
 ## Hurtige links
 

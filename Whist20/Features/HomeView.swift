@@ -348,7 +348,8 @@ struct HomeView: View {
     }
 
     private func parseResumeDetails(_ hand: RecordedHand) -> ResumeDetails {
-        let caption = hand.resumeCaption
+        let caption = hand.displayResumeNarrative
+        let storedCaption = hand.resumeCaption
         var details = ResumeDetails(typeLabel: "—")
 
         switch hand.kindRaw {
@@ -365,16 +366,11 @@ struct HomeView: View {
         details.typeLabel = parseNormalType(caption)
         details.bidTricks = parseBidTricks(caption)
         details.trump = parseTrump(caption)
-
-        if let range = caption.range(of: "||") {
-            let code = String(caption[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-            if let delta = Int(code.hasPrefix("+") ? String(code.dropFirst()) : code),
-               let bid = details.bidTricks {
-                let actual = bid + delta
-                let sign = delta > 0 ? "+\(delta)" : delta < 0 ? "\(delta)" : "±0"
-                details.stikText = "\(actual) (\(sign))"
-            }
-        }
+        details.stikText = parseStikText(
+            from: caption,
+            storedCaption: storedCaption,
+            bidTricks: details.bidTricks
+        )
 
         return details
     }
@@ -403,6 +399,55 @@ struct HomeView: View {
         guard let range = caption.range(of: "meldte ", options: [.backwards, .caseInsensitive]) else { return nil }
         let after = caption[range.upperBound...].trimmingCharacters(in: .whitespaces)
         return after.split(separator: " ").first.flatMap { Int($0) }
+    }
+
+    private func parseStikText(from caption: String, storedCaption: String, bidTricks: Int?) -> String? {
+        if caption.range(of: "ramte buddet præcis", options: .caseInsensitive) != nil,
+           let bid = bidTricks {
+            return "\(bid) (±0)"
+        }
+
+        if let togRange = caption.range(of: "tog ", options: .caseInsensitive) {
+            let afterTog = caption[togRange.upperBound...]
+            let beforeStik: Substring
+            if let stikRange = afterTog.range(of: "stik", options: .caseInsensitive) {
+                beforeStik = afterTog[..<stikRange.lowerBound]
+            } else {
+                beforeStik = afterTog
+            }
+
+            let actual = beforeStik
+                .split(whereSeparator: { !$0.isNumber })
+                .compactMap { Int($0) }
+                .first
+
+            if let actual {
+                if let delta = parseDeltaInParentheses(String(afterTog)) {
+                    return "\(actual) (\(delta))"
+                }
+                return "\(actual)"
+            }
+        }
+
+        if let range = storedCaption.range(of: "||") {
+            let code = String(storedCaption[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            if let delta = Int(code.hasPrefix("+") ? String(code.dropFirst()) : code),
+               let bid = bidTricks {
+                let actual = bid + delta
+                let sign = delta > 0 ? "+\(delta)" : delta < 0 ? "\(delta)" : "±0"
+                return "\(actual) (\(sign))"
+            }
+        }
+
+        return nil
+    }
+
+    private func parseDeltaInParentheses(_ text: String) -> String? {
+        guard let start = text.firstIndex(of: "("),
+              let end = text[start...].firstIndex(of: ")") else { return nil }
+        let value = String(text[text.index(after: start)..<end]).trimmingCharacters(in: .whitespaces)
+        guard value.hasPrefix("+") || value.hasPrefix("-") else { return nil }
+        return value
     }
 
     private func parseTrump(_ caption: String) -> String? {

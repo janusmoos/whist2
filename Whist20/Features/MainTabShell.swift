@@ -187,27 +187,3 @@ struct ActiveSpilTabView: View {
         }
     }
 }
-
-// MARK: - Statistik
-
-struct StatistikTabView: View {
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ContentUnavailableView(
-                        "Statistik",
-                        systemImage: "chart.bar.xaxis",
-                        description: Text(
-                            "Oversigt over spiltyper, makkerpar og tendenser — kommer senere."
-                        )
-                    )
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-            }
-            .navigationTitle("Statistik")
-            .navigationBarTitleDisplayMode(.large)
-        }
-    }
-}

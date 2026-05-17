@@ -1,0 +1,8 @@
+statistic,requires,availableGames,status
+Samlet score pr. spiller,score only,744,klar nu
+Gennemsnit pr. spil,score only,744,klar nu
+Udvikling over tid,score + session date,26,næsten klar
+Spiltype-statistik,gameTypeRaw,460,kræver normalisering
+Dealer-statistik,dealerId,512,kan laves med sample size
+Melder/hvem-statistik,bidderId,398,kræver navne-/kolonnerevision
+Makker-statistik,partnerId,0,ikke klar i import v1

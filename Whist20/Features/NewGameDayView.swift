@@ -190,6 +190,7 @@ struct NewGameDayView: View {
         let day = GameDay(title: title, notes: notes, seatOrderJSON: seatOrderJSON)
         modelContext.insert(day)
         try? modelContext.save()
+        LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: day.id, modelContext: modelContext)
         savedDayId = day.id
         savedTitle = title
         didSave = true

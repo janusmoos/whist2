@@ -12,12 +12,15 @@ extension GameDay {
         days.first { $0.isActive }
     }
 
+    @MainActor
     func close(modelContext: ModelContext) {
         endedAt = Date()
         try? modelContext.save()
+        LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: id, modelContext: modelContext)
     }
 
     /// Genåbn spilledag. Returnerer `false`, hvis en **anden** spilledag allerede er aktiv.
+    @MainActor
     func resumeIfAllowed(allDays: [GameDay], modelContext: ModelContext) -> Bool {
         guard !isActive else { return true }
         if allDays.contains(where: { $0.id != id && $0.isActive }) {
@@ -25,6 +28,7 @@ extension GameDay {
         }
         endedAt = nil
         try? modelContext.save()
+        LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: id, modelContext: modelContext)
         return true
     }
 }

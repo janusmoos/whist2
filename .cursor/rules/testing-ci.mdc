@@ -1,7 +1,8 @@
 ---
 description: Testing and CI discipline for Whist20
 globs:
-  - "whist 2.0/**/*.swift"
+  - "Whist20/**/*.swift"
+  - "Whist20Tests/**/*.swift"
 alwaysApply: true
 ---
 
@@ -9,11 +10,10 @@ alwaysApply: true
 
 ## Når vi ændrer scoring eller domænet
 
-- Opdatér/tilføj relevante tests i `whist 2.0/Whist20Tests/`.
+- Opdatér/tilføj relevante tests i `Whist20Tests/`.
 - Kør tests lokalt med `xcodebuild ... test` (samme destination som CI, hvis muligt).
 
 ## Når CI fejler
 
 - Prioritér at få workflowet grønt igen før større feature-arbejde.
 - Hvis fejlen er “simulator navn / Xcode version”, så gør destinationen mere robust (fx via `-destination 'platform=iOS Simulator,OS=latest,name=iPhone 15'` eller dynamisk device lookup).
-

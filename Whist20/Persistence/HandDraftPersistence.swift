@@ -119,6 +119,10 @@ enum HandDraftPersistence {
             context.insert(pending)
         }
         try? context.save()
+        let gid = gameDay.id
+        Task { @MainActor in
+            LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: gid, modelContext: context)
+        }
     }
 
     static func deletePending(context: ModelContext, gameDay: GameDay) {
@@ -130,6 +134,10 @@ enum HandDraftPersistence {
         pending.gameDay = nil
         context.delete(pending)
         try? context.save()
+        let gid = gameDay.id
+        Task { @MainActor in
+            LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: gid, modelContext: context)
+        }
     }
 }
 
