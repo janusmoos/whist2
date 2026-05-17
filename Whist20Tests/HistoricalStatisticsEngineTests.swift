@@ -3,6 +3,26 @@ import XCTest
 
 final class HistoricalStatisticsEngineTests: XCTestCase {
 
+    func testHistoricalDataPackResourceNames() {
+        XCTAssertEqual(HistoricalDataPack.primary.resourceName, "whist_historical_data_v3")
+        XCTAssertEqual(HistoricalDataPack.legacyV2.resourceName, "whist_historical_data_v2")
+        XCTAssertEqual(HistoricalDataPack.custom(resourceName: "fixture").resourceName, "fixture")
+    }
+
+    func testLoadsPrimaryAndLegacyHistoricalDataPacks() throws {
+        let primary = try HistoricalDataJSONLoader(bundle: .main, pack: .primary).load()
+        let legacy = try HistoricalDataJSONLoader(bundle: .main, pack: .legacyV2).load()
+
+        XCTAssertEqual(primary.version, "whist_historical_data_v3")
+        XCTAssertEqual(primary.auditSummary?.version, "v3")
+        XCTAssertEqual(primary.games.count, 903)
+        XCTAssertEqual(primary.playerResults.count, primary.games.count * 4)
+
+        XCTAssertEqual(legacy.version, "whist_historical_data_v2_corrected")
+        XCTAssertEqual(legacy.auditSummary?.version, "v2")
+        XCTAssertEqual(legacy.games.count, 744)
+    }
+
     func testDecodesHistoricalDataShape() throws {
         let json = """
         {

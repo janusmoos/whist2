@@ -49,6 +49,7 @@
 		B2A101072CF0000000120107 /* StatistikTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101062CF0000000120106 /* StatistikTabView.swift */; };
 		B2A101092CF0000000120109 /* HistoricalStatisticsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101082CF0000000120108 /* HistoricalStatisticsEngineTests.swift */; };
 		B2A1010B2CF000000012010B /* whist_historical_data_v2.json in Resources */ = {isa = PBXBuildFile; fileRef = B2A1010A2CF000000012010A /* whist_historical_data_v2.json */; };
+		B2A101132CF0000000120113 /* whist_historical_data_v3.json in Resources */ = {isa = PBXBuildFile; fileRef = B2A101122CF0000000120112 /* whist_historical_data_v3.json */; };
 		B2A101102CF0000000120110 /* LiveSessionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1010E2CF000000012010E /* LiveSessionSync.swift */; };
 /* End PBXBuildFile section */
 
@@ -107,6 +108,7 @@
 		B2A101062CF0000000120106 /* StatistikTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatistikTabView.swift; sourceTree = "<group>"; };
 		B2A101082CF0000000120108 /* HistoricalStatisticsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalStatisticsEngineTests.swift; sourceTree = "<group>"; };
 		B2A1010A2CF000000012010A /* whist_historical_data_v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = whist_historical_data_v2.json; sourceTree = "<group>"; };
+		B2A101122CF0000000120112 /* whist_historical_data_v3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = whist_historical_data_v3.json; sourceTree = "<group>"; };
 		B2A1010E2CF000000012010E /* LiveSessionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSessionSync.swift; sourceTree = "<group>"; };
 		B2A1010F2CF000000012010F /* AppInfoAdditions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppInfoAdditions.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -235,6 +237,7 @@
 		B2A1010D2CF000000012010D /* HistoricalData */ = {
 			isa = PBXGroup;
 			children = (
+				B2A101122CF0000000120112 /* whist_historical_data_v3.json */,
 				B2A1010A2CF000000012010A /* whist_historical_data_v2.json */,
 			);
 			path = HistoricalData;
@@ -336,6 +339,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B2A100102CF0000000120010 /* Assets.xcassets in Resources */,
+				B2A101132CF0000000120113 /* whist_historical_data_v3.json in Resources */,
 				B2A1010B2CF000000012010B /* whist_historical_data_v2.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

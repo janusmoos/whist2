@@ -1,5 +1,22 @@
 import Foundation
 
+enum HistoricalDataPack: Equatable {
+    case primary
+    case legacyV2
+    case custom(resourceName: String)
+
+    var resourceName: String {
+        switch self {
+        case .primary:
+            "whist_historical_data_v3"
+        case .legacyV2:
+            "whist_historical_data_v2"
+        case let .custom(resourceName):
+            resourceName
+        }
+    }
+}
+
 enum HistoricalDataJSONLoaderError: LocalizedError, Equatable {
     case missingResource(String)
 
@@ -15,7 +32,12 @@ struct HistoricalDataJSONLoader {
     var bundle: Bundle
     var resourceName: String
 
-    init(bundle: Bundle = .main, resourceName: String = "whist_historical_data_v2") {
+    init(bundle: Bundle = .main, pack: HistoricalDataPack = .primary) {
+        self.bundle = bundle
+        self.resourceName = pack.resourceName
+    }
+
+    init(bundle: Bundle = .main, resourceName: String) {
         self.bundle = bundle
         self.resourceName = resourceName
     }

@@ -1,0 +1,88 @@
+{
+  "bundleSemver": "3.0.0-draft",
+  "generatedAtUtc": null,
+  "sourceWorkbook": {
+    "fileName": "Whist – resultater – samlet (2024)_AKTIV_forenkling af data.xlsx",
+    "localPathAtGeneration": "/Users/moos/Downloads/Whist – resultater – samlet (2024)_AKTIV_forenkling af data.xlsx",
+    "sha256": "a6c126c81f743c9ad5da54af3ac18e312459cc44d02e01d7b656d3ccce446bfa",
+    "sheetCount": 56
+  },
+  "truthSheets": [
+    {
+      "name": "SAMLET_alle regnskab_16-5-2026",
+      "role": "primary_game_rows",
+      "dimensions": {
+        "rows": 755,
+        "columns": 77
+      },
+      "headerRows": [1, 2, 3],
+      "fieldHeaderRow": 3,
+      "fieldHeaderSha256": "81b3ab246b88c09f0d1b9ded92f1c3eec10fa612e3e76b3d6dd1f6f0bfcc4b77",
+      "dataRows": {
+        "summaryOnlyRows": "4:10",
+        "gameRows": "11:755"
+      }
+    },
+    {
+      "name": "00_Regnskab_01",
+      "role": "audit_control",
+      "dimensions": {
+        "rows": 48,
+        "columns": 14
+      },
+      "sessionMetadataRows": "3:35"
+    }
+  ],
+  "legacy": {
+    "immutableBundle": "whist_historical_data_v2",
+    "resourcePath": "Whist20/Resources/HistoricalData/whist_historical_data_v2.json",
+    "documentationPath": "docs/statistik/examples/v02/CODEX_HANDOFF_WHIST_IMPORT.md"
+  },
+  "importer": {
+    "repo": "github.com:janusmoos/whist2.git",
+    "gitCommit": null,
+    "gitBranch": "codex/historical-data-v3-source-switch",
+    "scriptPath": null
+  },
+  "tooling": {
+    "pythonVersion": null,
+    "openpyxlVersion": null
+  },
+  "outputs": {
+    "historicalDataJson": {
+      "path": "docs/statistik/examples/v03/whist_historical_data_v3.json",
+      "sha256": null
+    },
+    "auditReport": {
+      "path": "docs/statistik/examples/v03/IMPORT_V3_REPORT.md",
+      "sha256": null
+    },
+    "readOnlyAuditReport": {
+      "path": "docs/statistik/examples/v03/IMPORT_V3_AUDIT.md",
+      "sha256": null
+    },
+    "readOnlyAuditManifest": {
+      "path": "docs/statistik/examples/v03/import_manifest_v3.audit.json",
+      "sha256": null
+    },
+    "issuesCsv": {
+      "path": "docs/statistik/examples/v03/issues_v3.csv",
+      "sha256": null
+    },
+    "sessionValidationCsv": {
+      "path": "docs/statistik/examples/v03/session_validation_v3.csv",
+      "sha256": null
+    },
+    "session19CombinedOrderCsv": {
+      "path": "docs/statistik/examples/v03/session19_combined_order.csv",
+      "sha256": null
+    }
+  },
+  "normalizationRules": {
+    "version": "v3-draft",
+    "documentation": [
+      "docs/statistik/examples/v03/IMPORT_V3_DECISIONS.md",
+      "docs/statistik/examples/v03/IMPORT_V3_COLUMN_MAP.md"
+    ]
+  }
+}
