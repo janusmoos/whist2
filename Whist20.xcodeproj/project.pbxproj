@@ -49,6 +49,7 @@
 		B2A101072CF0000000120107 /* StatistikTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101062CF0000000120106 /* StatistikTabView.swift */; };
 		B2A101092CF0000000120109 /* HistoricalStatisticsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101082CF0000000120108 /* HistoricalStatisticsEngineTests.swift */; };
 		B2A1010B2CF000000012010B /* whist_historical_data_v2.json in Resources */ = {isa = PBXBuildFile; fileRef = B2A1010A2CF000000012010A /* whist_historical_data_v2.json */; };
+		B2A101102CF0000000120110 /* LiveSessionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1010E2CF000000012010E /* LiveSessionSync.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +107,8 @@
 		B2A101062CF0000000120106 /* StatistikTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatistikTabView.swift; sourceTree = "<group>"; };
 		B2A101082CF0000000120108 /* HistoricalStatisticsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalStatisticsEngineTests.swift; sourceTree = "<group>"; };
 		B2A1010A2CF000000012010A /* whist_historical_data_v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = whist_historical_data_v2.json; sourceTree = "<group>"; };
+		B2A1010E2CF000000012010E /* LiveSessionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSessionSync.swift; sourceTree = "<group>"; };
+		B2A1010F2CF000000012010F /* AppInfoAdditions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppInfoAdditions.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,8 +141,10 @@
 		B2A1000C2CF000000012000C /* Whist20 */ = {
 			isa = PBXGroup;
 			children = (
+				B2A1010F2CF000000012010F /* AppInfoAdditions.plist */,
 				B2A100032CF0000000120003 /* Whist20App.swift */,
 				B2A100042CF0000000120004 /* ContentView.swift */,
+				B2A101112CF0000000120111 /* Services */,
 				B2A100382CF0000000120038 /* Features */,
 				B2A100412CF0000000120041 /* Persistence */,
 				B2A100302CF0000000120030 /* Domain */,
@@ -147,6 +152,14 @@
 				B2A100052CF0000000120005 /* Assets.xcassets */,
 			);
 			path = Whist20;
+			sourceTree = "<group>";
+		};
+		B2A101112CF0000000120111 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B2A1010E2CF000000012010E /* LiveSessionSync.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		B2A1000D2CF000000012000D /* Products */ = {
@@ -377,6 +390,7 @@
 				B2A101032CF0000000120103 /* HistoricalDataJSONLoader.swift in Sources */,
 				B2A101052CF0000000120105 /* HistoricalStatisticsEngine.swift in Sources */,
 				B2A101072CF0000000120107 /* StatistikTabView.swift in Sources */,
+				B2A101102CF0000000120110 /* LiveSessionSync.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -531,6 +545,7 @@
 				DEVELOPMENT_TEAM = 9U8LM3K5F5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Whist20/AppInfoAdditions.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Whist 2.0";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -560,6 +575,7 @@
 				DEVELOPMENT_TEAM = 9U8LM3K5F5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Whist20/AppInfoAdditions.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Whist 2.0";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
