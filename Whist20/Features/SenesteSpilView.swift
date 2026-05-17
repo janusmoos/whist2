@@ -33,32 +33,48 @@ struct SenesteSpilView: View {
     }
 
     var body: some View {
-        List {
-            if let pair = latestPair {
-                Section {
-                    SenesteSpilDiscreteTable(
-                        gameDay: pair.gameDay,
-                        hands: handsNewestFirst(for: pair.gameDay)
-                    )
-                    .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 10, trailing: 12))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                } header: {
-                    Text(pair.gameDay.title)
-                } footer: {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if let pair = latestPair {
+                    let ordered = handsNewestFirst(for: pair.gameDay)
+                    let heroHand = ordered.first ?? pair.hand
+                    let otherHands = Array(ordered.dropFirst())
+
+                    SenesteSpilLatestHeroCard(hand: heroHand, gameDay: pair.gameDay)
+                        .padding(.horizontal, 16)
+
+                    if !otherHands.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Øvrige kampe samme dag")
+                                .font(.headline)
+                                .padding(.horizontal, 4)
+                            SenesteSpilDiscreteTable(
+                                gameDay: pair.gameDay,
+                                hands: otherHands
+                            )
+                        }
+                        .padding(.horizontal, 16)
+                    }
+
                     Text("Viser kampe fra den spilledag, den seneste kamp tilhører.")
                         .font(.footnote)
-                }
-            } else {
-                Section {
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                } else {
                     ContentUnavailableView(
                         "Ingen gemte kampe",
                         systemImage: "clock.arrow.circlepath",
                         description: Text("Når I har gemt en kamp, vises den her med resumé og point.")
                     )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 48)
                 }
             }
+            .padding(.top, 8)
+            .padding(.bottom, 28)
         }
+        .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Seneste spil")
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
