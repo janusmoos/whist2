@@ -53,6 +53,10 @@
 		B2A101102CF0000000120110 /* LiveSessionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1010E2CF000000012010E /* LiveSessionSync.swift */; };
 		B2A101152CF0000000120115 /* LocalGameBackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101142CF0000000120114 /* LocalGameBackupService.swift */; };
 		B2A101172CF0000000120117 /* LocalGameBackupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101162CF0000000120116 /* LocalGameBackupServiceTests.swift */; };
+		B2A101222CF0000000120122 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2A101212CF0000000120121 /* Anton-Regular.ttf */; };
+		B2A101242CF0000000120124 /* Anton-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = B2A101232CF0000000120123 /* Anton-OFL.txt */; };
+		B2A101262CF0000000120126 /* Archivo.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B2A101252CF0000000120125 /* Archivo.ttf */; };
+		B2A101282CF0000000120128 /* Archivo-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = B2A101272CF0000000120127 /* Archivo-OFL.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +119,10 @@
 		B2A1010F2CF000000012010F /* AppInfoAdditions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppInfoAdditions.plist; sourceTree = "<group>"; };
 		B2A101142CF0000000120114 /* LocalGameBackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalGameBackupService.swift; sourceTree = "<group>"; };
 		B2A101162CF0000000120116 /* LocalGameBackupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalGameBackupServiceTests.swift; sourceTree = "<group>"; };
+		B2A101212CF0000000120121 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
+		B2A101232CF0000000120123 /* Anton-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Anton-OFL.txt"; sourceTree = "<group>"; };
+		B2A101252CF0000000120125 /* Archivo.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Archivo.ttf"; sourceTree = "<group>"; };
+		B2A101272CF0000000120127 /* Archivo-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Archivo-OFL.txt"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -235,9 +243,21 @@
 		B2A1010C2CF000000012010C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B2A1011A2CF000000012011A /* Fonts */,
 				B2A1010D2CF000000012010D /* HistoricalData */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		B2A1011A2CF000000012011A /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				B2A101212CF0000000120121 /* Anton-Regular.ttf */,
+				B2A101232CF0000000120123 /* Anton-OFL.txt */,
+				B2A101252CF0000000120125 /* Archivo.ttf */,
+				B2A101272CF0000000120127 /* Archivo-OFL.txt */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		B2A1010D2CF000000012010D /* HistoricalData */ = {
@@ -343,11 +363,15 @@
 		B2A100082CF0000000120008 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
-				B2A100102CF0000000120010 /* Assets.xcassets in Resources */,
-				B2A101132CF0000000120113 /* whist_historical_data_v3.json in Resources */,
-				B2A1010B2CF000000012010B /* whist_historical_data_v2.json in Resources */,
-			);
+				files = (
+					B2A100102CF0000000120010 /* Assets.xcassets in Resources */,
+					B2A101222CF0000000120122 /* Anton-Regular.ttf in Resources */,
+					B2A101242CF0000000120124 /* Anton-OFL.txt in Resources */,
+					B2A101262CF0000000120126 /* Archivo.ttf in Resources */,
+					B2A101282CF0000000120128 /* Archivo-OFL.txt in Resources */,
+					B2A101132CF0000000120113 /* whist_historical_data_v3.json in Resources */,
+					B2A1010B2CF000000012010B /* whist_historical_data_v2.json in Resources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B2A1001C2CF000000012001C /* Resources */ = {

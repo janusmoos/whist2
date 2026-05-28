@@ -4,6 +4,7 @@ import SwiftUI
 /// Hub efter et gemt spil: hurtig tilføjelse, seneste spil, pladsholdere til statistik m.m.
 struct GameDayStartView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var gameDay: GameDay
     /// Når sand, åbnes «Tilføj spil»-arket én gang ved første visning (fx fra forsiden).
     var presentAddHandSheetOnAppear: Bool = false
@@ -15,9 +16,6 @@ struct GameDayStartView: View {
     @State private var toastWorkItem: DispatchWorkItem?
     @State private var didConsumePresentAddHand = false
     @State private var showResumeBlocked = false
-    /// Hvilken af de kompakte kampe (ikke den fremhævede seneste) er udvidet med resumé.
-    @State private var expandedOtherHandID: UUID?
-    @State private var senesteSpilVisning: SenesteSpilOversigtVisning = .table
 
     private var hasActivePendingHand: Bool {
         gameDay.pendingHand != nil
@@ -28,159 +26,11 @@ struct GameDayStartView: View {
     }
 
     var body: some View {
-        List {
-            if !gameDay.isActive {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("Spilledagen er afsluttet", systemImage: "moon.zzz.fill")
-                            .font(.headline)
-                        Text(
-                            hasActivePendingHand
-                                ? "Der ligger stadig et spil undervejs under «Aktivt spil». Genoptag spilledagen for at fortsætte — eller afslut den aktive spilkladde først."
-                                : "Genoptag for at registrere nye kampe. Historik og pointfindes stadig nedenfor."
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        Button {
-                            if gameDay.resumeIfAllowed(allDays: allGameDays, modelContext: modelContext) {
-                                return
-                            }
-                            showResumeBlocked = true
-                        } label: {
-                            Label("Genoptag spilledag", systemImage: "arrow.uturn.backward.circle.fill")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            if canStartOrContinueHand {
-                Section {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Button {
-                            showAddHand = true
-                        } label: {
-                            Label(
-                                "Tilføj spil",
-                                systemImage: "plus.circle.fill"
-                            )
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                        .buttonStyle(.borderedProminent)
-
-                        // Aktivitetsstatus: diskret række når der ikke er en kladde.
-                        if hasActivePendingHand {
-                            NavigationLink {
-                                ActiveGameView(gameDay: gameDay)
-                            } label: {
-                                Label("Fortsæt aktivt spil", systemImage: "arrow.triangle.2.circlepath.circle.fill")
-                                    .font(.subheadline.weight(.semibold))
-                            }
-                        } else {
-                            HStack(spacing: 10) {
-                                Image(systemName: "rectangle.and.hand.point.up.left.filled")
-                                    .foregroundStyle(.tertiary)
-                                    .frame(width: 20)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Ingen kladde i gang")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                    Text("Et påbegyndt spil dukker op her som «Aktivt spil».")
-                                        .font(.caption)
-                                        .foregroundStyle(.tertiary)
-                                }
-                                Spacer(minLength: 0)
-                            }
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("Aktivt spil: ingen kladde")
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            Section("Seneste spil") {
-                if latestHand != nil {
-                    if senesteSpilVisning == .cards {
-                        if let hand = latestHand {
-                            NavigationLink(value: HomeRoute.hand(gameDayId: gameDay.id, handId: hand.id)) {
-                                FeaturedLatestHandCard(hand: hand, gameDay: gameDay)
-                            }
-                            .buttonStyle(.plain)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                            .listRowBackground(Color.clear)
-
-                            ForEach(otherHandsChronological, id: \.id) { other in
-                                CompactHandDayRow(
-                                    hand: other,
-                                    gameDay: gameDay,
-                                    isExpanded: expandedOtherHandID == other.id,
-                                    onToggle: {
-                                        withAnimation(.easeInOut(duration: 0.22)) {
-                                            if expandedOtherHandID == other.id {
-                                                expandedOtherHandID = nil
-                                            } else {
-                                                expandedOtherHandID = other.id
-                                            }
-                                        }
-                                    }
-                                )
-                                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                                .listRowBackground(Color.clear)
-                            }
-                        }
-                    } else {
-                        SenesteSpilDiscreteTable(gameDay: gameDay, hands: handsNewestFirst)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 10, trailing: 12))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
-                } else {
-                    Text("Ingen gemte kampe endnu. Brug «Tilføj spil» når spilledagen er aktiv.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section {
-                dummyCard(
-                    title: "Statistik",
-                    systemImage: "chart.bar.xaxis",
-                    message: "Oversigt over spiltyper, makkerpar og tendenser — kommer senere."
-                )
-            }
-
-            Section {
-                NavigationLink {
-                    PointStandingView(gameDay: gameDay)
-                } label: {
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "person.3.sequence")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 36)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Pointfordeling")
-                                .font(.headline)
-                            Text("Samlede point pr. spiller og udvikling over aftenen.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            Section {
-                NavigationLink {
-                    GameDaySettingsAndHandsView(gameDay: gameDay)
-                } label: {
-                    Label("Spilledag & alle kampe", systemImage: "list.bullet.rectangle")
-                }
+        Group {
+            if gameDay.isActive {
+                activeGameDayContent
+            } else {
+                finishedGameDayContent
             }
         }
         .navigationTitle("")
@@ -224,37 +74,29 @@ struct GameDayStartView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 2) {
-                    Text("Nyt spil")
-                        .font(.headline.weight(.semibold))
-                    Text("Spilledag: \(gameDay.title)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Nyt spil, spilledag \(gameDay.title)")
-            }
-            ToolbarItemGroup(placement: .primaryAction) {
-                Menu {
-                    Picker("Visning", selection: $senesteSpilVisning) {
-                        ForEach(SenesteSpilOversigtVisning.allCases) { mode in
-                            Text(mode.menuTitle).tag(mode)
-                        }
+            if gameDay.isActive {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 2) {
+                        Text("Nyt spil")
+                            .font(.headline.weight(.semibold))
+                        Text("Spilledag: \(gameDay.title)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
-                } label: {
-                    Image(systemName: "square.grid.2x2")
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Nyt spil, spilledag \(gameDay.title)")
                 }
-                .accessibilityLabel("Visning af seneste spil")
 
-                if canStartOrContinueHand {
-                    Button {
-                        showAddHand = true
-                    } label: {
-                        Image(systemName: hasActivePendingHand ? "arrow.triangle.2.circlepath" : "plus")
+                ToolbarItemGroup(placement: .primaryAction) {
+                    if canStartOrContinueHand {
+                        Button {
+                            showAddHand = true
+                        } label: {
+                            Image(systemName: hasActivePendingHand ? "arrow.triangle.2.circlepath" : "plus")
+                        }
+                        .accessibilityLabel(hasActivePendingHand ? "Fortsæt aktivt spil" : "Tilføj spil")
                     }
-                    .accessibilityLabel(hasActivePendingHand ? "Fortsæt aktivt spil" : "Tilføj spil")
                 }
             }
         }
@@ -265,27 +107,56 @@ struct GameDayStartView: View {
         }
     }
 
+    private var activeGameDayContent: some View {
+        List {
+            Section("Seneste spil") {
+                if let hand = latestHand {
+                    VStack(alignment: .leading, spacing: 10) {
+                        RecordedHandCardIllustration(hand: hand, isCompact: true)
+                        ActiveGameResumePanel(
+                            resumeLine: ActiveGamePosterText.resultResumeLine(for: hand),
+                            colorScheme: colorScheme
+                        )
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                    .listRowBackground(Color.clear)
+                } else {
+                    Text("Ingen gemte kampe endnu. Brug «Tilføj spil» når spilledagen er aktiv.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private var finishedGameDayContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                FinishedGameDayHeader(gameDay: gameDay)
+
+                FinishedGameDayStatisticsArea(
+                    gameDay: gameDay,
+                    hands: handsNewestFirst
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 18)
+            .padding(.bottom, 28)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+    }
+
     private var latestHand: RecordedHand? {
         gameDay.hands.max(by: { $0.playedAt < $1.playedAt })
     }
 
-    /// Seneste kamp først, derefter ældre (samme orden som kortvisningen).
     private var handsNewestFirst: [RecordedHand] {
-        guard let latest = latestHand else { return [] }
-        return [latest] + otherHandsChronological
-    }
-
-    /// Øvrige kampe samme dag (ikke den senest afsluttede): omvendt kronologisk (#n−1 … #1).
-    private var otherHandsChronological: [RecordedHand] {
-        guard let latest = latestHand else { return [] }
-        return gameDay.hands
-            .filter { $0.id != latest.id }
-            .sorted { a, b in
-                if a.handNumber > 0, b.handNumber > 0, a.handNumber != b.handNumber {
-                    return a.handNumber > b.handNumber
-                }
-                return a.playedAt > b.playedAt
+        gameDay.hands.sorted { a, b in
+            if a.handNumber > 0, b.handNumber > 0, a.handNumber != b.handNumber {
+                return a.handNumber > b.handNumber
             }
+            return a.playedAt > b.playedAt
+        }
     }
 
     @ViewBuilder
@@ -322,6 +193,143 @@ struct GameDayStartView: View {
     }
 }
 
+// MARK: - Afsluttet spilledag
+
+private struct FinishedGameDayHeader: View {
+    var gameDay: GameDay
+
+    private var trimmedNotes: String {
+        gameDay.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(gameDay.title.uppercased())
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 42))
+                .fontWidth(.compressed)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.62)
+                .frame(maxWidth: .infinity)
+
+            Text(dateLine)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 20))
+                .fontWidth(.compressed)
+                .fontWeight(.semibold)
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.78))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+
+            if !trimmedNotes.isEmpty {
+                Text(trimmedNotes)
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 17))
+                    .fontWidth(.compressed)
+                    .fontWeight(.regular)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.bottom, 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var dateLine: String {
+        let date = gameDay.createdAt.formatted(date: .long, time: .omitted)
+        if let ended = gameDay.endedAt {
+            let endedDate = ended.formatted(date: .abbreviated, time: .shortened)
+            return "\(date) · afsluttet \(endedDate)"
+        }
+        return date
+    }
+}
+
+private struct FinishedGameDayStatisticsArea: View {
+    var gameDay: GameDay
+    var hands: [RecordedHand]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SenesteSpilDaySummarySection(
+                standing: gameDay.scoreStanding,
+                seats: gameDay.seatOrder,
+                title: "Samlet resultat"
+            )
+
+            totalGamesTile
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Alle spil")
+                    .font(.title2.weight(.bold))
+                    .padding(.horizontal, 4)
+
+                if hands.isEmpty {
+                    Text("Ingen gemte kampe.")
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .fill(ActiveGamePosterStyle.panelColor)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+                        }
+                } else {
+                    SenesteSpilDiscreteTable(gameDay: gameDay, hands: hands)
+                }
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private var totalGamesTile: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("SAMLET ANTAL SPIL")
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
+                    .fontWidth(.compressed)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.72))
+                    .lineLimit(1)
+                Text("Afsluttet spilledag")
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
+                    .fontWidth(.compressed)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Text("\(hands.count)")
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 52))
+                .fontWidth(.compressed)
+                .monospacedDigit()
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Samlet antal spil, \(hands.count)")
+    }
+}
+
 // MARK: - Spilledag, bord og fuld kamp-liste (sekundær skærm)
 
 private struct GameDaySettingsAndHandsView: View {
@@ -342,7 +350,7 @@ private struct GameDaySettingsAndHandsView: View {
                     Text(gameDay.createdAt.formatted(date: .long, time: .shortened))
                 }
                 if gameDay.isActive {
-                    Text("For at afslutte spilledagen skal I bruge «Afslut spilledag» på forsiden.")
+                    Text("For at afslutte spilledagen skal I bruge «Afslut spilledag» øverst på Spilledage.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {

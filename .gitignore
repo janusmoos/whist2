@@ -14,3 +14,7 @@ web/node_modules/
 web/.next/
 web/.env
 web/.env.local
+
+# Lokale Python caches
+__pycache__/
+*.pyc

@@ -111,6 +111,7 @@ enum HandDraftPersistence {
     static func upsertPending(context: ModelContext, gameDay: GameDay, draft: HandInputDraft, navigationStep: String) {
         guard let json = try? encode(draft, navigationStep: navigationStep) else { return }
         if let existing = gameDay.pendingHand {
+            guard existing.draftJSON != json else { return }
             existing.draftJSON = json
             existing.updatedAt = Date()
         } else {

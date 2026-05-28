@@ -1,6 +1,6 @@
 {
   "version": "whist_historical_data_v3",
-  "generatedAt": "2026-05-17T10:25:46.844218+00:00",
+  "generatedAt": "2026-05-26T21:26:27.608817+00:00",
   "players": [
     {
       "id": "Thomas",
@@ -20385,11 +20385,9 @@
       "bidderIds": [
         "Thomas"
       ],
-      "winnerId": null,
+      "winnerId": "Thomas",
       "winnerIds": [
-        "Thomas",
-        "Peter",
-        "Christian"
+        "Thomas"
       ],
       "partnerId": null,
       "dealerId": "Thomas",
@@ -20414,9 +20412,10 @@
       "bidderIds": [
         "Peter"
       ],
-      "winnerId": "Peter",
+      "winnerId": null,
       "winnerIds": [
-        "Peter"
+        "Peter",
+        "Janus"
       ],
       "partnerId": "Janus",
       "dealerId": "Janus",
@@ -20442,6 +20441,7 @@
       "winnerId": null,
       "winnerIds": [
         "Thomas",
+        "Peter",
         "Janus"
       ],
       "partnerId": "Janus",
@@ -20468,7 +20468,7 @@
       "winnerId": null,
       "winnerIds": [
         "Thomas",
-        "Janus"
+        "Peter"
       ],
       "partnerId": "Thomas",
       "dealerId": "Christian",
@@ -20491,9 +20491,10 @@
       "bidderIds": [
         "Thomas"
       ],
-      "winnerId": "Thomas",
+      "winnerId": null,
       "winnerIds": [
-        "Thomas"
+        "Thomas",
+        "Janus"
       ],
       "partnerId": "Christian",
       "dealerId": "Thomas",
@@ -24307,9 +24308,10 @@
       "bidderIds": [
         "Peter"
       ],
-      "winnerId": "Peter",
+      "winnerId": null,
       "winnerIds": [
-        "Peter"
+        "Peter",
+        "Christian"
       ],
       "partnerId": "Christian",
       "dealerId": "Christian",
@@ -24840,8 +24842,8 @@
       ],
       "winnerId": null,
       "winnerIds": [
-        "Peter",
-        "Janus"
+        "Thomas",
+        "Christian"
       ],
       "partnerId": "Christian",
       "dealerId": "Thomas",
@@ -48291,7 +48293,7 @@
       "id": "session_25_2024-11-29_game_002_Peter",
       "gameId": "session_25_2024-11-29_game_002",
       "playerId": "Peter",
-      "score": 4,
+      "score": -4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 549
     },
@@ -48299,7 +48301,7 @@
       "id": "session_25_2024-11-29_game_002_Janus",
       "gameId": "session_25_2024-11-29_game_002",
       "playerId": "Janus",
-      "score": -20,
+      "score": -4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 549
     },
@@ -48307,7 +48309,7 @@
       "id": "session_25_2024-11-29_game_002_Christian",
       "gameId": "session_25_2024-11-29_game_002",
       "playerId": "Christian",
-      "score": 4,
+      "score": -4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 549
     },
@@ -48323,7 +48325,7 @@
       "id": "session_25_2024-11-29_game_003_Peter",
       "gameId": "session_25_2024-11-29_game_003",
       "playerId": "Peter",
-      "score": 20,
+      "score": 4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 550
     },
@@ -48331,7 +48333,7 @@
       "id": "session_25_2024-11-29_game_003_Janus",
       "gameId": "session_25_2024-11-29_game_003",
       "playerId": "Janus",
-      "score": -4,
+      "score": 4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 550
     },
@@ -48339,7 +48341,7 @@
       "id": "session_25_2024-11-29_game_003_Christian",
       "gameId": "session_25_2024-11-29_game_003",
       "playerId": "Christian",
-      "score": -12,
+      "score": -4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 550
     },
@@ -48355,7 +48357,7 @@
       "id": "session_25_2024-11-29_game_004_Peter",
       "gameId": "session_25_2024-11-29_game_004",
       "playerId": "Peter",
-      "score": -12,
+      "score": 12,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 551
     },
@@ -48363,7 +48365,7 @@
       "id": "session_25_2024-11-29_game_004_Janus",
       "gameId": "session_25_2024-11-29_game_004",
       "playerId": "Janus",
-      "score": 28,
+      "score": 4,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 551
     },
@@ -48379,7 +48381,7 @@
       "id": "session_25_2024-11-29_game_005_Thomas",
       "gameId": "session_25_2024-11-29_game_005",
       "playerId": "Thomas",
-      "score": 40,
+      "score": 16,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 552
     },
@@ -48387,7 +48389,7 @@
       "id": "session_25_2024-11-29_game_005_Peter",
       "gameId": "session_25_2024-11-29_game_005",
       "playerId": "Peter",
-      "score": 0,
+      "score": 16,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 552
     },
@@ -48395,7 +48397,7 @@
       "id": "session_25_2024-11-29_game_005_Janus",
       "gameId": "session_25_2024-11-29_game_005",
       "playerId": "Janus",
-      "score": 16,
+      "score": -16,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 552
     },
@@ -48403,7 +48405,7 @@
       "id": "session_25_2024-11-29_game_005_Christian",
       "gameId": "session_25_2024-11-29_game_005",
       "playerId": "Christian",
-      "score": -56,
+      "score": -16,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 552
     },
@@ -48411,7 +48413,7 @@
       "id": "session_25_2024-11-29_game_006_Thomas",
       "gameId": "session_25_2024-11-29_game_006",
       "playerId": "Thomas",
-      "score": 56,
+      "score": 80,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 553
     },
@@ -48419,7 +48421,7 @@
       "id": "session_25_2024-11-29_game_006_Peter",
       "gameId": "session_25_2024-11-29_game_006",
       "playerId": "Peter",
-      "score": -16,
+      "score": -32,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 553
     },
@@ -48427,7 +48429,7 @@
       "id": "session_25_2024-11-29_game_006_Janus",
       "gameId": "session_25_2024-11-29_game_006",
       "playerId": "Janus",
-      "score": 0,
+      "score": 32,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 553
     },
@@ -48435,7 +48437,7 @@
       "id": "session_25_2024-11-29_game_006_Christian",
       "gameId": "session_25_2024-11-29_game_006",
       "playerId": "Christian",
-      "score": -40,
+      "score": -80,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 553
     },
@@ -52859,7 +52861,7 @@
       "id": "session_30_2025-11-21_game_001_Thomas",
       "gameId": "session_30_2025-11-21_game_001",
       "playerId": "Thomas",
-      "score": -224,
+      "score": -24,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 692
     },
@@ -52867,7 +52869,7 @@
       "id": "session_30_2025-11-21_game_001_Peter",
       "gameId": "session_30_2025-11-21_game_001",
       "playerId": "Peter",
-      "score": 360,
+      "score": 24,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 692
     },
@@ -52875,7 +52877,7 @@
       "id": "session_30_2025-11-21_game_001_Janus",
       "gameId": "session_30_2025-11-21_game_001",
       "playerId": "Janus",
-      "score": -120,
+      "score": -24,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 692
     },
@@ -52883,7 +52885,7 @@
       "id": "session_30_2025-11-21_game_001_Christian",
       "gameId": "session_30_2025-11-21_game_001",
       "playerId": "Christian",
-      "score": -16,
+      "score": 24,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 692
     },
@@ -53499,7 +53501,7 @@
       "id": "session_31_2025-11-22_game_001_Thomas",
       "gameId": "session_31_2025-11-22_game_001",
       "playerId": "Thomas",
-      "score": -52,
+      "score": 8,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 712
     },
@@ -53507,7 +53509,7 @@
       "id": "session_31_2025-11-22_game_001_Peter",
       "gameId": "session_31_2025-11-22_game_001",
       "playerId": "Peter",
-      "score": 36,
+      "score": -8,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 712
     },
@@ -53515,7 +53517,7 @@
       "id": "session_31_2025-11-22_game_001_Janus",
       "gameId": "session_31_2025-11-22_game_001",
       "playerId": "Janus",
-      "score": 20,
+      "score": -8,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 712
     },
@@ -53523,7 +53525,7 @@
       "id": "session_31_2025-11-22_game_001_Christian",
       "gameId": "session_31_2025-11-22_game_001",
       "playerId": "Christian",
-      "score": -4,
+      "score": 8,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 712
     },
@@ -54911,10 +54913,10 @@
     "importedGames": 903,
     "playerResultRows": 3612,
     "playerTotals": {
-      "Christian": -721,
-      "Janus": 3479,
-      "Peter": -3473,
-      "Thomas": 635
+      "Christian": -669,
+      "Janus": 3547,
+      "Peter": -3853,
+      "Thomas": 895
     },
     "fieldCounts": {
       "gameType": 699,
@@ -54923,14 +54925,17 @@
       "partner": 251,
       "score_sum_zero": 873
     },
-    "issueCount": 47,
+    "issueCount": 50,
     "issueCounts": {
       "date_mismatch": 8,
       "empty_source_sheet": 1,
       "expected_vs_imported_count_mismatch": 1,
       "individual_sheet_limited_source": 6,
+      "known_control_total_error": 1,
+      "primary_header_sha256_mismatch": 1,
       "score_sum_not_zero": 30,
-      "session19_manual_review_required": 1
+      "session19_manual_review_required": 1,
+      "workbook_sha256_mismatch": 1
     }
   }
 }

@@ -16,8 +16,7 @@ struct MeldingPresentation {
             )
         case .sol:
             var r: [(String, String)] = [
-                ("Type", "Sol"),
-                ("Variant", solTypeDanish(draft.solType)),
+                ("Spiltype", solTypeDanish(draft.solType)),
                 ("Melder", draft.solBidder?.playerDisplayName ?? "Ikke valgt"),
             ]
             if !draft.goingWith.isEmpty {
@@ -33,11 +32,17 @@ struct MeldingPresentation {
                 ("Spiltype", draft.normalSubtype.title),
                 ("Meldt", "\(draft.bidTricks) stik"),
             ]
+            if draft.requiresPartnerAceForBid {
+                r.append(("Makker", draft.partner?.playerDisplayName ?? "Ikke valgt"))
+            }
             if draft.normalSubtype == .alm, let t = draft.trumpAlm {
                 r.append(("Trumf (bud)", t.cardSymbol))
             }
             if draft.normalSubtype == .gode {
-                r.append(("Bemærk", "Gode i klør"))
+                r.append(("Trumf", Suit.clubs.cardSymbol))
+            }
+            if draft.normalSubtype == .sans {
+                r.append(("Trumf", "Ingen trumf"))
             }
             if draft.normalSubtype == .halve {
                 if let t = draft.trumpAfterPlay {
@@ -84,7 +89,7 @@ struct MeldingPresentation {
         switch t {
         case .normal: return "Sol"
         case .pure: return "Ren sol"
-        case .halfDealer: return "Halv bordlægger"
+        case .halfDealer: return "½ bordlægger"
         case .dealer: return "Bordlægger"
         }
     }
@@ -92,17 +97,25 @@ struct MeldingPresentation {
 
 // MARK: - Kort UI
 
+private let meldingBoxTitleFont: Font = .system(size: 15, weight: .semibold)
+private let meldingTileLabelFont: Font = .system(size: 13, weight: .semibold)
+private let meldingTileValueFont: Font = .system(size: 15, weight: .semibold)
+let meldingSeatButtonFontSize: CGFloat = 14
+private let meldingWheelValueFont: Font = .system(size: 17)
+
 struct MeldingStatusCard: View {
     let presentation: MeldingPresentation
 
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .center, spacing: 15) {
             Text(presentation.sectionTitle)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(meldingBoxTitleFont)
+                .foregroundStyle(headingColor)
                 .textCase(.uppercase)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
 
             if presentation.rows.contains(where: { $0.0 == "Melder" }) {
                 tilesLayout
@@ -117,15 +130,27 @@ struct MeldingStatusCard: View {
             }
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.thinMaterial)
+                .fill(colorScheme == .dark ? Color(uiColor: .secondarySystemGroupedBackground) : ActiveGamePosterStyle.panelColor)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
+    }
+
+    private var statusTileBackground: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.08)
+            : Color(red: 0.97, green: 0.97, blue: 0.96)
+    }
+
+    private var headingColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.62)
+            : ActiveGamePosterStyle.darkInkColor.opacity(0.55)
     }
 
     private var rowsByKey: [String: String] {
@@ -138,6 +163,7 @@ struct MeldingStatusCard: View {
         let trump =
             rowsByKey["Trumf (bud)"] ?? rowsByKey["Trumf"] ?? rowsByKey["Trumf (bud)"]
         let ace = rowsByKey["Makker-es"]
+        let partner = rowsByKey["Makker"]
         let bid = rowsByKey["Meldt"]
         let subtype = rowsByKey["Spiltype"] ?? rowsByKey["Type"]
 
@@ -149,6 +175,9 @@ struct MeldingStatusCard: View {
                 if let subtype {
                     tile(label: "Spiltype", value: subtype)
                 }
+                if let partner {
+                    tile(label: "Makker", value: partner)
+                }
             }
 
             LazyVGrid(
@@ -158,11 +187,11 @@ struct MeldingStatusCard: View {
                 if let trump {
                     tile(label: "Trumf", value: trump)
                 }
-                if let ace {
-                    tile(label: "Makker-es", value: ace)
-                }
                 if let bid {
                     tile(label: "Meldt", value: bid)
+                }
+                if let ace {
+                    tile(label: "Makker-es", value: ace)
                 }
             }
         }
@@ -186,47 +215,73 @@ struct MeldingStatusCard: View {
     private func tile(label: String, value: String) -> some View {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         let isSuitIcon = (label == "Trumf" || label == "Makker-es") && ["♠", "♥", "♦", "♣"].contains(trimmed)
-        return VStack(alignment: .leading, spacing: 6) {
+        let isNoTrumpIcon = label == "Trumf" && trimmed == "Ingen trumf"
+        return VStack(alignment: .center, spacing: 7) {
             Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(meldingTileLabelFont)
+                .foregroundStyle(headingColor)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: 16, alignment: .center)
+                .multilineTextAlignment(.center)
             if isSuitIcon {
                 Text(trimmed)
                     .font(.title2.weight(.heavy))
                     .foregroundStyle(suitIconColor(trimmed))
-                    .frame(width: 26, height: 26, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(width: 26, height: 26, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .accessibilityLabel("\(label): \(trimmed)")
+            } else if isNoTrumpIcon {
+                Image(systemName: "xmark.circle")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                    .frame(width: 26, height: 26, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .accessibilityLabel("Ingen trumf")
             } else {
                 SuitColoredInlineText.build(value, colorScheme: colorScheme)
-                    .font(.subheadline.weight(.semibold))
+                    .font(meldingTileValueFont)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 62, alignment: .top)
         .padding(.horizontal, 10)
-        .padding(.vertical, 9)
+        .padding(.top, 6)
+        .padding(.bottom, 6)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
+                .fill(statusTileBackground)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.72), lineWidth: 1)
         }
     }
 
     private func suitIconColor(_ symbol: String) -> Color {
-        switch symbol {
-        case "♥", "♦": return .red
-        case "♠", "♣":
-            return colorScheme == .dark ? Color(white: 0.95) : Color(white: 0.05)
-        default: return .primary
-        }
+        Suit(cardSymbol: symbol)?.color(context: .poster, colorScheme: colorScheme) ?? .primary
     }
 }
 
 // MARK: - Melder som knapper (fire spillere)
+
+struct MeldingSeatChoiceButtonStyle: ButtonStyle {
+    var isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isSelected ? ActiveGamePosterStyle.panelColor : Color(uiColor: .systemBackground))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(isSelected ? ActiveGamePosterStyle.borderColor.opacity(0.86) : Color.gray.opacity(0.24), lineWidth: 1)
+            }
+            .opacity(configuration.isPressed ? 0.72 : 1)
+    }
+}
 
 struct MelderSeatButtonGrid: View {
     @Binding var selectedSeat: Seat
@@ -239,16 +294,15 @@ struct MelderSeatButtonGrid: View {
                     selectedSeat = seat
                 } label: {
                     Text(seat.playerDisplayName)
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.82))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
                 }
-                .buttonStyle(.bordered)
-                .tint(on ? .accentColor : .secondary)
-                .buttonBorderShape(.roundedRectangle(radius: 6))
-                .fontWeight(on ? .semibold : .regular)
+                .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                 .accessibilityLabel("Melder: \(seat.playerDisplayName)")
             }
         }
@@ -270,16 +324,15 @@ struct PartnerSeatButtonGrid: View {
                     selectedPartner = seat
                 } label: {
                     Text(seat.playerDisplayName)
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.82))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
                 }
-                .buttonStyle(.bordered)
-                .tint(on ? .accentColor : .secondary)
-                .buttonBorderShape(.roundedRectangle(radius: 6))
-                .fontWeight(on ? .semibold : .regular)
+                .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                 .accessibilityLabel("Makker: \(seat.playerDisplayName)")
             }
         }
@@ -319,6 +372,7 @@ struct ActualTricksWheelPicker: View {
         Picker("Vundne stik", selection: $actualTricks) {
             ForEach(Array(0 ... 13), id: \.self) { n in
                 Text("\(n) stik \(Self.deltaSuffix(n, bid: bidTricks))")
+                    .font(meldingWheelValueFont)
                     .tag(n)
             }
         }

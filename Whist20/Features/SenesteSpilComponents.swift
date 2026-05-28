@@ -210,48 +210,13 @@ struct SenesteSpilLatestHeroCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            headerRow
-
-            scoreArena
-                .padding(.top, 22)
-
-            rolesHint
-                .padding(.top, 14)
-
-            contractBadgeStrip
-                .padding(.top, 20)
-
-            SuitColoredInlineText.build(captionParts.narrative, colorScheme: colorScheme)
-                .font(.body)
-                .lineSpacing(5)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 12) {
+            RecordedHandCardIllustration(hand: hand)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 22)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(captionParts.narrative)
+
+            ActiveGameResumePanel(resumeLine: ActiveGamePosterText.resultResumeLine(for: hand), colorScheme: colorScheme)
         }
-        .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            Color.primary.opacity(0.14),
-                            Color.primary.opacity(0.05),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        }
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.08), radius: 18, y: 10)
         .accessibilityElement(children: .combine)
     }
 

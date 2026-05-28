@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+  <rect width="1600" height="1100" fill="#F7F7F5"/>
+  <text x="80" y="105" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#111111">Whist20 farvepalette</text>
+  <text x="80" y="150" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#666666">Eksisterende appfarver og foreslåede spillerfarver</text>
+
+  <text x="80" y="235" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#111111">Nuværende faste farver</text>
+
+  <g transform="translate(80 275)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#EDE8E0" stroke="#C9C1B5"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Plakatbaggrund</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#EDE8E0</text>
+  </g>
+  <g transform="translate(800 275)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#B3A38F" stroke="#958570"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Plakatborder</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#B3A38F</text>
+  </g>
+
+  <g transform="translate(80 375)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#B80D1A" stroke="#8E0812"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Rød kulør / negativ / ribbon</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#B80D1A</text>
+  </g>
+  <g transform="translate(800 375)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#1A1F29" stroke="#11151C"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Sort kulør / mørk ikon</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#1A1F29</text>
+  </g>
+
+  <g transform="translate(80 475)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#1A7A3B" stroke="#11592A"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Positiv grøn</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#1A7A3B</text>
+  </g>
+  <g transform="translate(800 475)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#EB8C0D" stroke="#C67308"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Sol/orange accent</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#EB8C0D</text>
+  </g>
+
+  <g transform="translate(80 575)">
+    <rect x="0" y="0" width="120" height="72" rx="10" fill="#B8B8B8" stroke="#989898"/>
+    <text x="150" y="30" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#111111">Sans-termometer grå</text>
+    <text x="150" y="61" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#555555">#B8B8B8</text>
+  </g>
+
+  <text x="80" y="735" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#111111">Foreslåede spillerfarver</text>
+  <text x="80" y="770" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#666666">Mættet farve til linjen, lys tint til stillingsboksens baggrund</text>
+
+  <g transform="translate(80 815)">
+    <rect x="0" y="0" width="660" height="90" rx="14" fill="#E8EEF7" stroke="#6F8FBF" stroke-opacity="0.45"/>
+    <rect x="24" y="22" width="72" height="46" rx="8" fill="#6F8FBF"/>
+    <text x="120" y="38" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" fill="#111111">Thomas</text>
+    <text x="120" y="68" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#555555">Linje #6F8FBF · Boks #E8EEF7</text>
+  </g>
+
+  <g transform="translate(860 815)">
+    <rect x="0" y="0" width="660" height="90" rx="14" fill="#E7F1EB" stroke="#6FA987" stroke-opacity="0.45"/>
+    <rect x="24" y="22" width="72" height="46" rx="8" fill="#6FA987"/>
+    <text x="120" y="38" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" fill="#111111">Peter</text>
+    <text x="120" y="68" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#555555">Linje #6FA987 · Boks #E7F1EB</text>
+  </g>
+
+  <g transform="translate(80 935)">
+    <rect x="0" y="0" width="660" height="90" rx="14" fill="#F5EBDD" stroke="#C9944A" stroke-opacity="0.45"/>
+    <rect x="24" y="22" width="72" height="46" rx="8" fill="#C9944A"/>
+    <text x="120" y="38" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" fill="#111111">Janus</text>
+    <text x="120" y="68" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#555555">Linje #C9944A · Boks #F5EBDD</text>
+  </g>
+
+  <g transform="translate(860 935)">
+    <rect x="0" y="0" width="660" height="90" rx="14" fill="#EFE8F4" stroke="#9B75B8" stroke-opacity="0.45"/>
+    <rect x="24" y="22" width="72" height="46" rx="8" fill="#9B75B8"/>
+    <text x="120" y="38" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" fill="#111111">Christian</text>
+    <text x="120" y="68" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#555555">Linje #9B75B8 · Boks #EFE8F4</text>
+  </g>
+</svg>

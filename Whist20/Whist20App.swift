@@ -1,9 +1,14 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 @main
 struct Whist20App: App {
     private let modelContainer: ModelContainer = Self.makeModelContainer()
+
+    init() {
+        Self.configureNavigationTypography()
+    }
 
     /// Egen store-sti (ikke Apples default), så skemaændringer ikke kolliderer med ældre testfiler.
     private static func persistenceStoreURL() -> URL {
@@ -40,6 +45,28 @@ struct Whist20App: App {
                 fatalError("Kunne ikke starte SwiftData: \(error)")
             }
         }
+    }
+
+    private static func configureNavigationTypography() {
+        guard let titleFont = UIFont(name: ActiveGamePosterStyle.fontName, size: 19),
+              let largeTitleFont = UIFont(name: ActiveGamePosterStyle.fontName, size: 42) else {
+            return
+        }
+
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.titleTextAttributes = [
+            .font: titleFont,
+            .foregroundColor: UIColor.label,
+        ]
+        appearance.largeTitleTextAttributes = [
+            .font: largeTitleFont,
+            .foregroundColor: UIColor.label,
+        ]
+
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
 
     var body: some Scene {

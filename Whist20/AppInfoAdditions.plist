@@ -8,6 +8,11 @@
 	<string></string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Anton-Regular.ttf</string>
+		<string>Archivo.ttf</string>
+	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 </dict>

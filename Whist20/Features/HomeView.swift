@@ -1,14 +1,11 @@
 import SwiftData
 import SwiftUI
 
-/// Første skærm: kompakt 2×2 grid + live-boks med aktivt / seneste spil.
+/// Første skærm: kompakt 2×2 grid + aktivt spil, når der ligger en kladde.
 struct HomeView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
 
     @Binding var navigationPath: NavigationPath
-    @State private var alertMessage: String?
-    @State private var showEndGameDayConfirm = false
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -25,7 +22,7 @@ struct HomeView: View {
                     quickGrid
                         .padding(.top, 8)
 
-                    liveStatusBox
+                    activeGameSection
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 28)
@@ -45,6 +42,12 @@ struct HomeView: View {
                     }
                 case .newGameDay:
                     NewGameDayView(path: $navigationPath)
+                case .editGameDay(let id):
+                    if let day = gameDays.first(where: { $0.id == id }) {
+                        GameDayEditView(gameDay: day)
+                    } else {
+                        missingContent(title: "Spilledag findes ikke")
+                    }
                 case .gameDay(let id, let openAdd):
                     if let day = gameDays.first(where: { $0.id == id }) {
                         GameDayStartView(gameDay: day, presentAddHandSheetOnAppear: openAdd)
@@ -65,31 +68,9 @@ struct HomeView: View {
                 case .scorecard:
                     ScorecardView()
                 case .allGameDays:
-                    GameDaysView()
+                    GameDaysView(navigationPath: $navigationPath)
                 }
             }
-        }
-        .alert("Bemærk", isPresented: Binding(
-            get: { alertMessage != nil },
-            set: { if !$0 { alertMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { alertMessage = nil }
-        } message: {
-            Text(alertMessage ?? "")
-        }
-        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
-            Button("Annuller", role: .cancel) {}
-            Button("Afslut", role: .destructive) {
-                if let day = activeGameDay {
-                    day.close(modelContext: modelContext)
-                }
-            }
-        } message: {
-            Text(
-                GameDaySessionDialogs.endGameDayMessage(
-                    hasPendingHand: activeGameDay?.pendingHand != nil
-                )
-            )
         }
     }
 
@@ -98,36 +79,26 @@ struct HomeView: View {
     private var quickGrid: some View {
         let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
         return LazyVGrid(columns: columns, spacing: 12) {
-            if activeGameDay != nil {
-                gridButton(
-                    title: "Afslut spilledag",
-                    systemImage: "flag.checkered",
-                    tint: .orange
-                ) {
-                    showEndGameDayConfirm = true
-                }
-            } else {
-                gridButton(
-                    title: "Ny spilledag",
-                    systemImage: "calendar.badge.plus",
-                    tint: .accentColor
-                ) {
-                    navigationPath.append(HomeRoute.newGameDay)
-                }
-            }
-
             gridButton(
-                title: "Alle spilledage",
+                title: "Spilledage",
                 systemImage: "calendar",
-                tint: .accentColor
+                tint: homeButtonBlue
             ) {
                 navigationPath.append(HomeRoute.allGameDays)
             }
 
             gridButton(
+                title: "Seneste spil",
+                systemImage: "clock.arrow.circlepath",
+                tint: homeButtonGreen
+            ) {
+                navigationPath.append(HomeRoute.senesteSpil)
+            }
+
+            gridButton(
                 title: "Stilling",
                 systemImage: "list.number",
-                tint: .accentColor
+                tint: homeButtonOrange
             ) {
                 navigationPath.append(HomeRoute.standings)
             }
@@ -135,7 +106,7 @@ struct HomeView: View {
             gridButton(
                 title: "Indstillinger",
                 systemImage: "gearshape.fill",
-                tint: .secondary
+                tint: homeButtonMuted
             ) {
                 navigationPath.append(HomeRoute.settings)
             }
@@ -149,359 +120,75 @@ struct HomeView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Image(systemName: systemImage)
-                    .font(.title2)
-                    .imageScale(.large)
+                    .font(.system(size: 27, weight: .semibold))
+                    .frame(height: 30)
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.custom(ActiveGamePosterStyle.fontName, size: 23))
+                    .textCase(.uppercase)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.7)
                     .multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity, minHeight: 80)
+            .frame(maxWidth: .infinity, minHeight: 88)
+            .padding(.vertical, 6)
             .foregroundStyle(tint)
             .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(tint.opacity(0.1))
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .fill(ActiveGamePosterStyle.panelColor)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(tint.opacity(0.25), lineWidth: 1)
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
             }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
     }
 
-    // MARK: - Live-boks: aktivt spil eller seneste afsluttede
+    // MARK: - Aktivt spil
 
     @ViewBuilder
-    private var liveStatusBox: some View {
+    private var activeGameSection: some View {
         if let day = activeGameDay, hasActivePendingHand {
             activeGameBox(gameDay: day)
-        } else if let (day, _) = latestFinishedPair {
-            recentGamesBox(gameDay: day)
-        } else {
-            emptyStatusBox
         }
     }
 
-    /// Aktivt spil: resumé-tekst fra kladden.
+    /// Aktivt spil: samme plakatgrafik som fanen "Aktivt spil".
     private func activeGameBox(gameDay: GameDay) -> some View {
         let loaded = loadDraft(for: gameDay)
-        return VStack(alignment: .leading, spacing: 10) {
-            Label("Aktivt spil", systemImage: "circle.fill")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.orange)
-                .symbolRenderingMode(.multicolor)
-            if let (draft, step) = loaded {
-                let resumeLine = HandResumeCaption.presentTenseLine(from: draft)
-                SuitColoredInlineText.build(resumeLine, colorScheme: colorScheme)
-                    .font(.subheadline.weight(.semibold))
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            Text(gameDay.title)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.orange.opacity(0.3), lineWidth: 1.5)
-        }
-    }
-
-    /// Seneste afsluttede kamp: tile-layout à la MeldingStatusCard.
-    private func recentGamesBox(gameDay: GameDay) -> some View {
-        guard let (_, hand) = latestFinishedPair else {
-            return AnyView(EmptyView())
-        }
-        let scores = HandScorePersistence.decodeScores(hand.scoresBySeatJSON)
-        let seats = gameDay.seatOrder
-        let bidderName: String? = Seat(rawValue: hand.bidderSeatRaw)?.playerDisplayName
-        let partnerName: String? = {
-            guard hand.kindRaw == "normal", hand.partnerSeatRaw >= 0 else { return nil }
-            return Seat(rawValue: hand.partnerSeatRaw)?.playerDisplayName
-        }()
-        let parsed = parseResumeDetails(hand)
-
-        return AnyView(
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Seneste spil")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    Spacer()
-                    Text("#\(hand.handNumber)")
-                        .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.tertiary)
-                }
-
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        if let name = bidderName {
-                            infoTile(label: "Melder", value: name)
-                        }
-                        infoTile(label: "Type", value: parsed.typeLabel)
-                    }
-
-                    if hand.kindRaw != "duty" {
-                        let hasTrump = parsed.trump != nil
-                        let hasBid = parsed.bidTricks != nil
-                        let hasPartner = partnerName != nil
-                        let hasStik = parsed.stikText != nil
-
-                        if hasTrump || hasBid || hasPartner || hasStik {
-                            HStack(spacing: 8) {
-                                if let p = partnerName {
-                                    infoTile(label: "Makker", value: p)
-                                }
-                                if let bid = parsed.bidTricks {
-                                    infoTile(label: "Meldt", value: "\(bid) stik")
-                                }
-                            }
-                        }
-
-                        if hasTrump || hasStik {
-                            HStack(spacing: 8) {
-                                if let trump = parsed.trump {
-                                    infoTile(label: "Trumf", value: trump)
-                                }
-                                if let stik = parsed.stikText {
-                                    infoTile(label: "Stik", value: stik)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                HStack(spacing: 6) {
-                    ForEach(seats, id: \.self) { seat in
-                        let v = scores[seat] ?? 0
-                        HStack(spacing: 3) {
-                            Text(String(seat.playerDisplayName.prefix(1)))
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Text(v > 0 ? "+\(v)" : "\(v)")
-                                .font(.subheadline.weight(.bold).monospacedDigit())
-                                .foregroundStyle(v > 0 ? .green : v < 0 ? .red : .secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(.top, 2)
-
-                Text(gameDay.title)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "circle.fill")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.multicolor)
+                Text("Aktivt spil")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.thinMaterial)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-            }
-        )
-    }
 
-    private func infoTile(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+            if let (draft, _) = loaded {
+                let resumeLine = ActiveGamePosterText.resumeLine(for: draft)
+                ActiveGameCardIllustration(draft: draft, isCompact: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ActiveGameResumePanel(resumeLine: resumeLine, colorScheme: colorScheme)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thinMaterial)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-    }
-
-    private struct ResumeDetails {
-        var typeLabel: String
-        var bidTricks: Int?
-        var trump: String?
-        var stikText: String?
-    }
-
-    private func parseResumeDetails(_ hand: RecordedHand) -> ResumeDetails {
-        let caption = hand.displayResumeNarrative
-        let storedCaption = hand.resumeCaption
-        var details = ResumeDetails(typeLabel: "—")
-
-        switch hand.kindRaw {
-        case "duty":
-            details.typeLabel = "Duestraf"
-            return details
-        case "sol":
-            details.typeLabel = parseSolType(caption)
-            return details
-        default:
-            break
-        }
-
-        details.typeLabel = parseNormalType(caption)
-        details.bidTricks = parseBidTricks(caption)
-        details.trump = parseTrump(caption)
-        details.stikText = parseStikText(
-            from: caption,
-            storedCaption: storedCaption,
-            bidTricks: details.bidTricks
-        )
-
-        return details
-    }
-
-    private func parseNormalType(_ caption: String) -> String {
-        let lower = caption.lowercased()
-        if lower.contains("vip tredje") || lower.contains("vip 3") { return "VIP i 3." }
-        if lower.contains("vip anden") || lower.contains("vip 2") { return "VIP i 2." }
-        if lower.contains("vip første") || lower.contains("vip 1") || lower.contains("vip") { return "VIP i 1." }
-        if lower.contains("(gode)") { return "Gode" }
-        if lower.contains("halve") { return "Halve" }
-        if lower.contains("sans") { return "Sans" }
-        if lower.contains("almindelige") { return "Almindelig" }
-        return "Normal"
-    }
-
-    private func parseSolType(_ caption: String) -> String {
-        let lower = caption.lowercased()
-        if lower.contains("bordlægger") && !lower.contains("halv") { return "Hel bordlægger" }
-        if lower.contains("halv bordlægger") || lower.contains("halv-bordlægger") { return "Halv bordlægger" }
-        if lower.contains("ren sol") || lower.contains("ren-sol") { return "Ren sol" }
-        return "Sol"
-    }
-
-    private func parseBidTricks(_ caption: String) -> Int? {
-        guard let range = caption.range(of: "meldte ", options: [.backwards, .caseInsensitive]) else { return nil }
-        let after = caption[range.upperBound...].trimmingCharacters(in: .whitespaces)
-        return after.split(separator: " ").first.flatMap { Int($0) }
-    }
-
-    private func parseStikText(from caption: String, storedCaption: String, bidTricks: Int?) -> String? {
-        if caption.range(of: "ramte buddet præcis", options: .caseInsensitive) != nil,
-           let bid = bidTricks {
-            return "\(bid) (±0)"
-        }
-
-        if let togRange = caption.range(of: "tog ", options: .caseInsensitive) {
-            let afterTog = caption[togRange.upperBound...]
-            let beforeStik: Substring
-            if let stikRange = afterTog.range(of: "stik", options: .caseInsensitive) {
-                beforeStik = afterTog[..<stikRange.lowerBound]
-            } else {
-                beforeStik = afterTog
-            }
-
-            let actual = beforeStik
-                .split(whereSeparator: { !$0.isNumber })
-                .compactMap { Int($0) }
-                .first
-
-            if let actual {
-                if let delta = parseDeltaInParentheses(String(afterTog)) {
-                    return "\(actual) (\(delta))"
-                }
-                return "\(actual)"
-            }
-        }
-
-        if let range = storedCaption.range(of: "||") {
-            let code = String(storedCaption[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-            if let delta = Int(code.hasPrefix("+") ? String(code.dropFirst()) : code),
-               let bid = bidTricks {
-                let actual = bid + delta
-                let sign = delta > 0 ? "+\(delta)" : delta < 0 ? "\(delta)" : "±0"
-                return "\(actual) (\(sign))"
-            }
-        }
-
-        return nil
-    }
-
-    private func parseDeltaInParentheses(_ text: String) -> String? {
-        guard let start = text.firstIndex(of: "("),
-              let end = text[start...].firstIndex(of: ")") else { return nil }
-        let value = String(text[text.index(after: start)..<end]).trimmingCharacters(in: .whitespaces)
-        guard value.hasPrefix("+") || value.hasPrefix("-") else { return nil }
-        return value
-    }
-
-    private func parseTrump(_ caption: String) -> String? {
-        let suitSymbols: [(symbol: String, name: String)] = [
-            ("♠", "Spar"), ("♥", "Hjerter"), ("♦", "Ruder"), ("♣", "Klør"),
-        ]
-        if caption.lowercased().contains("sans") { return nil }
-        if caption.lowercased().contains("(gode)") { return "♣" }
-        guard let range = caption.range(of: "som trumf", options: .caseInsensitive) else { return nil }
-        let before = caption[..<range.lowerBound]
-        for (symbol, _) in suitSymbols {
-            if before.contains(symbol) { return symbol }
-        }
-        return nil
-    }
-
-    private var emptyStatusBox: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "tray")
-                .font(.title2)
-                .foregroundStyle(.tertiary)
-            Text("Opret en spilledag for at komme i gang.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .padding(.horizontal, 16)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        }
     }
 
     // MARK: - Helpers
 
     @Environment(\.colorScheme) private var colorScheme
 
-    private var latestFinishedPair: (gameDay: GameDay, hand: RecordedHand)? {
-        var best: (GameDay, RecordedHand)?
-        for day in gameDays {
-            for hand in day.hands {
-                guard let cur = best else {
-                    best = (day, hand)
-                    continue
-                }
-                if hand.playedAt > cur.1.playedAt {
-                    best = (day, hand)
-                }
-            }
-        }
-        return best
-    }
+    private var homeButtonBlue: Color { Color(red: 0.43, green: 0.56, blue: 0.75) }
+    private var homeButtonGreen: Color { Color(red: 0.38, green: 0.66, blue: 0.53) }
+    private var homeButtonOrange: Color { Color(red: 0.79, green: 0.53, blue: 0.21) }
+    private var homeButtonMuted: Color { ActiveGamePosterStyle.darkInkColor.opacity(0.62) }
 
     private func loadDraft(for gameDay: GameDay) -> (draft: HandInputDraft, stepRaw: String?)? {
         guard let json = gameDay.pendingHand?.draftJSON,

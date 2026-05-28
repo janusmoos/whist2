@@ -195,6 +195,35 @@ struct HistoricalGameTypeTrendSummary: Equatable, Identifiable {
     }
 }
 
+enum HistoricalScoreStreakKind: Equatable {
+    case win
+    case loss
+}
+
+struct HistoricalPlayerScoreStreak: Equatable, Identifiable {
+    var id: String {
+        "\(player.id)-\(kind)-\(startGameId)-\(endGameId)-\(games)-\(totalScore)"
+    }
+
+    var player: HistoricalPlayer
+    var kind: HistoricalScoreStreakKind
+    var games: Int
+    var totalScore: Int
+    var startSessionNumber: String
+    var startGameNumber: Int
+    var endSessionNumber: String
+    var endGameNumber: Int
+    var startGameId: String
+    var endGameId: String
+}
+
+struct HistoricalScoreStreakSummary: Equatable {
+    var longestWin: HistoricalPlayerScoreStreak?
+    var highestWinAmount: HistoricalPlayerScoreStreak?
+    var longestLoss: HistoricalPlayerScoreStreak?
+    var deepestLossAmount: HistoricalPlayerScoreStreak?
+}
+
 enum HistoricalStatisticsEngine {
     static func scopedData(
         from data: HistoricalWhistData,
@@ -211,10 +240,11 @@ enum HistoricalStatisticsEngine {
     ) -> HistoricalStatisticsSnapshot {
         let scopedData = data.filtered(for: scope, recentSessionLimit: recentSessionLimit)
         let summaries = playerScoreSummaries(from: scopedData)
-        let derivedIssueCounts = dataQualityIssueCounts(from: scopedData)
+        let details = gameDetails(from: scopedData)
+        let derivedIssueCounts = dataQualityIssueCounts(from: details)
         let zeroSumCount = scopedData.auditSummary?.fieldCounts.scoreSumZero
             ?? scopedData.games.filter { ($0.checksum ?? 0) == 0 }.count
-        let issueCount = gamesWithQualityIssues(from: scopedData).count
+        let issueCount = details.filter(\.hasQualityIssues).count
 
         return HistoricalStatisticsSnapshot(
             scope: scope,
@@ -591,6 +621,141 @@ enum HistoricalStatisticsEngine {
             }
     }
 
+    static func scoreStreakSummary(from data: HistoricalWhistData) -> HistoricalScoreStreakSummary {
+        let players = data.players.sorted { lhs, rhs in
+            if lhs.displayOrder != rhs.displayOrder {
+                return lhs.displayOrder < rhs.displayOrder
+            }
+            return lhs.name < rhs.name
+        }
+        let sessionsById = Dictionary(uniqueKeysWithValues: data.sessions.map { ($0.id, $0) })
+        let sessionOrder = Dictionary(uniqueKeysWithValues: data.sessions.enumerated().map { ($0.element.id, $0.offset) })
+        let orderedGames = data.games.sorted { lhs, rhs in
+            let leftSessionOrder = sessionOrder[lhs.sessionId] ?? Int.max
+            let rightSessionOrder = sessionOrder[rhs.sessionId] ?? Int.max
+            if leftSessionOrder != rightSessionOrder {
+                return leftSessionOrder < rightSessionOrder
+            }
+            if lhs.gameNumberInSession != rhs.gameNumberInSession {
+                return lhs.gameNumberInSession < rhs.gameNumberInSession
+            }
+            return lhs.id < rhs.id
+        }
+        let resultsByGame = Dictionary(grouping: data.playerResults, by: \.gameId)
+        var allStreaks: [HistoricalPlayerScoreStreak] = []
+
+        for player in players {
+            var activeKind: HistoricalScoreStreakKind?
+            var activeGames = 0
+            var activeTotal = 0
+            var activeStartGame: HistoricalGame?
+            var activeEndGame: HistoricalGame?
+
+            func finishActiveStreak() {
+                guard let kind = activeKind,
+                      activeGames > 0,
+                      let startGame = activeStartGame,
+                      let endGame = activeEndGame,
+                      let startSession = sessionsById[startGame.sessionId],
+                      let endSession = sessionsById[endGame.sessionId] else {
+                    activeKind = nil
+                    activeGames = 0
+                    activeTotal = 0
+                    activeStartGame = nil
+                    activeEndGame = nil
+                    return
+                }
+
+                allStreaks.append(
+                    HistoricalPlayerScoreStreak(
+                        player: player,
+                        kind: kind,
+                        games: activeGames,
+                        totalScore: activeTotal,
+                        startSessionNumber: startSession.sessionNumber,
+                        startGameNumber: startGame.gameNumberInSession,
+                        endSessionNumber: endSession.sessionNumber,
+                        endGameNumber: endGame.gameNumberInSession,
+                        startGameId: startGame.id,
+                        endGameId: endGame.id
+                    )
+                )
+
+                activeKind = nil
+                activeGames = 0
+                activeTotal = 0
+                activeStartGame = nil
+                activeEndGame = nil
+            }
+
+            for game in orderedGames {
+                let score = resultsByGame[game.id]?.first { $0.playerId == player.id }?.score ?? 0
+                let kind: HistoricalScoreStreakKind?
+                if score > 0 {
+                    kind = .win
+                } else if score < 0 {
+                    kind = .loss
+                } else {
+                    kind = nil
+                }
+
+                guard let kind else {
+                    finishActiveStreak()
+                    continue
+                }
+
+                if activeKind != kind {
+                    finishActiveStreak()
+                    activeKind = kind
+                    activeGames = 0
+                    activeTotal = 0
+                    activeStartGame = game
+                }
+
+                activeGames += 1
+                activeTotal += score
+                activeEndGame = game
+            }
+
+            finishActiveStreak()
+        }
+
+        let winStreaks = allStreaks.filter { $0.kind == .win }
+        let lossStreaks = allStreaks.filter { $0.kind == .loss }
+
+        return HistoricalScoreStreakSummary(
+            longestWin: bestLengthStreak(from: winStreaks, prefersHigherTotal: true),
+            highestWinAmount: winStreaks.max { lhs, rhs in
+                if lhs.totalScore != rhs.totalScore {
+                    return lhs.totalScore < rhs.totalScore
+                }
+                return lhs.games < rhs.games
+            },
+            longestLoss: bestLengthStreak(from: lossStreaks, prefersHigherTotal: false),
+            deepestLossAmount: lossStreaks.min { lhs, rhs in
+                if lhs.totalScore != rhs.totalScore {
+                    return lhs.totalScore < rhs.totalScore
+                }
+                return lhs.games > rhs.games
+            }
+        )
+    }
+
+    private static func bestLengthStreak(
+        from streaks: [HistoricalPlayerScoreStreak],
+        prefersHigherTotal: Bool
+    ) -> HistoricalPlayerScoreStreak? {
+        streaks.max { lhs, rhs in
+            if lhs.games != rhs.games {
+                return lhs.games < rhs.games
+            }
+            if lhs.totalScore != rhs.totalScore {
+                return prefersHigherTotal ? lhs.totalScore < rhs.totalScore : lhs.totalScore > rhs.totalScore
+            }
+            return lhs.player.displayOrder > rhs.player.displayOrder
+        }
+    }
+
     private static func sessionDisplayTitle(_ session: HistoricalSession) -> String {
         if let date = session.date, !date.isEmpty {
             return "#\(session.sessionNumber) · \(date)"
@@ -624,7 +789,10 @@ enum HistoricalStatisticsEngine {
     }
 
     static func dataQualityIssueCounts(from data: HistoricalWhistData) -> [String: Int] {
-        let details = gameDetails(from: data)
+        dataQualityIssueCounts(from: gameDetails(from: data))
+    }
+
+    private static func dataQualityIssueCounts(from details: [HistoricalGameScoreDetail]) -> [String: Int] {
         var counts: [String: Int] = [:]
         for detail in details {
             for flag in detail.qualityFlags {
@@ -632,10 +800,6 @@ enum HistoricalStatisticsEngine {
             }
         }
         return counts
-    }
-
-    private static func gamesWithQualityIssues(from data: HistoricalWhistData) -> [HistoricalGameScoreDetail] {
-        gameDetails(from: data).filter(\.hasQualityIssues)
     }
 
     private static func gameDetails(from data: HistoricalWhistData) -> [HistoricalGameScoreDetail] {

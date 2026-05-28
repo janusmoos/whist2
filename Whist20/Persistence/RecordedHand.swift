@@ -21,6 +21,9 @@ final class RecordedHand {
     /// Makkers plads ved normale spil (`Seat.rawValue`). Lig med `bidderSeatRaw` ved selvmakker. `-1` = ukendt / ikke relevant (sol, duestraf, ældre data).
     var partnerSeatRaw: Int = -1
 
+    /// Makker-es ved normale spil (`Suit.rawValue`). `nil` ved spil uden makker-es eller ældre data.
+    var partnerAceSuitRaw: String?
+
     /// JSON-array af makkersæders `rawValue` for sol (`goingWith`), fx `[1,2]`. Tom `[]` uden for sol.
     var solAlliesSeatsJSON: String = "[]"
 
@@ -38,6 +41,7 @@ final class RecordedHand {
         resumeCaption: String = "",
         bidderSeatRaw: Int = -1,
         partnerSeatRaw: Int = -1,
+        partnerAceSuitRaw: String? = nil,
         solAlliesSeatsJSON: String = "[]",
         handNumber: Int = 0,
         gameDay: GameDay? = nil
@@ -50,6 +54,7 @@ final class RecordedHand {
         self.resumeCaption = resumeCaption
         self.bidderSeatRaw = bidderSeatRaw
         self.partnerSeatRaw = partnerSeatRaw
+        self.partnerAceSuitRaw = partnerAceSuitRaw
         self.solAlliesSeatsJSON = solAlliesSeatsJSON
         self.handNumber = handNumber
         self.gameDay = gameDay
@@ -62,6 +67,16 @@ extension RecordedHand {
         HandResumeCaption.displayResumeLine(for: self)
     }
 
+    var isNormalStorslemResult: Bool {
+        guard kindRaw == "normal" else { return false }
+        guard let bidTricks = Self.parseBidTricks(from: resumeCaption),
+              let delta = Self.parseDelta(from: resumeCaption) else {
+            return displayResumeNarrative.range(of: "STORSLEM", options: .caseInsensitive) != nil
+        }
+        let actualTricks = max(0, min(13, bidTricks + delta))
+        return actualTricks == 13 || actualTricks == 0
+    }
+
     /// Til summering af point pr. spilledag eller på tværs af dage.
     var scoreContribution: HandScoreContribution {
         HandScoreContribution(
@@ -69,6 +84,18 @@ extension RecordedHand {
             playedAt: playedAt,
             scoresBySeat: HandScorePersistence.decodeScores(scoresBySeatJSON)
         )
+    }
+
+    private static func parseBidTricks(from text: String) -> Int? {
+        guard let range = text.range(of: "meldte ", options: [.caseInsensitive, .backwards]) else { return nil }
+        let after = text[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return after.split(separator: " ").first.flatMap { Int($0) }
+    }
+
+    private static func parseDelta(from text: String) -> Int? {
+        guard let range = text.range(of: "||") else { return nil }
+        let token = text[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return Int(token)
     }
 }
 

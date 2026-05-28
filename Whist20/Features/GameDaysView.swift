@@ -6,60 +6,70 @@ struct GameDaysView: View {
     @Environment(\.homeNavigationPath) private var homeNavigationPath
     @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
 
+    var navigationPath: Binding<NavigationPath>?
+
     @State private var showResumeBlocked = false
     @State private var showNeedsEndActiveFirst = false
+    @State private var showEndGameDayConfirm = false
+
+    private var activeGameDay: GameDay? {
+        GameDay.activeDay(in: gameDays)
+    }
+
+    private var finishedGameDays: [GameDay] {
+        gameDays.filter { !$0.isActive }
+    }
 
     var body: some View {
         Group {
             if gameDays.isEmpty {
-                ContentUnavailableView(
-                    "Ingen spilledage endnu",
-                    systemImage: "calendar",
-                    description: Text("Brug «Ny spilledag» på forsiden. Spilledage gemmes på enheden.")
-                )
+                VStack(spacing: 18) {
+                    ContentUnavailableView(
+                        "Ingen spilledage endnu",
+                        systemImage: "calendar",
+                        description: Text("Spilledage gemmes på enheden.")
+                    )
+
+                    Button(action: requestNewGameDay) {
+                        Label("Start ny spilledag", systemImage: "calendar.badge.plus")
+                            .font(.headline)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                }
+                .padding(.horizontal, 24)
             } else {
                 List {
-                    ForEach(gameDays, id: \.id) { day in
-                        /// Samme `NavigationPath` som forsiden — undgår kæde af implicitte `destination:`-lag.
-                        NavigationLink(value: HomeRoute.gameDay(day.id, openAddHand: false)) {
-                            HStack(alignment: .firstTextBaseline) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(day.title)
-                                        .font(.headline)
-                                    Text(day.createdAt.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer(minLength: 8)
-                                statusBadge(for: day)
-                            }
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if !day.isActive, GameDay.activeDay(in: gameDays) == nil {
-                                Button {
-                                    resume(day)
-                                } label: {
-                                    Label("Genoptag", systemImage: "arrow.uturn.backward.circle.fill")
-                                }
-                                .tint(.indigo)
-                            }
+                    Section {
+                        topActionCard
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
+
+                    if let activeGameDay {
+                        sectionTitle("Denne spilledag")
+
+                        Section {
+                            gameDayRow(activeGameDay)
                         }
                     }
-                    .onDelete(perform: deleteDays)
+
+                    if !finishedGameDays.isEmpty {
+                        sectionTitle("Alle afsluttede spilledage")
+
+                        Section {
+                            ForEach(finishedGameDays, id: \.id) { day in
+                                gameDayRow(day)
+                            }
+                            .onDelete(perform: deleteFinishedDays)
+                        }
+                    }
                 }
             }
         }
         .navigationTitle("Spilledage")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: requestNewGameDay) {
-                    Image(systemName: "plus")
-                }
-                .accessibilityLabel("Ny spilledag")
-                .disabled(GameDay.activeDay(in: gameDays) != nil)
-            }
-        }
         .alert("Kan ikke genoptage", isPresented: $showResumeBlocked) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -68,7 +78,86 @@ struct GameDaysView: View {
         .alert("Afslut aktiv spilledag først", isPresented: $showNeedsEndActiveFirst) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Der er allerede en aktiv spilledag. Afslut den på forsiden, før I opretter en ny.")
+            Text("Der er allerede en aktiv spilledag. Afslut den her på Spilledage, før I opretter en ny.")
+        }
+        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
+            Button("Annuller", role: .cancel) {}
+            Button("Afslut", role: .destructive) {
+                activeGameDay?.close(modelContext: modelContext)
+            }
+        } message: {
+            Text(
+                GameDaySessionDialogs.endGameDayMessage(
+                    hasPendingHand: activeGameDay?.pendingHand != nil
+                )
+            )
+        }
+    }
+
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.custom(ActiveGamePosterStyle.fontName, size: 32))
+            .fontWidth(.compressed)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
+    private func gameDayRow(_ day: GameDay) -> some View {
+        /// Samme `NavigationPath` som forsiden — undgår kæde af implicitte `destination:`-lag.
+        NavigationLink(value: day.isActive ? HomeRoute.editGameDay(day.id) : HomeRoute.gameDay(day.id, openAddHand: false)) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(day.title)
+                        .font(.headline)
+                    Text(day.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                statusBadge(for: day)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if !day.isActive, GameDay.activeDay(in: gameDays) == nil {
+                Button {
+                    resume(day)
+                } label: {
+                    Label("Genoptag", systemImage: "arrow.uturn.backward.circle.fill")
+                }
+                .tint(.indigo)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var topActionCard: some View {
+        if activeGameDay != nil {
+            Button {
+                showEndGameDayConfirm = true
+            } label: {
+                Text("Afslut denne spilledag")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .tint(.orange)
+        } else {
+            Button(action: requestNewGameDay) {
+                Label("Start ny spilledag", systemImage: "calendar.badge.plus")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .tint(.accentColor)
         }
     }
 
@@ -89,11 +178,15 @@ struct GameDaysView: View {
     }
 
     private func requestNewGameDay() {
-        guard GameDay.activeDay(in: gameDays) == nil else {
+        guard activeGameDay == nil else {
             showNeedsEndActiveFirst = true
             return
         }
-        homeNavigationPath?.wrappedValue.append(HomeRoute.newGameDay)
+        if let navigationPath {
+            navigationPath.wrappedValue.append(HomeRoute.newGameDay)
+        } else {
+            homeNavigationPath?.wrappedValue.append(HomeRoute.newGameDay)
+        }
     }
 
     private func resume(_ day: GameDay) {
@@ -103,9 +196,9 @@ struct GameDaysView: View {
         showResumeBlocked = true
     }
 
-    private func deleteDays(at offsets: IndexSet) {
+    private func deleteFinishedDays(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(gameDays[index])
+            modelContext.delete(finishedGameDays[index])
         }
         try? modelContext.save()
     }

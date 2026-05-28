@@ -12,8 +12,10 @@ struct ContentView: View {
     @State private var addHandAlertMessage: String?
     @State private var toastMessage: String?
     @State private var toastWorkItem: DispatchWorkItem?
-    /// Reserverer plads til den faste bundmenu (`MainTabBar`). Måles ved layout — `safeAreaInset` alene gav ofte skjult bund på indlejrede navigationer.
+    /// Reserverer plads til den faste bundmenu (`MainTabBar`). Måles ved layout — med ekstra luft,
+    /// så sidste indhold kan scrolles fri af det hævede midterkort.
     @State private var mainTabBarOverlapHeight: CGFloat = 62
+    private let mainTabBarExtraContentClearance: CGFloat = 34
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -30,7 +32,9 @@ struct ContentView: View {
                 HomeView(navigationPath: $homeNavigationPath)
             case .recentGames:
                 NavigationStack {
-                    SenesteSpilView()
+                    SenesteSpilView {
+                        selectedTab = .activeGames
+                    }
                         .navigationTitle("Seneste spil")
                         .navigationBarTitleDisplayMode(.large)
                 }
@@ -40,23 +44,30 @@ struct ContentView: View {
                 StatistikTabView()
             }
         }
-        .padding(.bottom, mainTabBarOverlapHeight)
+        .padding(.bottom, mainTabBarOverlapHeight + mainTabBarExtraContentClearance)
         .overlay(alignment: .bottom) {
-            MainTabBar(
-                selectedTab: $selectedTab,
-                hasActiveGameDay: activeGameDay != nil,
-                hasActivePendingHand: hasActivePendingHand,
-                onPlayTapped: openMeldingSheet,
-                onHomeTapped: { homeNavigationPath = NavigationPath() }
-            )
-            .background(
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: MainTabBarMeasuredHeightKey.self,
-                        value: proxy.size.height
-                    )
-                }
-            )
+            ZStack(alignment: .bottom) {
+                BottomMenuFade()
+                    .allowsHitTesting(false)
+
+                MainTabBar(
+                    selectedTab: $selectedTab,
+                    hasActiveGameDay: activeGameDay != nil,
+                    hasActivePendingHand: hasActivePendingHand,
+                    onPlayTapped: openMeldingSheet,
+                    onHomeTapped: { homeNavigationPath = NavigationPath() }
+                )
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: MainTabBarMeasuredHeightKey.self,
+                            value: proxy.size.height
+                        )
+                    }
+                )
+                .offset(y: 34)
+            }
+            .ignoresSafeArea(edges: .bottom)
         }
         .onPreferenceChange(MainTabBarMeasuredHeightKey.self) { height in
             if height > 1 {
@@ -67,7 +78,10 @@ struct ContentView: View {
             if let day = activeGameDay {
                 AddHandView(
                     gameDay: day,
-                    onDismissSaveNotice: { message in showToast(message) },
+                    onDismissSaveNotice: { message in
+                        selectedTab = .activeGames
+                        showToast(message)
+                    },
                     onSaved: { gameDayId, backupMessage in
                         navigateToGameDayAfterSave(gameDayId)
                         if backupMessage != "Lokal backup gemt" {
@@ -148,6 +162,45 @@ private enum MainTabBarMeasuredHeightKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
+    }
+}
+
+private struct BottomMenuFade: View {
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.regularMaterial)
+                .mask(fadeMask)
+
+            LinearGradient(
+                stops: [
+                    .init(color: Color(.systemBackground).opacity(0), location: 0.00),
+                    .init(color: Color(.systemBackground).opacity(0.08), location: 0.24),
+                    .init(color: Color(.systemBackground).opacity(0.56), location: 0.50),
+                    .init(color: Color(.systemBackground).opacity(0.96), location: 0.70),
+                    .init(color: Color(.systemBackground), location: 0.74),
+                    .init(color: Color(.systemBackground), location: 1.00),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .frame(height: 190)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var fadeMask: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .clear, location: 0.00),
+                .init(color: .black.opacity(0.12), location: 0.24),
+                .init(color: .black.opacity(0.68), location: 0.50),
+                .init(color: .black, location: 0.74),
+                .init(color: .black, location: 1.00),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 }
 

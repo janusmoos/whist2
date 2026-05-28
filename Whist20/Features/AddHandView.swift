@@ -55,7 +55,7 @@ final class HandInputDraft {
     /// `nil` indtil spilleren vælger trumf (alm.).
     var trumpAlm: Suit?
 
-    /// Alm/halve/gode: vælg kulør for makker-es direkte (`nil` = ingen makker-es); sans/VIP bruger ikke feltet.
+    /// Alm/sans/halve/gode/VIP: vælg kulør for makker-es direkte (`nil` = ingen makker-es).
     var partnerAceSuit: Suit?
 
     var solType: SolType = .normal
@@ -147,12 +147,11 @@ final class HandInputDraft {
         normalSubtype == .vip && vipLevel == .triple && trumpAfterPlay == .clubs
     }
 
-    /// Alm/halve/gode — ikke sans/VIP.
+    /// Alm/sans/halve/gode/VIP.
     var requiresPartnerAceForBid: Bool {
         guard kind == .normal else { return false }
         switch normalSubtype {
-        case .alm, .halve, .gode: return true
-        case .sans, .vip: return false
+        case .alm, .sans, .halve, .gode, .vip: return true
         }
     }
 
@@ -169,16 +168,11 @@ final class HandInputDraft {
         return out
     }
 
-    /// Kun halve: trumf må ikke være samme kulør som valgt makker-es.
+    /// Halve: trumf må ikke være samme kulør som valgt makker-es. VIP må godt vælge samme kulør.
     var halveTrumpExcludedSuits: Set<Suit> {
         guard kind == .normal, normalSubtype == .halve else { return [] }
         guard let ace = partnerAceSuit else { return [] }
         return [ace]
-    }
-
-    /// Bruges til at gemme resultat-trinnet ved hver relevant ændring.
-    var resultAutosaveToken: String {
-        (try? HandDraftPersistence.encode(self, navigationStep: HandDraftPersistence.stepResultat)) ?? UUID().uuidString
     }
 
     var isBidStepValid: Bool {
@@ -359,6 +353,8 @@ private struct BidStepView: View {
                     dutyBidSections
                 }
             }
+            .contentMargins(.top, 0, for: .scrollContent)
+            .listSectionSpacing(.custom(8))
         }
         .navigationTitle("Melding")
         .navigationBarTitleDisplayMode(.inline)
@@ -430,15 +426,13 @@ private struct BidStepView: View {
                     } label: {
                         Text(seat.playerDisplayName)
                             .font(.caption.weight(.semibold))
+                            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.84))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(on ? .red : .secondary)
-                    .buttonBorderShape(.roundedRectangle(radius: 6))
-                    .fontWeight(on ? .semibold : .regular)
+                    .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                     .overlay(alignment: .topLeading) {
                         if dealerSeat == seat {
                             dealerBadge
@@ -489,6 +483,7 @@ private struct BidStepView: View {
             resumeCaption: caption,
             bidderSeatRaw: bidderSeat,
             partnerSeatRaw: -1,
+            partnerAceSuitRaw: nil,
             solAlliesSeatsJSON: solAlliesJSON,
             handNumber: nextHandNumber,
             gameDay: gameDay
@@ -568,7 +563,7 @@ private struct BidStepView: View {
         switch t {
         case .normal: return "Sol"
         case .pure: return "Ren sol"
-        case .halfDealer: return "Halv bordlægger"
+        case .halfDealer: return "½ bordlægger"
         case .dealer: return "Bordlægger"
         }
     }
@@ -609,7 +604,7 @@ private struct HalveTrumpStepView: View {
                         navigationStepLabel: nil
                     )
                 )
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowBackground(Color.clear)
             }
 
@@ -624,6 +619,8 @@ private struct HalveTrumpStepView: View {
                 Text("Trumf")
             }
         }
+        .contentMargins(.top, 0, for: .scrollContent)
+        .listSectionSpacing(.custom(10))
         .navigationTitle("Trumf (halve)")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: draft.trumpAfterPlay) { _, newTrump in
@@ -689,7 +686,7 @@ private struct ResultStepView: View {
                         navigationStepLabel: nil
                     )
                 )
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowBackground(Color.clear)
             }
 
@@ -701,6 +698,8 @@ private struct ResultStepView: View {
                 normalResultSections
             }
         }
+        .contentMargins(.top, 0, for: .scrollContent)
+        .listSectionSpacing(.custom(10))
         .navigationTitle("Resultat")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -729,26 +728,32 @@ private struct ResultStepView: View {
                 navigationStep: HandDraftPersistence.stepResultat
             )
         }
-        .onChange(of: draft.resultAutosaveToken) { _, _ in
-            pendingAutosaveTask?.cancel()
-            // Hvis sessionen er ved at lukke ned (gem/cancel) — gør slet ingenting.
-            guard !session.shouldSuppressAutosave else { return }
-            pendingAutosaveTask = Task { @MainActor in
-                // Coalesce rapid changes (steppers/wheels) to avoid multiple updates per frame.
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                guard !Task.isCancelled else { return }
-                guard !session.shouldSuppressAutosave else { return }
-                HandDraftPersistence.upsertPending(
-                    context: modelContext,
-                    gameDay: gameDay,
-                    draft: draft,
-                    navigationStep: HandDraftPersistence.stepResultat
-                )
-            }
-        }
+        .onChange(of: draft.actualTricks) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.trumpAfterPlay) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.vipLevel) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.partner) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.dutySeat) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.solTricks) { _, _ in scheduleResultAutosave() }
         .onDisappear {
             pendingAutosaveTask?.cancel()
             pendingAutosaveTask = nil
+        }
+    }
+
+    private func scheduleResultAutosave() {
+        pendingAutosaveTask?.cancel()
+        guard !session.shouldSuppressAutosave else { return }
+        pendingAutosaveTask = Task { @MainActor in
+            // Wheel pickers can emit many values while scrolling. Wait until the UI settles.
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled else { return }
+            guard !session.shouldSuppressAutosave else { return }
+            HandDraftPersistence.upsertPending(
+                context: modelContext,
+                gameDay: gameDay,
+                draft: draft,
+                navigationStep: HandDraftPersistence.stepResultat
+            )
         }
     }
 
@@ -756,6 +761,48 @@ private struct ResultStepView: View {
     private var normalResultSections: some View {
         let scores = draft.finalScores()
 
+        if draft.normalSubtype == .vip {
+            Section {
+                VStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        VipCompactControlBox(title: "Trumf") {
+                            VipTrumpWheelPicker(selection: $draft.trumpAfterPlay)
+                        }
+                        VipCompactControlBox(title: "VIP-niveau") {
+                            VipLevelWheelPicker(selection: $draft.vipLevel)
+                        }
+                    }
+
+                    VipPartnerPickerBox(
+                        bidder: draft.bidder,
+                        seats: gameDay.seatOrder,
+                        scores: scores,
+                        partner: $draft.partner
+                    )
+
+                    VipCompactControlBox(title: "Antal stik") {
+                        ActualTricksWheelPicker(actualTricks: $draft.actualTricks, bidTricks: draft.bidTricks)
+                    }
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 6, trailing: 0))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+        } else {
+            normalPartnerSection(scores: scores)
+            actualTricksSection
+        }
+
+        if draft.vipTripleClubsDoubleActive {
+            Section {
+                vipTripleClubsDoubleNotice
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private func normalPartnerSection(scores: [Seat: Int]?) -> some View {
         Section("Makker til \(draft.bidder?.playerDisplayName ?? "—")") {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
                 ForEach(gameDay.seatOrder, id: \.self) { seat in
@@ -765,7 +812,8 @@ private struct ResultStepView: View {
                     } label: {
                         HStack(spacing: 0) {
                             Text(seat.playerDisplayName)
-                                .font(.caption.weight(.semibold))
+                                .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
+                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.82))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                             Spacer(minLength: 4)
@@ -774,45 +822,37 @@ private struct ResultStepView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(on ? .accentColor : .secondary)
-                    .buttonBorderShape(.roundedRectangle(radius: 6))
-                    .fontWeight(on ? .semibold : .regular)
+                    .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                     .accessibilityLabel("Makker: \(seat.playerDisplayName), \(scores?[seat].map { "\($0) point" } ?? "")")
                 }
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Vælg makker")
         }
+    }
 
-        if draft.normalSubtype == .vip {
-            Section("VIP-niveau") {
-                Picker("Niveau", selection: $draft.vipLevel) {
-                    Text("Første").tag(VipLevel.single)
-                    Text("Anden").tag(VipLevel.double)
-                    Text("Tredje").tag(VipLevel.triple)
-                }
+    private var vipLevelSection: some View {
+        Section("VIP-niveau") {
+            Picker("Niveau", selection: $draft.vipLevel) {
+                Text("Første").tag(VipLevel.single)
+                Text("Anden").tag(VipLevel.double)
+                Text("Tredje").tag(VipLevel.triple)
             }
         }
+    }
 
-        Section {
+    private var actualTricksSection: some View {
+        Section("Antal stik") {
             ActualTricksWheelPicker(actualTricks: $draft.actualTricks, bidTricks: draft.bidTricks)
         }
+    }
 
-        if draft.normalSubtype == .vip {
-            Section("Trumf") {
-                optionalSuitPicker(selection: $draft.trumpAfterPlay)
-            }
-        }
-
-        if draft.vipTripleClubsDoubleActive {
-            Section {
-                vipTripleClubsDoubleNotice
-            }
-            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-            .listRowBackground(Color.clear)
+    private var vipTrumpSection: some View {
+        Section("Trumf") {
+            optionalSuitPicker(selection: $draft.trumpAfterPlay)
         }
     }
 
@@ -867,7 +907,9 @@ private struct ResultStepView: View {
 
     private func scoreBadge(_ value: Int) -> some View {
         let text = value > 0 ? "+\(value)" : "\(value)"
-        let color: Color = value > 0 ? .green : value < 0 ? .red : .secondary
+        let color: Color = value > 0
+            ? Color(red: 0.07, green: 0.38, blue: 0.18)
+            : value < 0 ? Color(red: 0.70, green: 0.03, blue: 0.08) : .secondary
         return Text(text)
             .font(.caption2.weight(.bold).monospacedDigit())
             .foregroundStyle(color)
@@ -893,7 +935,7 @@ private struct ResultStepView: View {
         switch t {
         case .normal: return "Sol"
         case .pure: return "Ren sol"
-        case .halfDealer: return "Halv bordlægger"
+        case .halfDealer: return "½ bordlægger"
         case .dealer: return "Bordlægger"
         }
     }
@@ -949,6 +991,7 @@ private struct ResultStepView: View {
         let caption = HandResumeCaption.compactLine(from: draft)
         let bidderSeat = persistBidderSeatRaw(draft: draft, kind: kind)
         let partnerSeat = persistPartnerSeatRaw(draft: draft, kind: kind)
+        let partnerAceSuitRaw = kind == "normal" ? draft.partnerAceSuit?.rawValue : nil
         let solAlliesJSON = persistSolAlliesJSON(draft: draft, kind: kind)
         gameDay.migrateLegacyHandNumbersIfNeeded()
         let nextHandNumber = (gameDay.hands.map(\.handNumber).max() ?? 0) + 1
@@ -959,6 +1002,7 @@ private struct ResultStepView: View {
             resumeCaption: caption,
             bidderSeatRaw: bidderSeat,
             partnerSeatRaw: partnerSeat,
+            partnerAceSuitRaw: partnerAceSuitRaw,
             solAlliesSeatsJSON: solAlliesJSON,
             handNumber: nextHandNumber,
             gameDay: gameDay
@@ -1090,19 +1134,7 @@ struct AddHandView: View {
     }
 
     private func buildDismissUserMessage() -> String {
-        if path.isEmpty {
-            if !draft.isBidStepValid {
-                return "Kladde gemt som aktivt spil. Meldingen er ikke færdig — udfyld alle felter under «Fortsæt aktivt spil»."
-            }
-            return "Kladde gemt som aktivt spil. Melding er ikke færdigregistreret før du trykker «Næste». Fortsæt via «Fortsæt aktivt spil»."
-        }
-        if draft.kind == .normal, draft.normalSubtype == .halve, draft.trumpAfterPlay == nil {
-            return "Kladde gemt. Vælg trumf for halve under «Fortsæt aktivt spil» — den vises også på Aktivt spil, når den er valgt."
-        }
-        if !draft.isResultStepValid {
-            return "Resultatkladde gemt som aktivt spil. Spillet er ikke gemt før felterne er gyldige og du trykker «Gem»."
-        }
-        return "Kladde gemt. Husk at trykke «Gem» for at registrere kampen, eller fortsæt senere under «Fortsæt aktivt spil»."
+        "Meldingen er gemt som kladde"
     }
 
     private func restorePendingIfNeeded() {
@@ -1184,15 +1216,13 @@ private struct OptionalMelderSeatButtonGrid: View {
                 } label: {
                     Text(seat.playerDisplayName)
                         .font(.caption.weight(.semibold))
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.84))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
                 }
-                .buttonStyle(.bordered)
-                .tint(on ? .accentColor : .secondary)
-                .buttonBorderShape(.roundedRectangle(radius: 6))
-                .fontWeight(on ? .semibold : .regular)
+                .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                 .overlay(alignment: .topLeading) {
                     if dealerSeat == seat {
                         Text("D")
@@ -1255,6 +1285,154 @@ private struct OptionalSuitPicker: View {
         return suit.playingCardForegroundColor(colorScheme: colorScheme)
     }
 }
+
+private struct VipCompactControlBox<Content: View>: View {
+    var title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 7) {
+            Text(title.uppercased())
+                .font(vipControlTitleFont)
+                .foregroundStyle(vipControlTitleColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
+
+            content
+                .frame(maxWidth: .infinity)
+                .frame(height: 104)
+                .clipped()
+        }
+        .padding(.top, vipControlTopPadding)
+        .padding(.horizontal, 8)
+        .padding(.bottom, 6)
+        .frame(maxWidth: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+    }
+}
+
+private struct VipTrumpWheelPicker: View {
+    @Binding var selection: Suit?
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Picker("Trumf", selection: $selection) {
+            Text("—").tag(Suit?.none)
+            ForEach(Suit.allCases, id: \.self) { suit in
+                Text(suit.cardSymbol)
+                    .foregroundStyle(suit.playingCardForegroundColor(colorScheme: colorScheme))
+                    .tag(Suit?.some(suit))
+            }
+        }
+        .pickerStyle(.wheel)
+        .labelsHidden()
+        .accessibilityLabel("Trumf")
+    }
+}
+
+private struct VipLevelWheelPicker: View {
+    @Binding var selection: VipLevel
+
+    var body: some View {
+        Picker("VIP-niveau", selection: $selection) {
+            Text("Første")
+                .font(vipWheelValueFont)
+                .tag(VipLevel.single)
+            Text("Anden")
+                .font(vipWheelValueFont)
+                .tag(VipLevel.double)
+            Text("Tredje")
+                .font(vipWheelValueFont)
+                .tag(VipLevel.triple)
+        }
+        .pickerStyle(.wheel)
+        .labelsHidden()
+        .accessibilityLabel("VIP-niveau")
+    }
+}
+
+private struct VipPartnerPickerBox: View {
+    var bidder: Seat?
+    var seats: [Seat]
+    var scores: [Seat: Int]?
+    @Binding var partner: Seat?
+
+    var body: some View {
+        VStack(alignment: .center, spacing: 11) {
+            Text("MAKKER TIL \(bidder?.playerDisplayName.uppercased() ?? "—")")
+                .font(vipControlTitleFont)
+                .foregroundStyle(vipControlTitleColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                ForEach(seats, id: \.self) { seat in
+                    let on = partner == seat
+                    Button {
+                        partner = seat
+                    } label: {
+                        HStack(spacing: 0) {
+                            Text(seat.playerDisplayName)
+                                .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
+                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.82))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Spacer(minLength: 4)
+                            if let value = scores?[seat] {
+                                vipScoreBadge(value)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
+                    }
+                    .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
+                    .accessibilityLabel("Makker: \(seat.playerDisplayName), \(scores?[seat].map { "\($0) point" } ?? "")")
+                }
+            }
+        }
+        .padding(.top, vipControlTopPadding)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+    }
+
+    private func vipScoreBadge(_ value: Int) -> some View {
+        Text(value > 0 ? "+\(value)" : "\(value)")
+            .font(.caption2.weight(.bold).monospacedDigit())
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .foregroundStyle(value >= 0 ? Color(red: 0.07, green: 0.38, blue: 0.18) : Color(red: 0.70, green: 0.03, blue: 0.08))
+            .background {
+                Capsule()
+                    .fill((value >= 0 ? Color.green : Color.red).opacity(0.14))
+            }
+    }
+}
+
+private let vipControlTitleFont: Font = .system(size: 15, weight: .semibold)
+private let vipControlTitleColor: Color = ActiveGamePosterStyle.darkInkColor.opacity(0.80)
+private let vipControlTopPadding: CGFloat = 10
+private let vipWheelValueFont: Font = .system(size: 17)
 
 // MARK: - Kort resume til «Seneste spil»
 
@@ -1326,7 +1504,9 @@ enum HandResumeCaption {
             if let ace = d.partnerAceSuit { s += " og \(ace.cardSymbol) som makker-es" }
             core = s
         case .sans:
-            core = "\(bid) sans uden trumf"
+            var s = "\(bid) sans uden trumf"
+            if let ace = d.partnerAceSuit { s += " og \(ace.cardSymbol) som makker-es" }
+            core = s
         case .gode:
             core = "\(bid) \(Suit.clubs.cardSymbol) (gode)"
         case .halve:
@@ -1336,6 +1516,7 @@ enum HandResumeCaption {
             core = s
         case .vip:
             var s = "\(bid) VIP \(vipOrdinalDanish(d.vipLevel))"
+            if let ace = d.partnerAceSuit { s += " til \(ace.cardSymbol)" }
             if let tr = d.trumpAfterPlay { s += " med \(tr.cardSymbol) som trumf" }
             core = s
         }
@@ -1382,6 +1563,7 @@ enum HandResumeCaption {
         narrative = rewriteGodeMeldtePhrasing(narrative)
         narrative = applyLegacyResumeWordFixes(narrative)
         narrative = appendSolGoingWithToNarrative(narrative, hand: hand)
+        narrative = normalizeSoloSolOutcome(narrative, hand: hand)
         narrative = prependNormalBidderIfNeeded(narrative, hand: hand)
         narrative = appendSelfmakkerIfNeeded(narrative, hand: hand)
         if let d = parsedDelta {
@@ -1488,6 +1670,25 @@ enum HandResumeCaption {
         return t
     }
 
+    /// Ældre gemte solo-solspil kan have pluralformen "de gik alle ...".
+    /// Når der kun er én solspiller og ingen "går med", skal resuméet bruge "han".
+    private static func normalizeSoloSolOutcome(_ narrative: String, hand: RecordedHand) -> String {
+        guard hand.kindRaw == "sol" else { return narrative }
+        guard solAllySeats(from: hand).isEmpty else { return narrative }
+        var t = narrative
+        t = t.replacingOccurrences(of: " – de gik alle hjem", with: " – han gik hjem", options: .caseInsensitive)
+        t = t.replacingOccurrences(of: " – de gik alle ned", with: " – han gik ned", options: .caseInsensitive)
+        return t
+    }
+
+    private static func solAllySeats(from hand: RecordedHand) -> [Seat] {
+        guard let data = hand.solAlliesSeatsJSON.data(using: .utf8),
+              let rawSeats = try? JSONDecoder().decode([Int].self, from: data) else {
+            return []
+        }
+        return rawSeats.compactMap { Seat(rawValue: $0) }
+    }
+
     /// Ældre kampe uden «… meldte …» i teksten — tilføj melder ud fra `bidderSeatRaw`.
     private static func prependNormalBidderIfNeeded(_ narrative: String, hand: RecordedHand) -> String {
         guard hand.kindRaw == "normal",
@@ -1575,7 +1776,11 @@ enum HandResumeCaption {
             }
             core = s
         case .sans:
-            core = "\(bid) sans uden trumf"
+            var s = "\(bid) sans uden trumf"
+            if let ace = d.partnerAceSuit {
+                s += " og \(ace.cardSymbol) som makker-es"
+            }
+            core = s
         case .gode:
             /// Fx «9 ♣ (gode)» — ikonet for klør står før «(gode)».
             core = "\(bid) \(Suit.clubs.cardSymbol) (gode)"
@@ -1590,6 +1795,9 @@ enum HandResumeCaption {
             core = s
         case .vip:
             var s = "\(bid) VIP \(vipOrdinalDanish(d.vipLevel))"
+            if let ace = d.partnerAceSuit {
+                s += " til \(ace.cardSymbol)"
+            }
             if let tr = d.trumpAfterPlay {
                 s += " med \(tr.cardSymbol) som trumf"
             }
@@ -1600,7 +1808,12 @@ enum HandResumeCaption {
             guard let b = d.bidder, let p = d.partner, b == p else { return "" }
             return " som selvmakker"
         }()
-        return "\(melder) meldte \(core)\(selfmakkerSuffix)||\(deltaToken(bid: d.bidTricks, actual: d.actualTricks))"
+        return "\(melder) meldte \(storslemCoreIfNeeded(core, actual: d.actualTricks))\(selfmakkerSuffix)||\(deltaToken(bid: d.bidTricks, actual: d.actualTricks))"
+    }
+
+    private static func storslemCoreIfNeeded(_ core: String, actual: Int) -> String {
+        guard actual == 13 || actual == 0 else { return core }
+        return "\(core) – STORSLEM"
     }
 
     private static func vipOrdinalDanish(_ level: VipLevel) -> String {
@@ -1651,10 +1864,10 @@ enum HandResumeCaption {
         }
 
         if wentDown.isEmpty {
-            return " – de gik alle hjem"
+            return participants.count == 1 ? " – han gik hjem" : " – de gik alle hjem"
         }
         if wentHome.isEmpty {
-            return " – de gik alle ned"
+            return participants.count == 1 ? " – han gik ned" : " – de gik alle ned"
         }
 
         let homePart = danishNameList(wentHome)

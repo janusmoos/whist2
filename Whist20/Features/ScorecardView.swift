@@ -31,10 +31,10 @@ struct ScorecardView: View {
         .normal(tricks: 10, base: 4),
         .sol(label: "Ren sol", points: 8, maxTricks: 0, tint: Color.blue.opacity(0.20)),
         .normal(tricks: 11, base: 8),
-        .normal(tricks: 12, base: 16),
         .sol(label: "Halv bordl.", points: 16, maxTricks: 0, tint: Color.blue.opacity(0.30)),
-        .normal(tricks: 13, base: 32),
+        .normal(tricks: 12, base: 16),
         .sol(label: "Hel bordl.", points: 32, maxTricks: 0, tint: Color.blue.opacity(0.42)),
+        .normal(tricks: 13, base: 32),
     ]
 
     var body: some View {

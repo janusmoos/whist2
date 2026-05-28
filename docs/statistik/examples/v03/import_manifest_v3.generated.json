@@ -1,16 +1,16 @@
 {
   "bundleSemver": "3.0.0-draft",
-  "generatedAtUtc": "2026-05-17T10:25:46.844218+00:00",
+  "generatedAtUtc": "2026-05-26T21:26:27.608817+00:00",
   "sourceWorkbook": {
-    "fileName": "Whist – resultater – samlet (2024)_AKTIV_forenkling af data.xlsx",
-    "localPathAtGeneration": "/Users/moos/Downloads/Whist – resultater – samlet (2024)_AKTIV_forenkling af data.xlsx",
-    "sha256": "a6c126c81f743c9ad5da54af3ac18e312459cc44d02e01d7b656d3ccce446bfa",
+    "fileName": "Whist – resultater – samlet (2024)_AKTIV_forenkling af data-3.xlsx",
+    "localPathAtGeneration": "/Users/moos/Downloads/Whist – resultater – samlet (2024)_AKTIV_forenkling af data-3.xlsx",
+    "sha256": "359756845732b51a48fd2211308da84769748eedcabd1bac9f14548fef9f0f73",
     "sheetCount": 56
   },
   "outputs": {
     "historicalDataJson": {
       "path": "docs/statistik/examples/v03/whist_historical_data_v3.json",
-      "sha256": "9028759783dbc7d7bb6900f26aae6c1814f272327143b481e1456536b1430130"
+      "sha256": "91ba35caec090737921db5e2ab4ef8630a9c447ae02eb0643dd7317412957a4f"
     }
   },
   "qualityPolicy": {

@@ -1,6 +1,6 @@
 # Whist import v3 - app-klart datasæt
 
-Genereret: 2026-05-17T10:25:46.844218+00:00
+Genereret: 2026-05-26T21:26:27.608817+00:00
 
 ## Kort status
 
@@ -9,7 +9,7 @@ Genereret: 2026-05-17T10:25:46.844218+00:00
 | Sessions | 32 |
 | Spil | 903 |
 | PlayerResult-rækker | 3612 |
-| Issues | 47 |
+| Issues | 50 |
 
 ## Beslutninger
 
@@ -26,5 +26,8 @@ Genereret: 2026-05-17T10:25:46.844218+00:00
 | `empty_source_sheet` | 1 |
 | `expected_vs_imported_count_mismatch` | 1 |
 | `individual_sheet_limited_source` | 6 |
+| `known_control_total_error` | 1 |
+| `primary_header_sha256_mismatch` | 1 |
 | `score_sum_not_zero` | 30 |
 | `session19_manual_review_required` | 1 |
+| `workbook_sha256_mismatch` | 1 |

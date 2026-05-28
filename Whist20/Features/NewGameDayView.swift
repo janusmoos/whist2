@@ -210,3 +210,133 @@ struct NewGameDayView: View {
         path = newPath
     }
 }
+
+struct GameDayEditView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @Bindable var gameDay: GameDay
+
+    @State private var titleText: String
+    @State private var notesText: String
+    @State private var seatOrder: [Seat]
+
+    init(gameDay: GameDay) {
+        self.gameDay = gameDay
+        _titleText = State(initialValue: gameDay.title)
+        _notesText = State(initialValue: gameDay.notes)
+        _seatOrder = State(initialValue: gameDay.seatOrder)
+    }
+
+    private var trimmedTitle: String {
+        titleText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedNotes: String {
+        notesText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canEditSeatOrder: Bool {
+        gameDay.hands.isEmpty && gameDay.pendingHand == nil
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Rediger navn, noter og bordrækkefølge for spilledagen.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Navn")
+                        .font(.subheadline.weight(.semibold))
+                    TextField("Fx «Lørdag hos Peter»", text: $titleText)
+                        .textFieldStyle(.roundedBorder)
+                        .textInputAutocapitalization(.sentences)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Noter (valgfrit)")
+                        .font(.subheadline.weight(.semibold))
+                    TextField("Sted, mad, aftaler …", text: $notesText, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(4...10)
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Rækkefølge ved bordet")
+                        .font(.subheadline.weight(.semibold))
+
+                    if !canEditSeatOrder {
+                        Text("Rækkefølgen kan kun ændres, før der er gemt spil eller kladde på spilledagen.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    List {
+                        ForEach(seatOrder, id: \.self) { seat in
+                            HStack(spacing: 12) {
+                                Image(systemName: canEditSeatOrder ? "line.3.horizontal" : "lock.fill")
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityHidden(true)
+                                Text(seat.playerDisplayName)
+                                    .font(.body.weight(.medium))
+                                Spacer()
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        .onMove { from, to in
+                            guard canEditSeatOrder else { return }
+                            seatOrder.move(fromOffsets: from, toOffset: to)
+                        }
+                    }
+                    .environment(\.editMode, .constant(canEditSeatOrder ? .active : .inactive))
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .listStyle(.plain)
+                    .frame(height: 48 * 4 + 6)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 100)
+        }
+        .navigationTitle("Rediger spilledag")
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Divider()
+                Button {
+                    saveChanges()
+                } label: {
+                    Text("Gem ændringer")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(trimmedTitle.isEmpty)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.bar)
+            }
+        }
+    }
+
+    private func saveChanges() {
+        guard !trimmedTitle.isEmpty else { return }
+        gameDay.title = trimmedTitle
+        gameDay.notes = trimmedNotes
+
+        if canEditSeatOrder {
+            gameDay.seatOrderJSON = (try? String(
+                data: JSONEncoder().encode(seatOrder.map(\.rawValue)),
+                encoding: .utf8
+            )) ?? gameDay.seatOrderJSON
+        }
+
+        try? modelContext.save()
+        dismiss()
+    }
+}
