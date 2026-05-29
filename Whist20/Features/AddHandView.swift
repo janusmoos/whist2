@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 import SwiftUI
 
@@ -11,6 +12,10 @@ private enum HandRoute: Hashable {
 
 private enum AddHandLocalBackupNotice {
     static func message(afterWritingBackupFor gameDay: GameDay) -> String {
+        #if DEBUG
+        let start = AddHandPerfTrace.now()
+        defer { AddHandPerfTrace.log("LocalBackup.writeBackup", startedAt: start) }
+        #endif
         do {
             _ = try LocalGameBackupService.writeBackup(for: gameDay)
             return "Lokal backup gemt"
@@ -22,6 +27,19 @@ private enum AddHandLocalBackupNotice {
         }
     }
 }
+
+#if DEBUG
+private enum AddHandPerfTrace {
+    static func now() -> CFAbsoluteTime {
+        CFAbsoluteTimeGetCurrent()
+    }
+
+    static func log(_ label: String, startedAt start: CFAbsoluteTime) {
+        let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1_000
+        print(String(format: "[AddHand][perf] %@ %.1f ms", label, elapsed))
+    }
+}
+#endif
 
 // MARK: - Session (delt mellem AddHandView og dens del-views)
 
@@ -458,7 +476,15 @@ private struct BidStepView: View {
     }
 
     private func saveDutyFromBidStep() {
+        #if DEBUG
+        let finalScoresStart = AddHandPerfTrace.now()
+        #endif
         guard let scores = draft.finalScores() else { return }
+        #if DEBUG
+        AddHandPerfTrace.log("saveDuty.finalScores", startedAt: finalScoresStart)
+        let totalStart = AddHandPerfTrace.now()
+        defer { AddHandPerfTrace.log("saveDuty.total", startedAt: totalStart) }
+        #endif
         guard let dutySeat = draft.dutySeat else { return }
 
         // VIGTIGT: sæt session-flaget FØR vi rører persistencen, så hvis SwiftUI
@@ -474,8 +500,18 @@ private struct BidStepView: View {
         let caption = HandResumeCaption.compactLine(from: draft)
         let bidderSeat = dutySeat.rawValue
         let solAlliesJSON = "[]"
+        #if DEBUG
+        let migrateStart = AddHandPerfTrace.now()
+        #endif
         gameDay.migrateLegacyHandNumbersIfNeeded()
+        #if DEBUG
+        AddHandPerfTrace.log("saveDuty.migrateLegacyHandNumbersIfNeeded", startedAt: migrateStart)
+        let nextNumberStart = AddHandPerfTrace.now()
+        #endif
         let nextHandNumber = (gameDay.hands.map(\.handNumber).max() ?? 0) + 1
+        #if DEBUG
+        AddHandPerfTrace.log("saveDuty.nextHandNumber", startedAt: nextNumberStart)
+        #endif
         let hand = RecordedHand(
             kindRaw: kind,
             summaryLine: "",
@@ -490,8 +526,18 @@ private struct BidStepView: View {
         )
         hand.summaryLine = hand.displayResumeNarrative
         modelContext.insert(hand)
+        #if DEBUG
+        let deletePendingStart = AddHandPerfTrace.now()
+        #endif
         HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
+        #if DEBUG
+        AddHandPerfTrace.log("saveDuty.deletePending", startedAt: deletePendingStart)
+        let saveStart = AddHandPerfTrace.now()
+        #endif
         try? modelContext.save()
+        #if DEBUG
+        AddHandPerfTrace.log("saveDuty.modelContext.save", startedAt: saveStart)
+        #endif
         let backupMessage = AddHandLocalBackupNotice.message(afterWritingBackupFor: gameDay)
         #if DEBUG
         print("[AddHand] saveDutyFromBidStep: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
@@ -676,6 +722,8 @@ private struct ResultStepView: View {
     let session: AddHandSession
     var onSaved: ((UUID, String) -> Void)?
     @State private var pendingAutosaveTask: Task<Void, Never>?
+    @State private var pendingScorePreviewTask: Task<Void, Never>?
+    @State private var scorePreview: [Seat: Int]?
 
     var body: some View {
         Form {
@@ -714,6 +762,7 @@ private struct ResultStepView: View {
             if draft.kind == .sol {
                 draft.syncSolOpponentTricksFromContractSide()
             }
+            refreshScorePreview()
             // Hvis vi allerede er ved at gemme/annullere må vi ALDRIG genskabe kladden.
             guard !session.shouldSuppressAutosave else {
                 #if DEBUG
@@ -728,15 +777,42 @@ private struct ResultStepView: View {
                 navigationStep: HandDraftPersistence.stepResultat
             )
         }
-        .onChange(of: draft.actualTricks) { _, _ in scheduleResultAutosave() }
-        .onChange(of: draft.trumpAfterPlay) { _, _ in scheduleResultAutosave() }
-        .onChange(of: draft.vipLevel) { _, _ in scheduleResultAutosave() }
-        .onChange(of: draft.partner) { _, _ in scheduleResultAutosave() }
-        .onChange(of: draft.dutySeat) { _, _ in scheduleResultAutosave() }
-        .onChange(of: draft.solTricks) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.actualTricks) { _, _ in handleResultInputChanged() }
+        .onChange(of: draft.trumpAfterPlay) { _, _ in handleResultInputChanged() }
+        .onChange(of: draft.vipLevel) { _, _ in handleResultInputChanged() }
+        .onChange(of: draft.partner) { _, _ in handleResultInputChanged() }
+        .onChange(of: draft.dutySeat) { _, _ in handleResultInputChanged() }
+        .onChange(of: draft.solTricks) { _, _ in handleResultInputChanged() }
         .onDisappear {
+            pendingScorePreviewTask?.cancel()
+            pendingScorePreviewTask = nil
             pendingAutosaveTask?.cancel()
             pendingAutosaveTask = nil
+            refreshScorePreview()
+            persistResultDraftIfNeeded(scheduleSync: true)
+        }
+    }
+
+    private func handleResultInputChanged() {
+        scheduleScorePreviewRefresh()
+        scheduleResultAutosave()
+    }
+
+    private func refreshScorePreview() {
+        #if DEBUG
+        let start = AddHandPerfTrace.now()
+        defer { AddHandPerfTrace.log("ResultStep.refreshScorePreview.finalScores", startedAt: start) }
+        #endif
+        scorePreview = draft.finalScores()
+    }
+
+    private func scheduleScorePreviewRefresh() {
+        pendingScorePreviewTask?.cancel()
+        pendingScorePreviewTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            refreshScorePreview()
+            pendingScorePreviewTask = nil
         }
     }
 
@@ -745,22 +821,30 @@ private struct ResultStepView: View {
         guard !session.shouldSuppressAutosave else { return }
         pendingAutosaveTask = Task { @MainActor in
             // Wheel pickers can emit many values while scrolling. Wait until the UI settles.
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             guard !Task.isCancelled else { return }
-            guard !session.shouldSuppressAutosave else { return }
-            HandDraftPersistence.upsertPending(
-                context: modelContext,
-                gameDay: gameDay,
-                draft: draft,
-                navigationStep: HandDraftPersistence.stepResultat
-            )
+            persistResultDraftIfNeeded(scheduleSync: false)
+            pendingAutosaveTask = nil
         }
+    }
+
+    private func persistResultDraftIfNeeded(scheduleSync: Bool) {
+        guard !session.shouldSuppressAutosave else { return }
+        #if DEBUG
+        let start = AddHandPerfTrace.now()
+        defer { AddHandPerfTrace.log("ResultStep.persistResultDraftIfNeeded(scheduleSync=\(scheduleSync))", startedAt: start) }
+        #endif
+        HandDraftPersistence.upsertPending(
+            context: modelContext,
+            gameDay: gameDay,
+            draft: draft,
+            navigationStep: HandDraftPersistence.stepResultat,
+            scheduleSync: scheduleSync
+        )
     }
 
     @ViewBuilder
     private var normalResultSections: some View {
-        let scores = draft.finalScores()
-
         if draft.normalSubtype == .vip {
             Section {
                 VStack(spacing: 10) {
@@ -776,7 +860,7 @@ private struct ResultStepView: View {
                     VipPartnerPickerBox(
                         bidder: draft.bidder,
                         seats: gameDay.seatOrder,
-                        scores: scores,
+                        scores: scorePreview,
                         partner: $draft.partner
                     )
 
@@ -789,7 +873,7 @@ private struct ResultStepView: View {
                 .listRowSeparator(.hidden)
             }
         } else {
-            normalPartnerSection(scores: scores)
+            normalPartnerSection(scores: scorePreview)
             actualTricksSection
         }
 
@@ -881,13 +965,11 @@ private struct ResultStepView: View {
 
     @ViewBuilder
     private var solResultSections: some View {
-        let scores = draft.finalScores()
-
         Section("Stik (melder og medspillere)") {
             ForEach(draft.solTrickInputSeats, id: \.self) { seat in
                 HStack {
                     Stepper("\(seat.playerDisplayName): \(draft.solTricks[seat] ?? 0)", value: bindingSolTricksContract(seat), in: 0 ... 13)
-                    if let s = scores, let v = s[seat] {
+                    if let s = scorePreview, let v = s[seat] {
                         scoreBadge(v)
                     }
                 }
@@ -967,12 +1049,22 @@ private struct ResultStepView: View {
     }
 
     private func save() {
+        #if DEBUG
+        let finalScoresStart = AddHandPerfTrace.now()
+        #endif
         guard let scores = draft.finalScores() else { return }
+        #if DEBUG
+        AddHandPerfTrace.log("save.finalScores", startedAt: finalScoresStart)
+        let totalStart = AddHandPerfTrace.now()
+        defer { AddHandPerfTrace.log("save.total", startedAt: totalStart) }
+        #endif
 
         // VIGTIGT: luk sessionen FØR vi rører persistencen. På den måde kan ingen
         // resterende SwiftUI-tick (onAppear/onChange/onDisappear) eller debounced
         // autosave-task nå at genskabe `PendingHand` mens vi gemmer.
         session.didCompleteSave = true
+        pendingScorePreviewTask?.cancel()
+        pendingScorePreviewTask = nil
         pendingAutosaveTask?.cancel()
         pendingAutosaveTask = nil
         #if DEBUG
@@ -993,8 +1085,18 @@ private struct ResultStepView: View {
         let partnerSeat = persistPartnerSeatRaw(draft: draft, kind: kind)
         let partnerAceSuitRaw = kind == "normal" ? draft.partnerAceSuit?.rawValue : nil
         let solAlliesJSON = persistSolAlliesJSON(draft: draft, kind: kind)
+        #if DEBUG
+        let migrateStart = AddHandPerfTrace.now()
+        #endif
         gameDay.migrateLegacyHandNumbersIfNeeded()
+        #if DEBUG
+        AddHandPerfTrace.log("save.migrateLegacyHandNumbersIfNeeded", startedAt: migrateStart)
+        let nextNumberStart = AddHandPerfTrace.now()
+        #endif
         let nextHandNumber = (gameDay.hands.map(\.handNumber).max() ?? 0) + 1
+        #if DEBUG
+        AddHandPerfTrace.log("save.nextHandNumber", startedAt: nextNumberStart)
+        #endif
         let hand = RecordedHand(
             kindRaw: kind,
             summaryLine: "",
@@ -1009,8 +1111,18 @@ private struct ResultStepView: View {
         )
         hand.summaryLine = hand.displayResumeNarrative
         modelContext.insert(hand)
+        #if DEBUG
+        let deletePendingStart = AddHandPerfTrace.now()
+        #endif
         HandDraftPersistence.deletePending(context: modelContext, gameDay: gameDay)
+        #if DEBUG
+        AddHandPerfTrace.log("save.deletePending", startedAt: deletePendingStart)
+        let saveStart = AddHandPerfTrace.now()
+        #endif
         try? modelContext.save()
+        #if DEBUG
+        AddHandPerfTrace.log("save.modelContext.save", startedAt: saveStart)
+        #endif
         let backupMessage = AddHandLocalBackupNotice.message(afterWritingBackupFor: gameDay)
         #if DEBUG
         print("[AddHand] save: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
@@ -1084,6 +1196,13 @@ struct AddHandView: View {
     }
 
     private func handleInteractiveSheetDismiss() {
+        if !path.isEmpty {
+            #if DEBUG
+            print("[AddHand] onDisappear: intern navigation (path ikke tom) — skipper root-autosave")
+            #endif
+            return
+        }
+
         // Hvis brugeren har gemt eller trykket Annuller må vi ALDRIG autosave —
         // ellers genskaber vi den `PendingHand` som save() lige har slettet.
         if session.shouldSuppressAutosave {
@@ -1110,6 +1229,8 @@ struct AddHandView: View {
             ?? (path.isEmpty ? HandDraftPersistence.stepMelding : HandDraftPersistence.stepResultat)
         #if DEBUG
         print("[AddHand] onDisappear: autosaver kladde (step=\(step))")
+        let start = AddHandPerfTrace.now()
+        defer { AddHandPerfTrace.log("AddHandView.onDisappear.upsertPending", startedAt: start) }
         #endif
         HandDraftPersistence.upsertPending(
             context: modelContext,

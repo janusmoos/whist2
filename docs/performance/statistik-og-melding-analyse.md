@@ -8,10 +8,41 @@
 
 ## Executive summary
 
+### Aktuel status pr. 2026-05-28
+
+En del af den oprindelige statistik-analyse er allerede implementeret i koden:
+
+- `StatistikTabView` loader ikke længere historisk JSON direkte i `init`.
+- Første statistik-hub-model bygges via `HistoricalStatisticsStore.loadIfNeeded()` og `Task.detached`.
+- `HistoricalStatisticsEngine.snapshot` genbruger nu `gameDetails` internt i stedet for at kalde samme detaljebygning flere gange.
+- `gameTypeOverviews` bruger nu `resultsByGame`-opslag i stedet for at filtrere alle `playerResults` for hvert spil.
+
+De vigtigste resterende performance-risici er derfor ikke længere den oprindelige synkrone `init`, men:
+
+1. Statistik-store bor stadig i `StatistikTabView`; hvis viewet genskabes ved tab-skift, mister vi cachen.
+2. Flere statistik-undersider beregner stadig tunge modeller synkront ved navigation.
+3. Mange statistikberegninger ligger stadig i én meget stor SwiftUI-viewfil, hvilket gør invalidation, test og regressioner sværere.
+4. Meldingsflowet har stadig hyppige `context.save()` og flere scoreberegninger direkte i view-opdateringer.
+5. Der mangler konkrete målepunkter (`os_signpost`, Instruments Hangs/Time Profiler), så vi kan bevise forbedringer på fysisk iPhone XS.
+
+### Implementeringslog på `codex/performance-refactor-plan`
+
+Status efter første performance-runde:
+
+| Fase | Status | Ændring |
+|------|--------|---------|
+| 0 | Gennemført | Dokumentet er opdateret med aktuel kode-status og åbne risici. |
+| 1 | Gennemført | `HistoricalStatisticsStore` ejes nu af `ContentView` og injiceres i `StatistikTabView`, så cachen overlever faneskift. |
+| 2 | Gennemført | `HistoricalStatisticsHubModel`, spiltypeklassifikation og `gameTypeOverviews` er flyttet til `HistoricalStatisticsPreparer`. |
+| 3 | Gennemført i første snit | Hub’en beregner fortsat kun lette metrics; spiltype-overviews bygges først ved navigation til spiltyper. Dybere async loading kan stadig forbedres senere. |
+| 4 | Gennemført i første snit | Resultat-flow cacher score-preview, reducerer `finalScores()` i body og autosaver med længere debounce. |
+| 5 | Gennemført | Debug-build til iPhone 17-simulator er grøn via `xcodebuild`. |
+| 6 | Gennemført i første snit | XS-hang ved antal-stik: score-preview debounces separat, og resultat-autosaves gemmer lokalt uden live-sync på hvert hjulstop. |
+
 | Problem | Mest sandsynlige årsag | Karakter |
 |--------|------------------------|----------|
-| Statistik «crasher» på fysisk iPhone | Main thread blokeres i flere sekunder (JSON + tunge beregninger); iOS dræber appen (watchdog `0x8badf00d`) | Opleves som crash, men er ofte **frys + kill** |
-| Statistik føles langsom | Samme arbejde gentages ved **hvert** besøg på fanen; ingen cache | Performance |
+| Statistik «crasher» på fysisk iPhone | Resterende main-thread spikes på statistik-undersider eller cache-miss; iOS kan dræbe appen ved watchdog `0x8badf00d` | Opleves som crash, men er ofte **frys + kill** |
+| Statistik føles langsom | Første precompute er tung, og cache kan tabes ved fanegenskabelse; undersider beregner stadig inline | Performance |
 | Melding langsom | Hyppige **SwiftData `save()`** + scoring/UI-genberegning i `body` under wheel-scroll | Performance |
 
 Simulator har mere CPU/RAM og er mere tolerant over for main-thread blokering — derfor ses problemet primært på rigtige enheder.
@@ -48,7 +79,7 @@ Loader: `HistoricalDataJSONLoader` med `HistoricalDataPack.primary` → kun v3.
 - `Whist20App` / `ContentView`: SwiftData `@Query` af `GameDay` — **ingen** historisk JSON.
 - Historik loades først når brugeren vælger Statistik-fanen.
 
-### 2.2 Fanen genoprettes ved hvert besøg
+### 2.2 Fanen kan genoprettes ved hvert besøg
 
 `ContentView` bruger `switch selectedTab`:
 
@@ -57,22 +88,16 @@ case .statistics:
     StatistikTabView()
 ```
 
-Når brugeren forlader Statistik, fjernes view’et. Næste besøg = **ny `init`**, ny JSON-load og fuld genberegning. Ingen cache på app- eller fane-niveau.
+Når brugeren forlader Statistik, fjernes view’et. Den nuværende kode har `@StateObject`-cache inde i `StatistikTabView`, men den cache er bundet til viewets levetid. Hvis SwiftUI deallokerer fanen, kan næste besøg stadig give ny load/precompute.
 
-### 2.3 Synkron JSON i `StatistikTabView.init` (main thread)
+### 2.3 Første load er nu async, men store-lifetime er stadig for lokal
 
-```swift
-init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
-    dataResult = Result { try loader.load() }
-}
-```
+Koden bruger nu `HistoricalStatisticsStore.loadIfNeeded()` og `Task.detached` til første hub-model. Det er en væsentlig forbedring i forhold til den oprindelige synkrone `init`.
 
-`HistoricalDataJSONLoader.load()`:
+Åben risiko:
 
-1. `Data(contentsOf: url)` — synkron fil-I/O  
-2. `JSONDecoder().decode(HistoricalWhistData.self, from: data)` — synkron på hele ~1,5 MB  
-
-Dette kører i view-initializeren → typisk **main actor / main thread** i SwiftUI.
+1. Store bør løftes op i `ContentView` eller app-level environment, så `loadIfNeeded()` faktisk er app-session-cache.
+2. `Task.detached` bør senere suppleres med tydelige `Sendable`-grænser og målinger, så vi ved, hvad der stadig lander på main actor.
 
 ### 2.4 `statisticsHub` — tungt arbejde ved første `body`
 
@@ -96,7 +121,7 @@ let gameTypes = gameTypeOverviews(from: data)
 
 `@State selectedScope` / `recentSessionLimit` bruges i **under-navigation** (fx tendenser), ikke i hub — men **enhver** `StatistikTabView.body`-invalidation genkører hub-beregningerne.
 
-### 2.5 Hovedsynder: `gameTypeOverviews` — O(spil × resultater)
+### 2.5 Tidligere hovedsynder: `gameTypeOverviews` — nu delvist løst
 
 `HistoricalStatisticsEngine.gameDetails` er lineær og korrekt indekseret:
 
@@ -105,22 +130,14 @@ let resultsByGame = Dictionary(grouping: data.playerResults, by: \.gameId)
 // ... én gang, derefter O(games) lookup
 ```
 
-`gameTypeOverviews` (private i `StatistikTabView`, ca. linje 3659+) gør derimod:
+`gameTypeOverviews` var tidligere O(spil × resultater), fordi den filtrerede alle `playerResults` for hvert spil. Den nuværende kode bruger nu:
 
 ```swift
-let allGameDetails = Dictionary(uniqueKeysWithValues: data.games.compactMap { game in
-    let sessionsById = Dictionary(uniqueKeysWithValues: data.sessions.map { ($0.id, $0) })
-    let results = data.playerResults.filter { $0.gameId == game.id }
-    // ... byg HistoricalGameScoreDetail
-})
+let resultsByGame = Dictionary(grouping: data.playerResults, by: \.gameId)
+let results = resultsByGame[game.id] ?? []
 ```
 
-**Per spil (903×):**
-
-- `sessionsById` genbygges → ~29.000 små dictionary-allokeringer  
-- `playerResults.filter` over 3.612 rækker → **~3,26 mio.** sammenligninger  
-
-Samme funktion kaldes **igen** ved navigation til «Spiltyper» (`gameTypesOverviewView`, ca. linje 1012).
+Det resterende problem er ikke primært algoritmen, men placeringen: funktionen ligger stadig i `StatistikTabView` og kaldes ved navigation til «Spiltyper». Den bør flyttes til en ren statistik-preparer/cache, så viewlaget ikke ejer beregningen.
 
 ### 2.6 Gentagne `gameDetails` i engine (hub-besøg)
 
@@ -355,32 +372,44 @@ Apple anbefaler performance-profilering **før release** og overvågning efter r
 
 Prioriter i denne rækkefølge for størst effekt / lavest risiko. **§6 er den normative begrundelse; denne sektion er den konkrete opgaveliste.**
 
-### Fase A — Statistik: stop main-thread blokering (kritisk)
+### Fase 0 — Dokumentér aktuel status og mål
 
-**A1. Baggrundsindlæsning af historik** *(align med Apple watchdog + SwiftUI `.task`)*
+- Hold denne analyse opdateret, så den skelner mellem løste og åbne performance-risici.
+- Tilføj målepunkter før/efter større ændringer:
+  - første åbning af Statistik
+  - andet besøg på Statistik
+  - navigation til «Spiltyper»
+  - navigation til «Alle spilledage»
+  - VIP/resultat-wheel under autosave
 
-- **Fjern** synkron `loader.load()` fra `StatistikTabView.init`.
-- Introducér `@MainActor` `StatisticsViewModel` (eller `StatisticsDataStore`) med `loading | ready(PreparedStatistics) | failed`.
-- Start load med **`.task { await store.loadIfNeeded() }`** på view — ikke `onAppear` + manuel `Task` i `body`.
-- Kør `Data(contentsOf:)`, `JSONDecoder.decode`, `snapshot`, `gameTypeOverviews` (efter A2) i **`nonisolated`/`@concurrent` async** funktion eller dedikeret `actor StatisticsPreparer`.
-- Ved tab-skift væk: `.task` annullerer — tjek `Task.isCancelled` før main-thread UI-opdatering.
-- Vis **`ProgressView` / skeleton** i hub mens `phase == .loading` (progressive loading).
+### Fase 1 — Statistik-cache overlever tab-skift
 
-**A2. Fix `gameTypeOverviews` algoritme**
+- Flyt `HistoricalStatisticsStore` op i `ContentView` som `@StateObject`.
+- Injicér den i `StatistikTabView`.
+- Acceptkriterium: andet besøg på Statistik må ikke starte `loadIfNeeded()` forfra, hvis data allerede er loaded.
 
-- Erstat den nested loop med:
-  - Én gang: `let details = HistoricalStatisticsEngine` — enten eksponér `gameDetails(from:)` som `internal`/`package` eller tilføj `gameDetailsByGameId(from:)` i engine.
-  - Én gang: `sessionsById`, `playersById`, `resultsByGame` (grouping).
-- Forventet: fra ~O(games × results) til ~O(games + results).
+### Fase 2 — Statistik: flyt beregninger ud af SwiftUI-viewet
 
-**A3. Del cache på tværs af fanebesøg** *(session-level cache — best practice §6.4)*
+- Flyt `HistoricalStatisticsHubModel`, `gameTypeOverviews` og beslægtede helpers ud af `StatistikTabView.swift`.
+- Introducér et tydeligt `HistoricalStatisticsPreparer`/`PreparedStatistics`-lag.
+- Gør det muligt at performance-teste prepareren uden SwiftUI.
 
-- Hold `PreparedStatistics` (decoded data + precomputed snapshot/gameTypes/profiler) i:
-  - `@StateObject` injiceret fra `ContentView` / environment, **eller**
-  - `actor`/`@Observable` singleton med `loadGeneration` — **eller**
-  - Behold `StatistikTabView` i hierarkiet (skjult) i stedet for `switch` der deallokerer.
+### Fase 3 — Statistik: lazy undersider
 
-Minimum: cache **decoded JSON**; mål: cache hele `PreparedStatistics` så andet fanebesøg er O(1).
+- Byg tunge modeller til «Alle spilledage», «Spiltyper», «Spillere» og enkelt-sider først når brugeren åbner dem.
+- Vis lette loading-states i undersider, hvis beregning tager mærkbar tid.
+
+### Fase 4 — Melding: autosave og body-arbejde
+
+- Reducér antal `context.save()` under wheel-scroll.
+- Cache `draft.finalScores()` og andre afledte præsentationsværdier.
+- Overvej `@ModelActor` som næste trin, hvis main-thread saves stadig kan måles.
+
+### Fase 5 — Verifikation
+
+- Byg og kør på simulator.
+- Mål på fysisk iPhone XS med Instruments Hangs/Time Profiler, når muligt.
+- Dokumentér resultater og resterende risiko i denne fil.
 
 ### Fase B — Statistik: reducer redundant arbejde
 

@@ -1,6 +1,19 @@
 import Foundation
 import SwiftData
 
+#if DEBUG
+private enum HandDraftPerfTrace {
+    static func now() -> CFAbsoluteTime {
+        CFAbsoluteTimeGetCurrent()
+    }
+
+    static func log(_ label: String, startedAt start: CFAbsoluteTime) {
+        let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1_000
+        print(String(format: "[HandDraft][perf] %@ %.1f ms", label, elapsed))
+    }
+}
+#endif
+
 /// Gemmer/loader et påbegyndt spil (melding → resultat) som JSON på `GameDay.pendingHand`.
 enum HandDraftPersistence {
     /// Brugeren er stadig på meldingssiden (gemmes ikke automatisk under redigering).
@@ -108,8 +121,22 @@ enum HandDraftPersistence {
         return try JSONDecoder().decode(Snapshot.self, from: data)
     }
 
-    static func upsertPending(context: ModelContext, gameDay: GameDay, draft: HandInputDraft, navigationStep: String) {
+    static func upsertPending(
+        context: ModelContext,
+        gameDay: GameDay,
+        draft: HandInputDraft,
+        navigationStep: String,
+        scheduleSync: Bool = true
+    ) {
+        #if DEBUG
+        let totalStart = HandDraftPerfTrace.now()
+        defer { HandDraftPerfTrace.log("upsertPending.total(step=\(navigationStep), scheduleSync=\(scheduleSync))", startedAt: totalStart) }
+        let encodeStart = HandDraftPerfTrace.now()
+        #endif
         guard let json = try? encode(draft, navigationStep: navigationStep) else { return }
+        #if DEBUG
+        HandDraftPerfTrace.log("upsertPending.encode", startedAt: encodeStart)
+        #endif
         if let existing = gameDay.pendingHand {
             guard existing.draftJSON != json else { return }
             existing.draftJSON = json
@@ -119,14 +146,30 @@ enum HandDraftPersistence {
             gameDay.pendingHand = pending
             context.insert(pending)
         }
+        #if DEBUG
+        let saveStart = HandDraftPerfTrace.now()
+        #endif
         try? context.save()
-        let gid = gameDay.id
-        Task { @MainActor in
-            LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: gid, modelContext: context)
+        #if DEBUG
+        HandDraftPerfTrace.log("upsertPending.context.save", startedAt: saveStart)
+        #endif
+        if scheduleSync {
+            #if DEBUG
+            let scheduleStart = HandDraftPerfTrace.now()
+            defer { HandDraftPerfTrace.log("upsertPending.schedulePush.enqueue", startedAt: scheduleStart) }
+            #endif
+            let gid = gameDay.id
+            Task { @MainActor in
+                LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: gid, modelContext: context)
+            }
         }
     }
 
     static func deletePending(context: ModelContext, gameDay: GameDay) {
+        #if DEBUG
+        let totalStart = HandDraftPerfTrace.now()
+        defer { HandDraftPerfTrace.log("deletePending.total", startedAt: totalStart) }
+        #endif
         guard let pending = gameDay.pendingHand else { return }
         // Ryd både forward- og invers-referencen FØR vi sletter, så SwiftData
         // ikke kan ende i en mellemtilstand hvor `gameDay.pendingHand` stadig
@@ -134,7 +177,15 @@ enum HandDraftPersistence {
         gameDay.pendingHand = nil
         pending.gameDay = nil
         context.delete(pending)
+        #if DEBUG
+        let saveStart = HandDraftPerfTrace.now()
+        #endif
         try? context.save()
+        #if DEBUG
+        HandDraftPerfTrace.log("deletePending.context.save", startedAt: saveStart)
+        let scheduleStart = HandDraftPerfTrace.now()
+        defer { HandDraftPerfTrace.log("deletePending.schedulePush.enqueue", startedAt: scheduleStart) }
+        #endif
         let gid = gameDay.id
         Task { @MainActor in
             LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: gid, modelContext: context)

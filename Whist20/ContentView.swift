@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var addHandAlertMessage: String?
     @State private var toastMessage: String?
     @State private var toastWorkItem: DispatchWorkItem?
+    @StateObject private var statisticsStore = HistoricalStatisticsStore()
     /// Reserverer plads til den faste bundmenu (`MainTabBar`). Måles ved layout — med ekstra luft,
     /// så sidste indhold kan scrolles fri af det hævede midterkort.
     @State private var mainTabBarOverlapHeight: CGFloat = 62
@@ -41,7 +42,7 @@ struct ContentView: View {
             case .activeGames:
                 ActiveSpilTabView(openMeldingSheet: openMeldingSheet)
             case .statistics:
-                StatistikTabView()
+                StatistikTabView(store: statisticsStore)
             }
         }
         .padding(.bottom, mainTabBarOverlapHeight + mainTabBarExtraContentClearance)

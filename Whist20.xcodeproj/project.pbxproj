@@ -48,6 +48,7 @@
 		B2A101052CF0000000120105 /* HistoricalStatisticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101042CF0000000120104 /* HistoricalStatisticsEngine.swift */; };
 		B2A101072CF0000000120107 /* StatistikTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101062CF0000000120106 /* StatistikTabView.swift */; };
 		B2A101092CF0000000120109 /* HistoricalStatisticsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101082CF0000000120108 /* HistoricalStatisticsEngineTests.swift */; };
+		B2A1012A2CF000000012012A /* HistoricalStatisticsPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A101292CF0000000120129 /* HistoricalStatisticsPreparer.swift */; };
 		B2A1010B2CF000000012010B /* whist_historical_data_v2.json in Resources */ = {isa = PBXBuildFile; fileRef = B2A1010A2CF000000012010A /* whist_historical_data_v2.json */; };
 		B2A101132CF0000000120113 /* whist_historical_data_v3.json in Resources */ = {isa = PBXBuildFile; fileRef = B2A101122CF0000000120112 /* whist_historical_data_v3.json */; };
 		B2A101102CF0000000120110 /* LiveSessionSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1010E2CF000000012010E /* LiveSessionSync.swift */; };
@@ -113,6 +114,7 @@
 		B2A101042CF0000000120104 /* HistoricalStatisticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalStatisticsEngine.swift; sourceTree = "<group>"; };
 		B2A101062CF0000000120106 /* StatistikTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatistikTabView.swift; sourceTree = "<group>"; };
 		B2A101082CF0000000120108 /* HistoricalStatisticsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalStatisticsEngineTests.swift; sourceTree = "<group>"; };
+		B2A101292CF0000000120129 /* HistoricalStatisticsPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalStatisticsPreparer.swift; sourceTree = "<group>"; };
 		B2A1010A2CF000000012010A /* whist_historical_data_v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = whist_historical_data_v2.json; sourceTree = "<group>"; };
 		B2A101122CF0000000120112 /* whist_historical_data_v3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = whist_historical_data_v3.json; sourceTree = "<group>"; };
 		B2A1010E2CF000000012010E /* LiveSessionSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSessionSync.swift; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 				B2A101002CF0000000120100 /* HistoricalDataModels.swift */,
 				B2A101022CF0000000120102 /* HistoricalDataJSONLoader.swift */,
 				B2A101042CF0000000120104 /* HistoricalStatisticsEngine.swift */,
+				B2A101292CF0000000120129 /* HistoricalStatisticsPreparer.swift */,
 			);
 			path = Domain;
 			sourceTree = "<group>";
@@ -423,6 +426,7 @@
 				B2A101012CF0000000120101 /* HistoricalDataModels.swift in Sources */,
 				B2A101032CF0000000120103 /* HistoricalDataJSONLoader.swift in Sources */,
 				B2A101052CF0000000120105 /* HistoricalStatisticsEngine.swift in Sources */,
+				B2A1012A2CF000000012012A /* HistoricalStatisticsPreparer.swift in Sources */,
 				B2A101072CF0000000120107 /* StatistikTabView.swift in Sources */,
 				B2A101102CF0000000120110 /* LiveSessionSync.swift in Sources */,
 				B2A101152CF0000000120115 /* LocalGameBackupService.swift in Sources */,
