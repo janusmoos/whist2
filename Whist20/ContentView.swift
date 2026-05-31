@@ -74,7 +74,7 @@ struct ContentView: View {
             case .activeGames:
                 ActiveSpilTabView(openMeldingSheet: openMeldingSheet)
             case .statistics:
-                StatistikTabView(store: statisticsStore)
+                StatistikTabView(store: statisticsStore, gameDays: gameDays)
             }
         }
         .padding(.bottom, mainTabBarOverlapHeight + mainTabBarExtraContentClearance)

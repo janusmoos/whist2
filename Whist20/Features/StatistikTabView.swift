@@ -14,27 +14,47 @@ final class HistoricalStatisticsStore: ObservableObject {
 
     private let loader: HistoricalDataJSONLoader
     private var hasStartedLoading = false
+    private var historicalData: HistoricalWhistData?
 
     init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
         self.loader = loader
     }
 
-    func loadIfNeeded() async {
+    func loadIfNeeded(gameDays: [GameDay]) async {
         guard !hasStartedLoading else { return }
         hasStartedLoading = true
         state = .loading
 
         let loader = loader
+        let liveSnapshots = LiveHistoricalStatisticsAdapter.snapshots(from: gameDays)
         let result = await Task.detached(priority: .userInitiated) {
-            Result { try HistoricalStatisticsHubModel(loader: loader) }
+            Result {
+                let data = try loader.load()
+                let model = HistoricalStatisticsPreparer.prepareHubModel(
+                    historicalData: data,
+                    liveSnapshots: liveSnapshots
+                )
+                return (data, model)
+            }
         }.value
 
         switch result {
-        case let .success(model):
+        case let .success((data, model)):
+            historicalData = data
             state = .loaded(model)
         case let .failure(error):
             state = .failure(error)
         }
+    }
+
+    func gameDaysDidChange(_ gameDays: [GameDay]) {
+        guard let historicalData else { return }
+        let liveSnapshots = LiveHistoricalStatisticsAdapter.snapshots(from: gameDays)
+        let model = HistoricalStatisticsPreparer.prepareHubModel(
+            historicalData: historicalData,
+            liveSnapshots: liveSnapshots
+        )
+        state = .loaded(model)
     }
 }
 
@@ -42,6 +62,7 @@ struct StatistikTabView: View {
     @State private var selectedScope: HistoricalStatisticsScope = .current
     @State private var recentSessionLimit = 10
     @ObservedObject private var store: HistoricalStatisticsStore
+    private let gameDays: [GameDay]
 
     private let recentSessionLimitOptions = [5, 10, 15, 20, 25, 50]
     private let plannedStatistics = [
@@ -67,8 +88,9 @@ struct StatistikTabView: View {
         ),
     ]
 
-    init(store: HistoricalStatisticsStore) {
+    init(store: HistoricalStatisticsStore, gameDays: [GameDay]) {
         self.store = store
+        self.gameDays = gameDays
     }
 
     var body: some View {
@@ -94,8 +116,52 @@ struct StatistikTabView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .task {
-            await store.loadIfNeeded()
+            await store.loadIfNeeded(gameDays: gameDays)
         }
+        .onChange(of: gameDayStatisticsFingerprint) { _, _ in
+            store.gameDaysDidChange(gameDays)
+        }
+    }
+
+    private var gameDayStatisticsFingerprint: String {
+        gameDays
+            .sorted { lhs, rhs in
+                if lhs.createdAt != rhs.createdAt {
+                    return lhs.createdAt < rhs.createdAt
+                }
+                return lhs.id.uuidString < rhs.id.uuidString
+            }
+            .map { day in
+                let handPart = day.hands
+                    .sorted { lhs, rhs in
+                        if lhs.handNumber != rhs.handNumber {
+                            return lhs.handNumber < rhs.handNumber
+                        }
+                        return lhs.playedAt < rhs.playedAt
+                    }
+                    .map { hand in
+                        [
+                            hand.id.uuidString,
+                            "\(hand.handNumber)",
+                            "\(hand.playedAt.timeIntervalSince1970)",
+                            hand.kindRaw,
+                            hand.scoresBySeatJSON,
+                            "\(hand.bidderSeatRaw)",
+                            "\(hand.partnerSeatRaw)",
+                        ].joined(separator: ":")
+                    }
+                    .joined(separator: ",")
+                return [
+                    day.id.uuidString,
+                    "\(day.createdAt.timeIntervalSince1970)",
+                    day.title,
+                    day.endedAt.map { "\($0.timeIntervalSince1970)" } ?? "",
+                    day.seatOrderJSON,
+                    day.pendingHand?.id.uuidString ?? "",
+                    handPart,
+                ].joined(separator: "|")
+            }
+            .joined(separator: "||")
     }
 
     private func statisticsHub(_ model: HistoricalStatisticsHubModel) -> some View {
