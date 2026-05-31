@@ -133,7 +133,7 @@ struct MeldingStatusCard: View {
         .frame(maxWidth: .infinity, alignment: .center)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(colorScheme == .dark ? Color(uiColor: .secondarySystemGroupedBackground) : ActiveGamePosterStyle.panelColor)
+                .fill(ActiveGamePosterStyle.panelColor)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -142,15 +142,11 @@ struct MeldingStatusCard: View {
     }
 
     private var statusTileBackground: Color {
-        colorScheme == .dark
-            ? Color.white.opacity(0.08)
-            : Color(red: 0.97, green: 0.97, blue: 0.96)
+        ActiveGamePosterStyle.panelSecondaryColor
     }
 
     private var headingColor: Color {
-        colorScheme == .dark
-            ? Color.white.opacity(0.62)
-            : ActiveGamePosterStyle.darkInkColor.opacity(0.55)
+        ActiveGamePosterStyle.darkInkColor.opacity(0.62)
     }
 
     private var rowsByKey: [String: String] {
@@ -273,7 +269,7 @@ struct MeldingSeatChoiceButtonStyle: ButtonStyle {
         configuration.label
             .background {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(isSelected ? ActiveGamePosterStyle.panelColor : Color(uiColor: .systemBackground))
+                    .fill(isSelected ? ActiveGamePosterStyle.panelColor : ActiveGamePosterStyle.panelSecondaryColor)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)

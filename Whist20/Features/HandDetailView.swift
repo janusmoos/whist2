@@ -55,7 +55,7 @@ struct HandDetailView: View {
                     Spacer()
                     Text("\(sum)")
                         .monospacedDigit()
-                        .foregroundStyle(sum == 0 ? Color.secondary : Color.red)
+                        .foregroundStyle(sum == 0 ? Color.secondary : ActiveGamePosterStyle.negativeScoreColor)
                 }
             }
         }

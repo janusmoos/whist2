@@ -168,7 +168,7 @@ struct GameDaysView: View {
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.green.opacity(0.22))
+                .background(ActiveGamePosterStyle.positiveScoreColor.opacity(0.24))
                 .clipShape(Capsule())
         } else {
             Text("Afsluttet")

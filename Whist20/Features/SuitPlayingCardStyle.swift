@@ -24,9 +24,9 @@ extension Suit {
     func color(context: SuitColorContext, colorScheme: ColorScheme) -> Color {
         switch self {
         case .hearts, .diamonds:
-            return Color(red: 0.72, green: 0.05, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         case .clubs, .spades:
-            return Color(red: 0.10, green: 0.12, blue: 0.16)
+            return ActiveGamePosterStyle.darkInkColor
         }
     }
 

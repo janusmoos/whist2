@@ -370,7 +370,7 @@ struct StatistikTabView: View {
                         .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
                         .fontWidth(.compressed)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.62)
 
@@ -859,10 +859,10 @@ struct StatistikTabView: View {
         let intensity = min(1, max(0.18, Double(abs(score)) / Double(maxAbsScore)))
         let fill: Color = {
             if score > 0 {
-                return scoreForeground(1).opacity(0.22 + 0.62 * intensity)
+                return scoreForeground(1).opacity(0.32 + 0.60 * intensity)
             }
             if score < 0 {
-                return scoreForeground(-1).opacity(0.20 + 0.62 * intensity)
+                return scoreForeground(-1).opacity(0.34 + 0.58 * intensity)
             }
             return ActiveGamePosterStyle.borderColor.opacity(0.22)
         }()
@@ -1003,13 +1003,13 @@ struct StatistikTabView: View {
     private func rankColor(_ rank: Int) -> Color {
         switch rank {
         case 1:
-            return Color(red: 0.10, green: 0.48, blue: 0.23)
+            return ActiveGamePosterStyle.positiveScoreColor
         case 2:
             return Color(red: 0.44, green: 0.56, blue: 0.75)
         case 3:
             return Color(red: 0.79, green: 0.58, blue: 0.29)
         default:
-            return Color(red: 0.55, green: 0.08, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         }
     }
 
@@ -1555,9 +1555,9 @@ struct StatistikTabView: View {
         case "duestraf", "ukendt", "vip ukendt":
             return Color.secondary.opacity(0.75)
         case "hjerter":
-            return Color(red: 0.79, green: 0.03, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         case "ruder":
-            return Color(red: 0.91, green: 0.22, blue: 0.25)
+            return ActiveGamePosterStyle.negativeScoreColor
         case "spar":
             return Color(red: 0.08, green: 0.10, blue: 0.13)
         case "klør":
@@ -1728,7 +1728,7 @@ struct StatistikTabView: View {
                         x: .value("Spilledag", sessionScore.sessionIndex),
                         y: .value("Point", sessionScore.score)
                     )
-                    .foregroundStyle(sessionScore.score >= 0 ? Color.green : Color.red)
+                    .foregroundStyle(sessionScore.score >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
                     .accessibilityLabel(sessionScore.sessionTitle)
                     .accessibilityValue(scoreText(sessionScore.score))
                 }
@@ -2031,7 +2031,7 @@ struct StatistikTabView: View {
                             .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
                             .fontWidth(.compressed)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.black)
+                            .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                             .lineLimit(1)
                             .minimumScaleFactor(0.62)
 
@@ -2308,12 +2308,12 @@ struct StatistikTabView: View {
                         .position(x: centerX, y: 18)
 
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(red.opacity(row.losses == 0 ? 0.18 : 0.82))
+                        .fill(red.opacity(row.losses == 0 ? 0.24 : 0.94))
                         .frame(width: lossWidth, height: barHeight)
                         .position(x: centerX - lossWidth / 2, y: 18)
 
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(green.opacity(row.wins == 0 ? 0.18 : 0.82))
+                        .fill(green.opacity(row.wins == 0 ? 0.24 : 0.94))
                         .frame(width: winWidth, height: barHeight)
                         .position(x: centerX + winWidth / 2, y: 18)
 
@@ -2447,7 +2447,7 @@ struct StatistikTabView: View {
                         if detail.hasQualityIssues {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(ActiveGamePosterStyle.activeOrangeColor)
                                 .accessibilityLabel("Dataadvarsel")
                         }
                     }
@@ -3701,9 +3701,9 @@ struct StatistikTabView: View {
     private func scoreForeground(_ value: Double) -> Color {
         switch value {
         case let x where x > 0:
-            return Color(red: 0.05, green: 0.45, blue: 0.18)
+            return ActiveGamePosterStyle.positiveScoreColor
         case let x where x < 0:
-            return Color(red: 0.55, green: 0.08, blue: 0.1)
+            return ActiveGamePosterStyle.negativeScoreColor
         default:
             return Color.secondary
         }
@@ -3736,7 +3736,7 @@ private struct CollapsibleDataWarning: View {
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ActiveGamePosterStyle.activeOrangeColor)
                     Text("Advarsel om data")
                         .font(.headline)
                         .foregroundStyle(.primary)
@@ -3766,11 +3766,11 @@ private struct CollapsibleDataWarning: View {
         .padding(16)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.orange.opacity(0.11))
+                .fill(ActiveGamePosterStyle.activeOrangeColor.opacity(0.14))
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.orange.opacity(0.24), lineWidth: 1)
+                .strokeBorder(ActiveGamePosterStyle.activeOrangeColor.opacity(0.32), lineWidth: 1)
         }
     }
 }
@@ -4049,9 +4049,9 @@ private struct HistoricalGameDetailView: View {
     private func suitColor(_ suit: Suit) -> Color {
         switch suit {
         case .hearts:
-            return Color(red: 0.79, green: 0.03, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         case .diamonds:
-            return Color(red: 0.91, green: 0.22, blue: 0.25)
+            return ActiveGamePosterStyle.negativeScoreColor
         case .spades:
             return Color(red: 0.08, green: 0.10, blue: 0.13)
         case .clubs:
@@ -4174,9 +4174,9 @@ private struct HistoricalGameDetailView: View {
     private func scoreForeground(_ value: Int) -> Color {
         switch value {
         case let x where x > 0:
-            return Color(red: 0.05, green: 0.45, blue: 0.18)
+            return ActiveGamePosterStyle.positiveScoreColor
         case let x where x < 0:
-            return Color(red: 0.55, green: 0.08, blue: 0.1)
+            return ActiveGamePosterStyle.negativeScoreColor
         default:
             return Color.secondary
         }
@@ -4379,7 +4379,7 @@ private struct HistoricalSessionGamesTable: View {
                     .font(tableNumberFont)
                     .fontWidth(.compressed)
                     .fontWeight(.black)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -4488,8 +4488,8 @@ private struct HistoricalSessionGamesTable: View {
     }
 
     private func scoreForeground(_ value: Int) -> Color {
-        if value > 0 { return Color(red: 0.10, green: 0.48, blue: 0.23) }
-        if value < 0 { return Color(red: 0.72, green: 0.05, blue: 0.10) }
+        if value > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if value < 0 { return ActiveGamePosterStyle.negativeScoreColor }
         return Color.secondary
     }
 }

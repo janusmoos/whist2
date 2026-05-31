@@ -1,9 +1,41 @@
 import SwiftData
 import SwiftUI
 
+enum AppAppearanceMode: String, CaseIterable, Identifiable {
+    case auto
+    case normal
+    case darkMode
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .auto:
+            return "Auto"
+        case .normal:
+            return "Normal"
+        case .darkMode:
+            return "Dark Mode"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .auto:
+            return nil
+        case .normal:
+            return .light
+        case .darkMode:
+            return .dark
+        }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
+    @AppStorage("appAppearanceMode") private var appAppearanceModeRaw = AppAppearanceMode.auto.rawValue
 
     @State private var selectedTab: MainTab = .home
     /// Delt med `HomeView`, så navigation bevares når I skifter fane og kommer tilbage til forsiden.
@@ -104,12 +136,19 @@ struct ContentView: View {
             if let msg = toastMessage {
                 Text(msg)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ActiveGamePosterStyle.toastForegroundColor)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(.ultraThinMaterial.opacity(0.85))
-                    .background(Color.primary.opacity(0.7))
+                    .background {
+                        if reduceTransparency {
+                            ActiveGamePosterStyle.toastBackgroundColor
+                        } else {
+                            Rectangle()
+                                .fill(.ultraThinMaterial.opacity(0.85))
+                                .background(Color.primary.opacity(0.7))
+                        }
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
                     .padding(.horizontal, 20)
@@ -123,6 +162,11 @@ struct ContentView: View {
         .onAppear {
             GameDayEndedAtMigration.runIfNeeded(modelContext: modelContext)
         }
+        .preferredColorScheme(appAppearanceMode.colorScheme)
+    }
+
+    private var appAppearanceMode: AppAppearanceMode {
+        AppAppearanceMode(rawValue: appAppearanceModeRaw) ?? .auto
     }
 
     /// «Nyt spil»/«Afslut spil» fra bundmenuen: åbner meldingen direkte. Kræver aktiv spilledag.
@@ -167,18 +211,22 @@ private enum MainTabBarMeasuredHeightKey: PreferenceKey {
 }
 
 private struct BottomMenuFade: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(.regularMaterial)
-                .mask(fadeMask)
+            if !reduceTransparency {
+                Rectangle()
+                    .fill(.regularMaterial)
+                    .mask(fadeMask)
+            }
 
             LinearGradient(
                 stops: [
                     .init(color: Color(.systemBackground).opacity(0), location: 0.00),
-                    .init(color: Color(.systemBackground).opacity(0.08), location: 0.24),
-                    .init(color: Color(.systemBackground).opacity(0.56), location: 0.50),
-                    .init(color: Color(.systemBackground).opacity(0.96), location: 0.70),
+                    .init(color: Color(.systemBackground).opacity(reduceTransparency ? 0.64 : 0.08), location: 0.24),
+                    .init(color: Color(.systemBackground).opacity(reduceTransparency ? 0.92 : 0.56), location: 0.50),
+                    .init(color: Color(.systemBackground).opacity(1), location: 0.70),
                     .init(color: Color(.systemBackground), location: 0.74),
                     .init(color: Color(.systemBackground), location: 1.00),
                 ],

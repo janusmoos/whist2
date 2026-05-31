@@ -43,7 +43,7 @@ struct MainTabBar: View {
                 .fill(tabBarFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 34, style: .continuous)
-                        .strokeBorder(.white.opacity(0.78), lineWidth: 1)
+                        .strokeBorder(ActiveGamePosterStyle.highlightBorderColor.opacity(0.78), lineWidth: 1)
                 }
                 .shadow(color: .black.opacity(0.11), radius: 18, x: 0, y: 8)
 
@@ -157,7 +157,7 @@ struct MainTabBar: View {
                     .fill(ActiveGamePosterStyle.panelColor)
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(.white.opacity(0.96), lineWidth: 2.2)
+                            .strokeBorder(ActiveGamePosterStyle.highlightBorderColor.opacity(0.96), lineWidth: 2.2)
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -192,10 +192,10 @@ struct MainTabBar: View {
 
     private func centerBackCard(rotation: Double, x: CGFloat, y: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Color(red: 0.74, green: 0.77, blue: 0.69).opacity(0.74))
+            .fill(ActiveGamePosterStyle.tabBackCardColor.opacity(0.74))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(.white.opacity(0.78), lineWidth: 1.8)
+                    .strokeBorder(ActiveGamePosterStyle.highlightBorderColor.opacity(0.78), lineWidth: 1.8)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -214,7 +214,7 @@ struct MainTabBar: View {
     }
 
     private var tabIconSelected: Color {
-        Color(red: 0.10, green: 0.34, blue: 0.27)
+        ActiveGamePosterStyle.selectedGreenColor
     }
 
     private var tabIconMuted: Color {
@@ -222,11 +222,11 @@ struct MainTabBar: View {
     }
 
     private var centerActionColor: Color {
-        Color(red: 0.10, green: 0.34, blue: 0.27)
+        ActiveGamePosterStyle.selectedGreenColor
     }
 
     private var activeBadgeColor: Color {
-        Color(red: 0.93, green: 0.55, blue: 0.05)
+        ActiveGamePosterStyle.activeOrangeColor
     }
 }
 

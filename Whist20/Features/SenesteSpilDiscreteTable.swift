@@ -56,7 +56,7 @@ struct SenesteSpilDiscreteTable: View {
                         .font(tableNumberFont)
                         .fontWidth(.compressed)
                         .fontWeight(.black)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -188,8 +188,8 @@ struct SenesteSpilDiscreteTable: View {
     }
 
     private func scoreForeground(_ value: Int) -> Color {
-        if value > 0 { return Color(red: 0.10, green: 0.48, blue: 0.23) }
-        if value < 0 { return Color(red: 0.72, green: 0.05, blue: 0.10) }
+        if value > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if value < 0 { return ActiveGamePosterStyle.negativeScoreColor }
         return Color.secondary
     }
 }

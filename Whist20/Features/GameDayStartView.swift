@@ -5,6 +5,7 @@ import SwiftUI
 struct GameDayStartView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Bindable var gameDay: GameDay
     /// Når sand, åbnes «Tilføj spil»-arket én gang ved første visning (fx fra forsiden).
     var presentAddHandSheetOnAppear: Bool = false
@@ -50,12 +51,19 @@ struct GameDayStartView: View {
             if let msg = toastMessage {
                 Text(msg)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ActiveGamePosterStyle.toastForegroundColor)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(.ultraThinMaterial.opacity(0.85))
-                    .background(Color.primary.opacity(0.7))
+                    .background {
+                        if reduceTransparency {
+                            ActiveGamePosterStyle.toastBackgroundColor
+                        } else {
+                            Rectangle()
+                                .fill(.ultraThinMaterial.opacity(0.85))
+                                .background(Color.primary.opacity(0.7))
+                        }
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
                     .padding(.horizontal, 20)

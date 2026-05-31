@@ -469,9 +469,9 @@ private struct BidStepView: View {
     private var dealerBadge: some View {
         Text("D")
             .font(.caption2.weight(.heavy))
-            .foregroundStyle(.white)
+            .foregroundStyle(ActiveGamePosterStyle.textOnWarmAccentColor)
             .frame(width: 18, height: 18)
-            .background(Circle().fill(Color.orange))
+            .background(Circle().fill(ActiveGamePosterStyle.activeOrangeColor))
             .accessibilityLabel("Dealer")
     }
 
@@ -990,14 +990,14 @@ private struct ResultStepView: View {
     private func scoreBadge(_ value: Int) -> some View {
         let text = value > 0 ? "+\(value)" : "\(value)"
         let color: Color = value > 0
-            ? Color(red: 0.07, green: 0.38, blue: 0.18)
-            : value < 0 ? Color(red: 0.70, green: 0.03, blue: 0.08) : .secondary
+            ? ActiveGamePosterStyle.positiveScoreColor
+            : value < 0 ? ActiveGamePosterStyle.negativeScoreColor : .secondary
         return Text(text)
             .font(.caption2.weight(.bold).monospacedDigit())
             .foregroundStyle(color)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(.white, in: Capsule())
+            .background(ActiveGamePosterStyle.panelSecondaryColor, in: Capsule())
             .overlay(Capsule().strokeBorder(color, lineWidth: 1))
     }
 
@@ -1348,9 +1348,9 @@ private struct OptionalMelderSeatButtonGrid: View {
                     if dealerSeat == seat {
                         Text("D")
                             .font(.caption2.weight(.heavy))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(ActiveGamePosterStyle.textOnWarmAccentColor)
                             .frame(width: 18, height: 18)
-                            .background(Circle().fill(Color.orange))
+                            .background(Circle().fill(ActiveGamePosterStyle.activeOrangeColor))
                             .padding(.leading, 6)
                             .padding(.top, 4)
                             .accessibilityLabel("Dealer")
@@ -1542,10 +1542,10 @@ private struct VipPartnerPickerBox: View {
             .font(.caption2.weight(.bold).monospacedDigit())
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundStyle(value >= 0 ? Color(red: 0.07, green: 0.38, blue: 0.18) : Color(red: 0.70, green: 0.03, blue: 0.08))
+            .foregroundStyle(value >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
             .background {
                 Capsule()
-                    .fill((value >= 0 ? Color.green : Color.red).opacity(0.14))
+                    .fill((value >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor).opacity(0.18))
             }
     }
 }

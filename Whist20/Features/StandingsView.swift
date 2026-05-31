@@ -205,16 +205,16 @@ struct StandingsView: View {
         switch rank {
         case 1: return Color.yellow.opacity(0.35)
         case 2: return Color.secondary.opacity(0.18)
-        case 3: return Color.orange.opacity(0.22)
+        case 3: return ActiveGamePosterStyle.activeOrangeColor.opacity(0.24)
         default: return Color.secondary.opacity(0.12)
         }
     }
 
     private func rankBorder(_ rank: Int) -> Color {
         switch rank {
-        case 1: return Color.orange.opacity(0.45)
+        case 1: return ActiveGamePosterStyle.activeOrangeColor.opacity(0.48)
         case 2: return Color.secondary.opacity(0.35)
-        case 3: return Color.orange.opacity(0.4)
+        case 3: return ActiveGamePosterStyle.activeOrangeColor.opacity(0.44)
         default: return Color.secondary.opacity(0.25)
         }
     }
@@ -236,9 +236,9 @@ struct StandingsView: View {
     private func scoreForeground(_ value: Int) -> Color {
         switch value {
         case let x where x > 0:
-            return Color(red: 0.05, green: 0.45, blue: 0.18)
+            return ActiveGamePosterStyle.positiveScoreColor
         case let x where x < 0:
-            return Color(red: 0.55, green: 0.08, blue: 0.1)
+            return ActiveGamePosterStyle.negativeScoreColor
         default:
             return Color.secondary
         }

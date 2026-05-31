@@ -137,9 +137,9 @@ struct PointStandingView: View {
     private func chipBackground(for value: Int) -> Color {
         switch value {
         case let x where x > 0:
-            return Color.green.opacity(0.32)
+            return ActiveGamePosterStyle.positiveScoreColor.opacity(0.34)
         case let x where x < 0:
-            return Color.red.opacity(0.32)
+            return ActiveGamePosterStyle.negativeScoreColor.opacity(0.34)
         default:
             return Color.secondary.opacity(0.12)
         }

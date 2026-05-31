@@ -163,12 +163,12 @@ struct ScorecardView: View {
                     label: "«Gå hjem»-bonus",
                     value: "+1×",
                     detail: "Vinder man sit bud, får man én ekstra portion basispoint oven i. Fx giver 8 alm med præcis 8 stik: (1+1) × 1 = 2 point — ikke kun 1.",
-                    tint: Color.green.opacity(0.08)
+                    tint: ActiveGamePosterStyle.positiveScoreColor.opacity(0.10)
                 )
                 Divider()
                 specialRow(label: "Storslem (13 stik)", value: "×2", detail: "Gælder alle typer", tint: Color.pink.opacity(0.1))
                 Divider()
-                specialRow(label: "Klør i 3. VIP", value: "×2", detail: "Oven i VIP-multiplier", tint: Color.orange.opacity(0.1))
+                specialRow(label: "Klør i 3. VIP", value: "×2", detail: "Oven i VIP-multiplier", tint: ActiveGamePosterStyle.activeOrangeColor.opacity(0.12))
                 Divider()
                 specialRow(label: "Duestraf", value: "72", detail: "Straffet: −72 / øvrige: +24", tint: Color.yellow.opacity(0.15))
             }

@@ -163,7 +163,7 @@ struct HomeView: View {
             HStack(spacing: 6) {
                 Image(systemName: "circle.fill")
                     .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ActiveGamePosterStyle.activeOrangeColor)
                     .symbolRenderingMode(.multicolor)
                 Text("Aktivt spil")
                     .font(.caption.weight(.semibold))
@@ -208,6 +208,7 @@ struct HomeView: View {
 
 private struct AppSettingsView: View {
     @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
+    @AppStorage("appAppearanceMode") private var appAppearanceModeRaw = AppAppearanceMode.auto.rawValue
     @State private var backupInfo: LocalBackupInfo?
     @State private var shareFileURLs: [URL] = []
     @State private var backupMessage: String?
@@ -225,6 +226,16 @@ private struct AppSettingsView: View {
                 NavigationLink(value: HomeRoute.scorecard) {
                     Label("Scorecard", systemImage: "tablecells")
                 }
+            }
+
+            Section("Udseende") {
+                Picker("Tema", selection: $appAppearanceModeRaw) {
+                    ForEach(AppAppearanceMode.allCases) { mode in
+                        Text(mode.title)
+                            .tag(mode.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
 
             Section("Backup") {
@@ -260,7 +271,7 @@ private struct AppSettingsView: View {
             }
 
             Section {
-                Text("Her kommer snart valg for navne, regler, tema og mere.")
+                Text("Her kommer snart valg for navne, regler og mere.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

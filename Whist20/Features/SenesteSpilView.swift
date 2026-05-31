@@ -108,12 +108,12 @@ struct SenesteSpilView: View {
             onOpenActiveGame?()
         } label: {
             HStack(spacing: 12) {
-                ActiveGamePlayCardIcon(color: .white, lineWidth: 1.8)
+                ActiveGamePlayCardIcon(color: ActiveGamePosterStyle.textOnWarmAccentColor, lineWidth: 1.8)
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Se meldingen i det aktive spil")
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(ActiveGamePosterStyle.textOnWarmAccentColor)
                         .lineLimit(2)
                 }
 
@@ -121,17 +121,17 @@ struct SenesteSpilView: View {
 
                 Image(systemName: "chevron.right")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(ActiveGamePosterStyle.textOnWarmAccentColor.opacity(0.82))
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.orange)
+                    .fill(ActiveGamePosterStyle.activeOrangeColor)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.orange.opacity(0.88), lineWidth: 1)
+                    .strokeBorder(ActiveGamePosterStyle.activeOrangeColor.opacity(0.88), lineWidth: 1)
             }
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -163,7 +163,7 @@ struct SenesteSpilDaySummarySection: View {
                         .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
                         .fontWidth(.compressed)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.black)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.62)
 
@@ -382,8 +382,8 @@ struct SenesteSpilDaySummarySection: View {
     }
 
     private func scoreColor(_ value: Int) -> Color {
-        if value > 0 { return Color(red: 0.10, green: 0.48, blue: 0.23) }
-        if value < 0 { return Color(red: 0.72, green: 0.05, blue: 0.10) }
+        if value > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if value < 0 { return ActiveGamePosterStyle.negativeScoreColor }
         return .secondary
     }
 

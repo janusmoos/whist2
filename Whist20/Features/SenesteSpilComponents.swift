@@ -306,13 +306,13 @@ struct SenesteSpilLatestHeroCard: View {
         case "duty":
             Label("Duestraf", systemImage: "flag.fill")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.orange)
+                .foregroundStyle(ActiveGamePosterStyle.activeOrangeColor)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.orange.opacity(0.15))
+                        .fill(ActiveGamePosterStyle.activeOrangeColor.opacity(0.18))
                 }
         case "sol":
             solBadgeRow
@@ -426,8 +426,8 @@ struct SenesteSpilLatestHeroCard: View {
     }
 
     private func scoreHeroForeground(_ value: Int) -> Color {
-        if value > 0 { return Color.green }
-        if value < 0 { return Color.red }
+        if value > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if value < 0 { return ActiveGamePosterStyle.negativeScoreColor }
         return Color.secondary
     }
 
@@ -571,9 +571,9 @@ enum HandScoreChipStyle {
         case .dark:
             switch value {
             case _ where value > 0:
-                return Color(red: 0.20, green: 0.26, blue: 0.22)
+                return ActiveGamePosterStyle.positiveScoreColor.opacity(0.18)
             case _ where value < 0:
-                return Color(red: 0.26, green: 0.20, blue: 0.20)
+                return ActiveGamePosterStyle.negativeScoreColor.opacity(0.18)
             default:
                 return Color(white: 0.22)
             }
@@ -584,8 +584,8 @@ enum HandScoreChipStyle {
 
     /// 1 px kant: grøn / rød / neutral efter fortegn.
     static func border(for value: Int) -> Color {
-        if value > 0 { return Color.green }
-        if value < 0 { return Color.red }
+        if value > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if value < 0 { return ActiveGamePosterStyle.negativeScoreColor }
         return Color.secondary.opacity(0.45)
     }
 }

@@ -1,14 +1,146 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 enum ActiveGamePosterStyle {
-    static let panelColor = Color(red: 0.93, green: 0.91, blue: 0.88)
-    static let borderColor = Color(red: 0.70, green: 0.64, blue: 0.56)
-    static let darkInkColor = Color(red: 0.10, green: 0.12, blue: 0.16)
-    static let contractMarkerColor = Color(red: 0.32, green: 0.27, blue: 0.22)
+    static let panelColor = dynamicColor(
+        light: RGB(0.93, 0.91, 0.88),
+        dark: RGB(0.18, 0.17, 0.15),
+        lightHighContrast: RGB(0.96, 0.94, 0.90),
+        darkHighContrast: RGB(0.13, 0.12, 0.11)
+    )
+    static let panelSecondaryColor = dynamicColor(
+        light: RGB(0.97, 0.97, 0.96),
+        dark: RGB(0.24, 0.23, 0.21),
+        lightHighContrast: RGB(1.00, 0.99, 0.97),
+        darkHighContrast: RGB(0.29, 0.28, 0.25)
+    )
+    static let tabBackCardColor = dynamicColor(
+        light: RGB(0.74, 0.77, 0.69),
+        dark: RGB(0.30, 0.34, 0.29),
+        lightHighContrast: RGB(0.68, 0.72, 0.63),
+        darkHighContrast: RGB(0.36, 0.42, 0.34)
+    )
+    static let borderColor = dynamicColor(
+        light: RGB(0.70, 0.64, 0.56),
+        dark: RGB(0.56, 0.50, 0.43),
+        lightHighContrast: RGB(0.54, 0.47, 0.38),
+        darkHighContrast: RGB(0.76, 0.69, 0.58)
+    )
+    static let highlightBorderColor = dynamicColor(
+        light: RGB(1.0, 0.98, 0.94),
+        dark: RGB(0.44, 0.40, 0.34),
+        lightHighContrast: RGB(1.0, 0.99, 0.96),
+        darkHighContrast: RGB(0.62, 0.56, 0.48)
+    )
+    static let darkInkColor = dynamicColor(
+        light: RGB(0.10, 0.12, 0.16),
+        dark: RGB(0.88, 0.86, 0.80),
+        lightHighContrast: RGB(0.02, 0.03, 0.05),
+        darkHighContrast: RGB(0.98, 0.96, 0.90)
+    )
+    static let mutedInkColor = dynamicColor(
+        light: RGB(0.38, 0.36, 0.33),
+        dark: RGB(0.68, 0.66, 0.60),
+        lightHighContrast: RGB(0.23, 0.22, 0.20),
+        darkHighContrast: RGB(0.84, 0.81, 0.74)
+    )
+    static let contrastTextOnColor = dynamicColor(
+        light: RGB(1.00, 1.00, 1.00),
+        dark: RGB(0.08, 0.07, 0.06),
+        lightHighContrast: RGB(1.00, 1.00, 1.00),
+        darkHighContrast: RGB(0.00, 0.00, 0.00)
+    )
+    static let textOnWarmAccentColor = dynamicColor(
+        light: RGB(0.08, 0.07, 0.06),
+        dark: RGB(0.08, 0.07, 0.06),
+        lightHighContrast: RGB(0.00, 0.00, 0.00),
+        darkHighContrast: RGB(0.00, 0.00, 0.00)
+    )
+    static let toastBackgroundColor = dynamicColor(
+        light: RGB(0.10, 0.12, 0.16),
+        dark: RGB(0.08, 0.08, 0.07),
+        lightHighContrast: RGB(0.00, 0.00, 0.00),
+        darkHighContrast: RGB(0.00, 0.00, 0.00)
+    )
+    static let toastForegroundColor = dynamicColor(
+        light: RGB(1.00, 1.00, 1.00),
+        dark: RGB(1.00, 1.00, 1.00),
+        lightHighContrast: RGB(1.00, 1.00, 1.00),
+        darkHighContrast: RGB(1.00, 1.00, 1.00)
+    )
+    static let contractMarkerColor = dynamicColor(
+        light: RGB(0.32, 0.27, 0.22),
+        dark: RGB(0.86, 0.76, 0.62),
+        lightHighContrast: RGB(0.20, 0.16, 0.12),
+        darkHighContrast: RGB(1.00, 0.88, 0.68)
+    )
+    static let selectedGreenColor = dynamicColor(
+        light: RGB(0.10, 0.34, 0.27),
+        dark: RGB(0.48, 0.78, 0.65),
+        lightHighContrast: RGB(0.04, 0.26, 0.18),
+        darkHighContrast: RGB(0.58, 0.95, 0.77)
+    )
+    static let activeOrangeColor = dynamicColor(
+        light: RGB(0.93, 0.55, 0.05),
+        dark: RGB(1.00, 0.65, 0.18),
+        lightHighContrast: RGB(0.78, 0.40, 0.00),
+        darkHighContrast: RGB(1.00, 0.77, 0.34)
+    )
+    static let positiveScoreColor = dynamicColor(
+        light: RGB(0.10, 0.48, 0.23),
+        dark: RGB(0.46, 0.86, 0.58),
+        lightHighContrast: RGB(0.00, 0.36, 0.13),
+        darkHighContrast: RGB(0.62, 1.00, 0.72)
+    )
+    static let negativeScoreColor = dynamicColor(
+        light: RGB(0.72, 0.05, 0.10),
+        dark: RGB(1.00, 0.46, 0.49),
+        lightHighContrast: RGB(0.58, 0.00, 0.04),
+        darkHighContrast: RGB(1.00, 0.61, 0.64)
+    )
+    static let neutralMeterColor = dynamicColor(
+        light: RGB(0.72, 0.72, 0.72),
+        dark: RGB(0.58, 0.58, 0.56),
+        lightHighContrast: RGB(0.52, 0.52, 0.50),
+        darkHighContrast: RGB(0.78, 0.78, 0.74)
+    )
     static let cornerRadius: CGFloat = 12
     static let fontName = "Anton-Regular"
     static let resumeFontName = "ArchivoRoman-Regular"
+
+    private struct RGB {
+        let red: CGFloat
+        let green: CGFloat
+        let blue: CGFloat
+        let alpha: CGFloat
+
+        init(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, alpha: CGFloat = 1) {
+            self.red = red
+            self.green = green
+            self.blue = blue
+            self.alpha = alpha
+        }
+    }
+
+    private static func dynamicColor(
+        light: RGB,
+        dark: RGB,
+        lightHighContrast: RGB? = nil,
+        darkHighContrast: RGB? = nil
+    ) -> Color {
+        Color(uiColor: UIColor { traits in
+            let isDark = traits.userInterfaceStyle == .dark
+            let isHighContrast = traits.accessibilityContrast == .high
+            let value: RGB
+            if isDark {
+                value = isHighContrast ? (darkHighContrast ?? dark) : dark
+            } else {
+                value = isHighContrast ? (lightHighContrast ?? light) : light
+            }
+            return UIColor(red: value.red, green: value.green, blue: value.blue, alpha: value.alpha)
+        })
+    }
 }
 
 /// Læsevisning af kladde i `PendingHand` — nutidsform uden resultat (se `HandResumeCaption.presentTenseLine`).
@@ -425,10 +557,10 @@ struct RecordedHandCardIllustration: View {
 
     private var topPanelBorderColor: Color {
         if bidderScore > 0 {
-            return Color(red: 0.10, green: 0.48, blue: 0.23)
+            return ActiveGamePosterStyle.positiveScoreColor
         }
         if bidderScore < 0 {
-            return Color(red: 0.72, green: 0.05, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         }
         return ActiveGamePosterStyle.borderColor
     }
@@ -614,7 +746,7 @@ private struct ActiveGameSolPoster: View {
     var actionColor: Color?
     var isCompact = false
 
-    private let iconColor = Color(red: 0.10, green: 0.12, blue: 0.16)
+    private let iconColor = ActiveGamePosterStyle.darkInkColor
 
     var body: some View {
         VStack(spacing: verticalSpacing) {
@@ -670,7 +802,7 @@ private struct ActiveGameSolPoster: View {
         Text(text.uppercased())
             .font(.custom(ActiveGamePosterStyle.fontName, size: solTypeFontSize))
             .fontWidth(.compressed)
-            .foregroundStyle(.black)
+            .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
             .lineLimit(1)
             .minimumScaleFactor(0.55)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -687,7 +819,7 @@ private struct ActiveGameSolPoster: View {
         Text(text)
             .font(.custom(ActiveGamePosterStyle.fontName, size: size ?? posterFontSize))
             .fontWidth(.compressed)
-            .foregroundStyle(.black)
+            .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
     }
 
     @ViewBuilder
@@ -711,7 +843,7 @@ private struct ActiveGameSolPoster: View {
                     .font(.custom(ActiveGamePosterStyle.fontName, size: posterFontSize))
                     .fontWidth(.compressed)
                     .tracking(1.2)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                     .offset(x: offset.width, y: offset.height)
             }
 
@@ -978,7 +1110,7 @@ private struct ActiveGamePosterScoreStrip: View {
                 .font(.custom(ActiveGamePosterStyle.resumeFontName, size: isCompact ? 11 : 12))
                 .fontWidth(.compressed)
                 .fontWeight(.semibold)
-                .foregroundStyle(.black)
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.62)
 
@@ -1018,11 +1150,11 @@ private struct ActiveGamePosterScoreStrip: View {
         Text("SS")
             .font(.custom(ActiveGamePosterStyle.fontName, size: isCompact ? 10 : 11))
             .fontWidth(.compressed)
-            .foregroundStyle(.white)
+            .foregroundStyle(ActiveGamePosterStyle.contrastTextOnColor)
             .lineLimit(1)
             .minimumScaleFactor(0.65)
             .frame(width: isCompact ? 62 : 68, height: isCompact ? 15 : 17)
-            .background(Color(red: 0.72, green: 0.05, blue: 0.10).opacity(0.85))
+            .background(ActiveGamePosterStyle.negativeScoreColor.opacity(0.85))
             .rotationEffect(.degrees(45))
             .offset(x: isCompact ? 22 : 24, y: isCompact ? -18 : -20)
     }
@@ -1048,10 +1180,10 @@ private struct ActiveGamePosterScoreStrip: View {
 
     private func scoreColor(_ value: Int) -> Color {
         if value > 0 {
-            return Color(red: 0.10, green: 0.48, blue: 0.23)
+            return ActiveGamePosterStyle.positiveScoreColor
         }
         if value < 0 {
-            return Color(red: 0.72, green: 0.05, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         }
         return .secondary
     }
@@ -1073,7 +1205,7 @@ private struct ActiveGameTrumpPoster: View {
     var isCompact = false
 
     private let thermometerWidth: CGFloat = 14
-    private let sansThermometerColor = Color(red: 0.72, green: 0.72, blue: 0.72)
+    private let sansThermometerColor = ActiveGamePosterStyle.neutralMeterColor
 
     var body: some View {
         Grid(horizontalSpacing: horizontalSpacing, verticalSpacing: verticalSpacing) {
@@ -1147,11 +1279,11 @@ private struct ActiveGameTrumpPoster: View {
         Text("STORSLEM")
             .font(.custom(ActiveGamePosterStyle.fontName, size: storslemRibbonFontSize))
             .fontWidth(.compressed)
-            .foregroundStyle(.white)
+            .foregroundStyle(ActiveGamePosterStyle.contrastTextOnColor)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .frame(width: storslemRibbonWidth, height: storslemRibbonHeight)
-            .background(Color(red: 0.72, green: 0.05, blue: 0.10).opacity(0.85))
+            .background(ActiveGamePosterStyle.negativeScoreColor.opacity(0.85))
             .rotationEffect(.degrees(45))
             .offset(x: storslemRibbonOffsetX, y: storslemRibbonOffsetY)
     }
@@ -1208,7 +1340,7 @@ private struct ActiveGameTrumpPoster: View {
         Text(text)
             .font(.custom(ActiveGamePosterStyle.fontName, size: size ?? posterFontSize))
             .fontWidth(.compressed)
-            .foregroundStyle(.black)
+            .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
     }
 
     @ViewBuilder
@@ -1248,7 +1380,7 @@ private struct ActiveGameTrumpPoster: View {
         Text(delta > 0 ? "+\(delta)" : "\(delta)")
             .font(.system(size: resultDeltaBadgeFontSize, weight: .heavy, design: .rounded))
             .monospacedDigit()
-            .foregroundStyle(.white)
+            .foregroundStyle(ActiveGamePosterStyle.contrastTextOnColor)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .offset(y: resultDeltaBadgeTextYOffset)
@@ -1280,7 +1412,7 @@ private struct ActiveGameTrumpPoster: View {
         let actualHeight = CGFloat(max(0, min(13, actualTricks))) / 13 * topPanelHeight
         if actualTricks > bidTricks {
             Rectangle()
-                .fill(Color(red: 0.10, green: 0.48, blue: 0.23))
+                .fill(ActiveGamePosterStyle.positiveScoreColor)
                 .frame(height: max(0, actualHeight - bidFillHeight))
                 .offset(y: -bidFillHeight)
         } else if actualTricks < bidTricks {
@@ -1294,9 +1426,9 @@ private struct ActiveGameTrumpPoster: View {
     private var negativeThermometerResultColor: Color {
         switch trump {
         case .hearts, .diamonds:
-            return Color(red: 0.10, green: 0.12, blue: 0.16)
+            return ActiveGamePosterStyle.darkInkColor
         default:
-            return Color(red: 0.72, green: 0.05, blue: 0.10)
+            return ActiveGamePosterStyle.negativeScoreColor
         }
     }
 
@@ -1433,7 +1565,7 @@ private struct ActiveGameTrumpPoster: View {
     }
 
     private var contractColor: Color {
-        trump?.illustrationColor ?? Color(red: 0.10, green: 0.12, blue: 0.16)
+        trump?.illustrationColor ?? ActiveGamePosterStyle.darkInkColor
     }
 
     private var resultDelta: Int? {
@@ -1444,8 +1576,8 @@ private struct ActiveGameTrumpPoster: View {
 
     private func resultDeltaBadgeColor(_ delta: Int) -> Color {
         delta > 0
-            ? Color(red: 0.10, green: 0.48, blue: 0.23)
-            : Color(red: 0.72, green: 0.05, blue: 0.10)
+            ? ActiveGamePosterStyle.positiveScoreColor
+            : ActiveGamePosterStyle.negativeScoreColor
     }
 
     private func posterOutlineText(_ text: String) -> some View {
@@ -1456,7 +1588,7 @@ private struct ActiveGameTrumpPoster: View {
                     .font(.custom(ActiveGamePosterStyle.fontName, size: posterFontSize))
                     .fontWidth(.compressed)
                     .tracking(1.2)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                     .offset(x: offset.width, y: offset.height)
             }
 
