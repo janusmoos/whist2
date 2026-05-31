@@ -170,5 +170,6 @@ Kandidater til senere oprydning, når projektet er trygt ved `main`:
 - `docs/PARALLEL_WORK.md` - koordinering mellem Cursor og Codex
 - `TECHNICAL_HANDOFF.md` - teknisk opstart og arkitekturkort
 - `docs/performance/statistik-arkitektur-og-live-integration.md` - performance- og statistikarkitektur
+- `docs/statistik/live_statistics_integration_architecture.md` - konkret inputkort og målarkitektur for live-statistik
 - `docs/statistik/historisk_data_reproducerbarhed_og_versionsstyring.md` - datareproducerbarhed
 - `docs/statistik/data_audit_2026-05-26.md` - v3 data-audit
