@@ -47,8 +47,8 @@ gh pr create -R janusmoos/whist2 --title "Issue #1: Sol-type som wheel" --body "
 ```
 
 Se også:
+- `docs/architecture/branch_and_architecture_decisions.md` (levende log for branch-strategi, parkerede spor og arkitekturbeslutninger)
 - `docs/PARALLEL_WORK.md` (fælles overblik for Cursor + Codex: branches, opgaver, ejerskab)
 - `TECHNICAL_HANDOFF.md` (arkitektur, opstartstjek for Cursor/Codex, filer og kommandoer)
 - `VERSIONING.md` (marketing-version vs build-nummer, og foreslåede git-tags)
 - `MULTI_DEVICE.md` (overblik over fler-enheds-sync og anbefalet retning)
-

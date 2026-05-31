@@ -2,6 +2,8 @@
 
 **Formål:** Ét sted i repo’et som **begge** værktøjer (og du) læser ved session-start: hvilke **branches**, hvilket **ejerskab** af mapper, og hvad der er **i gang / næste skridt** på hver side.
 
+For overordnede branch- og arkitekturbeslutninger, se også `docs/architecture/branch_and_architecture_decisions.md`. Den fil er den levende beslutningslog for parkerede spor, merge-strategi og arkitekturretning.
+
 **Regel:** Opdater denne fil når I skifter fokus, merger til `main`, eller overtager en mappe — og **commit + push** så den anden part ser det efter `git pull`.
 
 ---
@@ -10,11 +12,14 @@
 
 | Spor | Branch-navn | Primært ansvar |
 |------|----------------|----------------|
-| **Design / UI (Cursor)** | `design/visual-refresh` | SwiftUI, farver, typografi, layout i `Whist20/` |
-| **Statistik / docs (Codex)** | `feature/statistics-historical-data` | Indhold og noter under `docs/statistik/`, evt. tilhørende kode på samme branch |
-| **Fælles linje** | `main` | Merge via PR når noget er klart til alle |
+| **Fælles linje** | `main` | Aktuel sandhed for app, statistik, performance og Dark Mode |
+| **Performance-reference** | `codex/performance-refactor-plan` | Parkeret snapshot, ikke aktiv udviklingsgren |
+| **Design-reference** | `codex/design-experiments` | Parkeret snapshot, ikke aktiv udviklingsgren |
+| **Dark Mode-reference** | `codex/dark-mode` | Merged til `main`; kan slettes senere |
+| **Historisk statistik-reference** | `feature/statistics-historical-data` | Parkeret historisk gren; merge ikke direkte |
+| **Datakvalitet-reference** | `codex/fix-historical-quality-notes` | Parkeret historisk gren; merge ikke direkte |
 
-*Ret tabellen hvis I omdøber branches.*
+*Ret tabellen når branches oprettes, merges, parkeres eller slettes. Opdater samtidig `docs/architecture/branch_and_architecture_decisions.md`.*
 
 ---
 
@@ -22,11 +27,12 @@
 
 | Område | Hvem må committe her? |
 |--------|------------------------|
-| `docs/statistik/` | **Kun Codex-sporet** (statistik-branchen), indtil I aftaler andet |
-| `Whist20/**/*.swift`, assets, UI | **Kun design-sporet** (design-branchen), eller eksplicit koordineret |
+| `docs/statistik/` | Koordineres eksplicit, især hvis ændringer berører v3-data/audit |
+| `Whist20/**/*.swift`, assets, UI | Koordineres eksplicit, især ved Dark Mode, performance eller navigation |
 | `docs/PARALLEL_WORK.md` | **Begge** — korte opdateringer når status ændrer sig |
+| `docs/architecture/branch_and_architecture_decisions.md` | **Begge** — opdateres ved arkitektur- og branchbeslutninger |
 
-**På design-maskinen:** commit **ikke** `docs/statistik/` ved en fejl. Ved støj fra lokal mappe: brug `.git/info/exclude` med linjen `docs/statistik/` (kun lokalt, pushet ikke). Se `TECHNICAL_HANDOFF.md`.
+Ved støj fra lokale mapper: brug `.git/info/exclude` lokalt. Se `TECHNICAL_HANDOFF.md`.
 
 ---
 
@@ -34,20 +40,22 @@
 
 ### Cursor (design)
 
-- [ ] `git fetch origin && git checkout design/visual-refresh && git pull origin design/visual-refresh`
+- [ ] `git fetch origin && git checkout main && git pull --rebase origin main`
 - [ ] Læs **Næste skridt – Cursor** nedenfor
-- [ ] Rør ikke `docs/statistik/` i commits (medmindre I har merget Codex’ ændringer og I aftaler deling)
+- [ ] Opret kortlivet branch fra `main`, hvis arbejdet ikke er en helt simpel dokumentationsopdatering
 
 ### Codex (statistik / funktioner)
 
 - [ ] Åbn **samme repo-klon** (mappe med `Whist20.xcodeproj` og `.git`)
-- [ ] `git fetch origin && git checkout feature/statistics-historical-data && git pull origin feature/statistics-historical-data`
+- [ ] `git fetch origin && git checkout main && git pull --rebase origin main`
 - [ ] Læs **Næste skridt – Codex** nedenfor
+- [ ] Opret kortlivet branch fra `main`, hvis arbejdet ikke er en helt simpel dokumentationsopdatering
 
 ### Før merge til `main`
 
 - [ ] Den anden har ikke uløste ændringer i de samme filer (eller konflikter er forventet og aftalt)
-- [ ] PR beskriver hvad der medtages (`docs/statistik/`, UI, osv.)
+- [ ] PR eller mergebesked beskriver hvad der medtages (`docs/statistik/`, UI, osv.)
+- [ ] `docs/architecture/branch_and_architecture_decisions.md` er opdateret, hvis arbejdet ændrer branch- eller arkitekturstatus
 
 ---
 
@@ -61,7 +69,7 @@ _Udfyld og kryds af efter behov._
 | 2 | | |
 | 3 | | |
 
-**Sidst opdateret:** _dato + evt. initialer_
+**Sidst opdateret:** 2026-05-31
 
 ---
 
@@ -75,7 +83,7 @@ _Udfyld og kryds af efter behov._
 | 2 | | |
 | 3 | | |
 
-**Sidst opdateret:** _dato + evt. initialer_
+**Sidst opdateret:** 2026-05-31
 
 ---
 
@@ -90,5 +98,6 @@ _Kort notat hvis noget venter på den anden (fx “merge statistik-PR før nye U
 ## Relaterede filer
 
 - `TECHNICAL_HANDOFF.md` — arkitektur og git-opstart
+- `docs/architecture/branch_and_architecture_decisions.md` — branch- og arkitekturbeslutninger
 - `docs/issues_local.txt` — samlet produkt-backlog
 - `docs/issues.md` — GitHub-issues oversigt

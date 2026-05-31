@@ -73,6 +73,7 @@ Regel: **én sandhed = GitHub**; Cursor og Codex er to arbejdsstationer mod samm
 
 - **Produkt-backlog:** `docs/issues_local.txt` (opdateres efter behov).
 - **Cursor + Codex samtidig:** `docs/PARALLEL_WORK.md` — branches, ejerskab af mapper (fx `docs/statistik/`), og næste skridt pr. værktøj.
+- **Branch- og arkitekturbeslutninger:** `docs/architecture/branch_and_architecture_decisions.md` — opdateres når branches oprettes, merges, parkeres eller når arkitekturspor skifter status.
 - GitHub-issues: `docs/issues.md` og `gh issue list -R janusmoos/whist2`.
 
 Angiv gerne **issue eller backlog-punkt** i commit-besked eller PR.
