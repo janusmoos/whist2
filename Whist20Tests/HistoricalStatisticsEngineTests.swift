@@ -106,6 +106,26 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(currentOverview?.playerTotals.first { $0.player.id == "Christian" }?.score, 12)
     }
 
+    func testPreparedHubModelCachesDestinationStatistics() {
+        let historicalData = makeMinimalHistoricalData()
+
+        let model = HistoricalStatisticsPreparer.prepareHubModel(historicalData: historicalData)
+        let allKey = HistoricalStatisticsScopeCacheKey(scope: .all, recentLimit: 10)
+        let currentKey = HistoricalStatisticsScopeCacheKey(scope: .current, recentLimit: 10)
+
+        XCTAssertEqual(model.sessionOverviews, HistoricalStatisticsEngine.sessionOverviews(from: historicalData))
+        XCTAssertEqual(model.playerSessionScores, HistoricalStatisticsEngine.playerSessionScores(from: historicalData))
+        XCTAssertEqual(model.playerProfiles, HistoricalStatisticsEngine.playerProfiles(from: historicalData))
+        XCTAssertEqual(model.playerSummaries, HistoricalStatisticsEngine.playerScoreSummaries(from: historicalData))
+        let expectedGameTypes = HistoricalStatisticsPreparer.gameTypeOverviews(from: historicalData)
+        XCTAssertEqual(model.gameTypeOverviews.map(\.id), expectedGameTypes.map(\.id))
+        XCTAssertEqual(model.gameTypeOverviews.map(\.games), expectedGameTypes.map(\.games))
+        XCTAssertEqual(model.snapshotsByScope[allKey], model.allSnapshot)
+        XCTAssertEqual(model.scopedDataByScope[currentKey]?.sessions.count, 1)
+        XCTAssertEqual(model.playerTrendSummariesByScope[allKey], HistoricalStatisticsEngine.playerTrendSummaries(from: historicalData))
+        XCTAssertEqual(model.gameTypeTrendSummariesByScope[allKey], HistoricalStatisticsEngine.gameTypeTrendSummaries(from: historicalData))
+    }
+
     func testLiveAdapterIgnoresPendingOnlyGameDays() {
         let historicalData = makeMinimalHistoricalData()
         let snapshot = LiveStatisticsGameDaySnapshot(

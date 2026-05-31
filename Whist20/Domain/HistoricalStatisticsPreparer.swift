@@ -5,17 +5,44 @@ struct HistoricalStatisticsHubModel {
     var allSnapshot: HistoricalStatisticsSnapshot
     var currentOverview: HistoricalSessionOverview?
     var gameTypeCount: Int
+    var sessionOverviews: [HistoricalSessionOverview]
+    var playerSessionScores: [String: [HistoricalPlayerSessionScore]]
+    var playerProfiles: [HistoricalPlayerProfile]
+    var playerSummaries: [HistoricalPlayerScoreSummary]
+    var gameTypeOverviews: [HistoricalGameTypeOverview]
+    var snapshotsByScope: [HistoricalStatisticsScopeCacheKey: HistoricalStatisticsSnapshot]
+    var scopedDataByScope: [HistoricalStatisticsScopeCacheKey: HistoricalWhistData]
+    var playerTrendSummariesByScope: [HistoricalStatisticsScopeCacheKey: [HistoricalPlayerTrendSummary]]
+    var gameTypeTrendSummariesByScope: [HistoricalStatisticsScopeCacheKey: [HistoricalGameTypeTrendSummary]]
 
     init(
         data: HistoricalWhistData,
         allSnapshot: HistoricalStatisticsSnapshot,
         currentOverview: HistoricalSessionOverview?,
-        gameTypeCount: Int
+        gameTypeCount: Int,
+        sessionOverviews: [HistoricalSessionOverview],
+        playerSessionScores: [String: [HistoricalPlayerSessionScore]],
+        playerProfiles: [HistoricalPlayerProfile],
+        playerSummaries: [HistoricalPlayerScoreSummary],
+        gameTypeOverviews: [HistoricalGameTypeOverview],
+        snapshotsByScope: [HistoricalStatisticsScopeCacheKey: HistoricalStatisticsSnapshot],
+        scopedDataByScope: [HistoricalStatisticsScopeCacheKey: HistoricalWhistData],
+        playerTrendSummariesByScope: [HistoricalStatisticsScopeCacheKey: [HistoricalPlayerTrendSummary]],
+        gameTypeTrendSummariesByScope: [HistoricalStatisticsScopeCacheKey: [HistoricalGameTypeTrendSummary]]
     ) {
         self.data = data
         self.allSnapshot = allSnapshot
         self.currentOverview = currentOverview
         self.gameTypeCount = gameTypeCount
+        self.sessionOverviews = sessionOverviews
+        self.playerSessionScores = playerSessionScores
+        self.playerProfiles = playerProfiles
+        self.playerSummaries = playerSummaries
+        self.gameTypeOverviews = gameTypeOverviews
+        self.snapshotsByScope = snapshotsByScope
+        self.scopedDataByScope = scopedDataByScope
+        self.playerTrendSummariesByScope = playerTrendSummariesByScope
+        self.gameTypeTrendSummariesByScope = gameTypeTrendSummariesByScope
     }
 
     init(loader: HistoricalDataJSONLoader) throws {
@@ -43,15 +70,63 @@ enum HistoricalStatisticsPreparer {
         )
         let allSnapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: .all)
         let currentData = HistoricalStatisticsEngine.scopedData(from: data, scope: .current)
+        let sessionOverviews = HistoricalStatisticsEngine.sessionOverviews(from: data)
         let currentOverview = HistoricalStatisticsEngine.sessionOverviews(from: currentData).last
-        let gameTypeCount = Set(data.games.compactMap(HistoricalGameTypeClassifier.canonicalGameType)).count
+        let gameTypeOverviews = gameTypeOverviews(from: data)
+        let gameTypeCount = gameTypeOverviews.count
+        let scopeCache = prepareScopeCache(from: data)
 
         return HistoricalStatisticsHubModel(
             data: data,
             allSnapshot: allSnapshot,
             currentOverview: currentOverview,
-            gameTypeCount: gameTypeCount
+            gameTypeCount: gameTypeCount,
+            sessionOverviews: sessionOverviews,
+            playerSessionScores: HistoricalStatisticsEngine.playerSessionScores(from: data),
+            playerProfiles: HistoricalStatisticsEngine.playerProfiles(from: data),
+            playerSummaries: HistoricalStatisticsEngine.playerScoreSummaries(from: data),
+            gameTypeOverviews: gameTypeOverviews,
+            snapshotsByScope: scopeCache.snapshots,
+            scopedDataByScope: scopeCache.scopedData,
+            playerTrendSummariesByScope: scopeCache.playerTrends,
+            gameTypeTrendSummariesByScope: scopeCache.gameTypeTrends
         )
+    }
+
+    private static func prepareScopeCache(
+        from data: HistoricalWhistData
+    ) -> (
+        snapshots: [HistoricalStatisticsScopeCacheKey: HistoricalStatisticsSnapshot],
+        scopedData: [HistoricalStatisticsScopeCacheKey: HistoricalWhistData],
+        playerTrends: [HistoricalStatisticsScopeCacheKey: [HistoricalPlayerTrendSummary]],
+        gameTypeTrends: [HistoricalStatisticsScopeCacheKey: [HistoricalGameTypeTrendSummary]]
+    ) {
+        let recentLimits = [5, 10, 15, 20, 25, 50]
+        var snapshots: [HistoricalStatisticsScopeCacheKey: HistoricalStatisticsSnapshot] = [:]
+        var scopedDataByScope: [HistoricalStatisticsScopeCacheKey: HistoricalWhistData] = [:]
+        var playerTrends: [HistoricalStatisticsScopeCacheKey: [HistoricalPlayerTrendSummary]] = [:]
+        var gameTypeTrends: [HistoricalStatisticsScopeCacheKey: [HistoricalGameTypeTrendSummary]] = [:]
+
+        for scope in HistoricalStatisticsScope.allCases {
+            for recentLimit in recentLimits {
+                let key = HistoricalStatisticsScopeCacheKey(scope: scope, recentLimit: recentLimit)
+                let scopedData = HistoricalStatisticsEngine.scopedData(
+                    from: data,
+                    scope: scope,
+                    recentSessionLimit: recentLimit
+                )
+                snapshots[key] = HistoricalStatisticsEngine.snapshot(
+                    from: data,
+                    scope: scope,
+                    recentSessionLimit: recentLimit
+                )
+                scopedDataByScope[key] = scopedData
+                playerTrends[key] = HistoricalStatisticsEngine.playerTrendSummaries(from: scopedData)
+                gameTypeTrends[key] = HistoricalStatisticsEngine.gameTypeTrendSummaries(from: scopedData)
+            }
+        }
+
+        return (snapshots, scopedDataByScope, playerTrends, gameTypeTrends)
     }
 
     static func gameTypeOverviews(from data: HistoricalWhistData) -> [HistoricalGameTypeOverview] {
@@ -141,6 +216,11 @@ enum HistoricalStatisticsPreparer {
                 return lhs.title < rhs.title
             }
     }
+}
+
+struct HistoricalStatisticsScopeCacheKey: Hashable {
+    var scope: HistoricalStatisticsScope
+    var recentLimit: Int
 }
 
 struct LiveStatisticsGameDaySnapshot: Equatable, Sendable {

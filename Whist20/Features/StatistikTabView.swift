@@ -189,7 +189,7 @@ struct StatistikTabView: View {
                     }
 
                     NavigationLink {
-                        allSessionsView(data)
+                        allSessionsView(model)
                     } label: {
                         navigationCard(
                             title: "Alle spilledage",
@@ -201,7 +201,7 @@ struct StatistikTabView: View {
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        playersOverviewView(data)
+                        playersOverviewView(model)
                     } label: {
                         navigationCard(
                             title: "Spillere",
@@ -213,7 +213,7 @@ struct StatistikTabView: View {
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        gameTypesOverviewView(data)
+                        gameTypesOverviewView(model)
                     } label: {
                         navigationCard(
                             title: "Spiltyper",
@@ -225,7 +225,7 @@ struct StatistikTabView: View {
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        trendsOverviewView(data)
+                        trendsOverviewView(model)
                     } label: {
                         navigationCard(
                             title: "Tendenser",
@@ -238,7 +238,7 @@ struct StatistikTabView: View {
                 }
 
                 NavigationLink {
-                    dataQualityView(data)
+                    dataQualityView(model)
                 } label: {
                     navigationCard(
                         title: "Datagrundlag",
@@ -556,11 +556,12 @@ struct StatistikTabView: View {
         }
     }
 
-    private func trendsContent(data: HistoricalWhistData, snapshot: HistoricalStatisticsSnapshot) -> some View {
-        let trends = HistoricalStatisticsEngine.playerTrendSummaries(from: data)
-        let gameTypeTrends = HistoricalStatisticsEngine.gameTypeTrendSummaries(from: data)
-
-        return ScrollView {
+    private func trendsContent(
+        snapshot: HistoricalStatisticsSnapshot,
+        trends: [HistoricalPlayerTrendSummary],
+        gameTypeTrends: [HistoricalGameTypeTrendSummary]
+    ) -> some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Tendenser")
@@ -797,9 +798,10 @@ struct StatistikTabView: View {
             .navigationTitle("Nuværende")
     }
 
-    private func allSessionsView(_ data: HistoricalWhistData) -> some View {
-        let overviews = HistoricalStatisticsEngine.sessionOverviews(from: data)
-        let playerSessionScores = HistoricalStatisticsEngine.playerSessionScores(from: data)
+    private func allSessionsView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let data = model.data
+        let overviews = model.sessionOverviews
+        let playerSessionScores = model.playerSessionScores
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -1085,9 +1087,9 @@ struct StatistikTabView: View {
             .joined(separator: ", ")
     }
 
-    private func playersOverviewView(_ data: HistoricalWhistData) -> some View {
-        let profiles = HistoricalStatisticsEngine.playerProfiles(from: data)
-        let summaries = HistoricalStatisticsEngine.playerScoreSummaries(from: data)
+    private func playersOverviewView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let profiles = model.playerProfiles
+        let summaries = model.playerSummaries
             .sorted { lhs, rhs in
                 if lhs.player.displayOrder != rhs.player.displayOrder {
                     return lhs.player.displayOrder < rhs.player.displayOrder
@@ -1116,8 +1118,9 @@ struct StatistikTabView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func gameTypesOverviewView(_ data: HistoricalWhistData) -> some View {
-        let overviews = gameTypeOverviews(from: data)
+    private func gameTypesOverviewView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let data = model.data
+        let overviews = model.gameTypeOverviews
         let trickDistribution = bidTrickDistribution(from: data)
         let solDistribution = solGameDistribution(from: data)
         let vipDistribution = vipGameDistribution(from: data)
@@ -1173,25 +1176,23 @@ struct StatistikTabView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func trendsOverviewView(_ data: HistoricalWhistData) -> some View {
-        let scopedData = HistoricalStatisticsEngine.scopedData(
-            from: data,
-            scope: selectedScope,
-            recentSessionLimit: recentSessionLimit
-        )
-        let snapshot = HistoricalStatisticsEngine.snapshot(
-            from: data,
-            scope: selectedScope,
-            recentSessionLimit: recentSessionLimit
-        )
+    private func trendsOverviewView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let key = HistoricalStatisticsScopeCacheKey(scope: selectedScope, recentLimit: recentSessionLimit)
+        let snapshot = model.snapshotsByScope[key] ?? model.allSnapshot
+        let playerTrends = model.playerTrendSummariesByScope[key] ?? []
+        let gameTypeTrends = model.gameTypeTrendSummariesByScope[key] ?? []
 
-        return trendsContent(data: scopedData, snapshot: snapshot)
+        return trendsContent(
+            snapshot: snapshot,
+            trends: playerTrends,
+            gameTypeTrends: gameTypeTrends
+        )
             .navigationTitle("Tendenser")
             .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func dataQualityView(_ data: HistoricalWhistData) -> some View {
-        let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: .all)
+    private func dataQualityView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let snapshot = model.allSnapshot
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -3727,10 +3728,6 @@ struct StatistikTabView: View {
             .map(\.player.name)
             .joined(separator: ", ")
         return (names.isEmpty ? "-" : names, targetScore)
-    }
-
-    private func gameTypeOverviews(from data: HistoricalWhistData) -> [HistoricalGameTypeOverview] {
-        HistoricalStatisticsPreparer.gameTypeOverviews(from: data)
     }
 
     private func scoreText(_ value: Int) -> String {
