@@ -20,7 +20,8 @@ Sidst opdateret: 2026-05-31
 
 | Branch | Status | Rolle |
 |---|---|---|
-| `main` / `origin/main` | Aktiv hovedlinje ved `1d4c1d1` | Indeholder design-snapshot, performance-snapshot og Dark Mode. Dette er den aktuelle sandhed. |
+| `main` / `origin/main` | Aktiv hovedlinje ved `0467cfa` | Indeholder design-snapshot, performance-snapshot, Dark Mode og branch-arkitekturlog. Dette er den aktuelle sandhed. |
+| `codex/live-statistics-integration` | Aktiv arbejdsbranch | Integrerer data fra live spil i hele statistik-modulet. Oprettet fra `main` ved `0467cfa`. |
 | `codex/dark-mode` | Merged til `main`, lokal reference | Kan slettes senere, men kan beholdes kort som reference til Dark Mode-arbejdet. |
 | `codex/performance-refactor-plan` | Parkeret snapshot ved `faf457a` | Reference for performance-refaktoren: statistik-preparer/store og reduceret autosave i meldingsflow. |
 | `codex/design-experiments` | Parkeret snapshot ved `987abe3` | Reference for plakatdesign, typografi og statistik/design-eksperimenter. |
@@ -46,6 +47,10 @@ gitGraph
   commit id: "1d4c1d1 dark mode"
   checkout main
   merge codex/dark-mode id: "main = current"
+  commit id: "0467cfa branch architecture"
+  branch codex/live-statistics-integration
+  checkout codex/live-statistics-integration
+  commit id: "active live stats work"
 ```
 
 ## Parkerede historiske grene
@@ -116,6 +121,26 @@ Beslutning:
 | 2026-05-31 | `codex/fix-historical-quality-notes` parkeres | Datakvalitet, live sync og web findes allerede i `main`; grenen mangler v3-sporet. | Byte-sammenligning af centrale filer og diff mod `main`. |
 | 2026-05-31 | Skin/1980-sporet holdes separat | Det er et produkt/designspor med egen skin-environment og mange lokale farver; kræver modernisering mod Dark Mode tokens. | Kodegennemgang af `WhistSkin`, `HomeSkin1980Views` og gammel `HomeView`. |
 | 2026-05-31 | Ingen ny integrationsbranch oprettes nu | Der er ingen moden ændring at integrere efter auditten. | `main` forblev rent. |
+| 2026-05-31 | `codex/live-statistics-integration` oprettes | Live spil-data skal integreres i hele statistik-modulet som et nyt samlet arkitekturspor oven på `main`. | Branch oprettet fra ren `main` ved `0467cfa`. |
+
+## Aktivt arkitekturspor: live spil i statistik
+
+Branch: `codex/live-statistics-integration`
+
+Formål:
+
+- Integrere data fra live/registrerede spil i statistik-modulet, så statistik ikke kun bygger på historiske importerede data.
+- Bevare den nye performance-arkitektur med `HistoricalStatisticsPreparer` og `HistoricalStatisticsStore`.
+- Undgå at genåbne de parkerede historiske branches som integrationskilde.
+- Sørge for at aktivt spil, seneste spil, spilledage og historiske data kan tænkes sammen uden at blande performance-refaktor og UI-design i samme commit, medmindre det er nødvendigt.
+
+Første analysepunkter for branchen:
+
+1. Kortlæg nuværende statistik-input: `HistoricalDataJSONLoader`, `HistoricalStatisticsEngine`, `HistoricalStatisticsPreparer`, `HistoricalStatisticsStore`, SwiftData `GameDay`/`RecordedHand`.
+2. Afgør om live data skal samles i en ny domain-preparer, en adapter fra SwiftData til eksisterende historisk datastruktur, eller et separat kombineret statistiklag.
+3. Bevar v3-historik som reproducerbar kilde og behandl live spil som appens aktuelle lokale datakilde.
+4. Udvid tests før store UI-ændringer.
+5. Verificer på iPhone XS simulator, da XS er reference for performance og layout.
 
 ## Verifikation 2026-05-31
 
