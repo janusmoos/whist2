@@ -79,27 +79,7 @@ struct NewGameDayView: View {
                     Text("Rækkefølge ved bordet")
                         .font(.subheadline.weight(.semibold))
 
-                    List {
-                        ForEach(seatOrder, id: \.self) { seat in
-                            HStack(spacing: 12) {
-                                Image(systemName: "line.3.horizontal")
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityHidden(true)
-                                Text(seat.playerDisplayName)
-                                    .font(.body.weight(.medium))
-                                Spacer()
-                            }
-                            .padding(.vertical, 2)
-                        }
-                        .onMove { from, to in
-                            seatOrder.move(fromOffsets: from, toOffset: to)
-                        }
-                    }
-                    .environment(\.editMode, .constant(.active))
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
-                    .listStyle(.plain)
-                    .frame(height: 48 * 4 + 6)
+                    SeatOrderEditor(seatOrder: $seatOrder, isEditable: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -273,28 +253,7 @@ struct GameDayEditView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    List {
-                        ForEach(seatOrder, id: \.self) { seat in
-                            HStack(spacing: 12) {
-                                Image(systemName: canEditSeatOrder ? "line.3.horizontal" : "lock.fill")
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityHidden(true)
-                                Text(seat.playerDisplayName)
-                                    .font(.body.weight(.medium))
-                                Spacer()
-                            }
-                            .padding(.vertical, 2)
-                        }
-                        .onMove { from, to in
-                            guard canEditSeatOrder else { return }
-                            seatOrder.move(fromOffsets: from, toOffset: to)
-                        }
-                    }
-                    .environment(\.editMode, .constant(canEditSeatOrder ? .active : .inactive))
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
-                    .listStyle(.plain)
-                    .frame(height: 48 * 4 + 6)
+                    SeatOrderEditor(seatOrder: $seatOrder, isEditable: canEditSeatOrder)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -338,5 +297,75 @@ struct GameDayEditView: View {
 
         try? modelContext.save()
         dismiss()
+    }
+}
+
+private struct SeatOrderEditor: View {
+    @Binding var seatOrder: [Seat]
+    var isEditable: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(seatOrder.enumerated()), id: \.element) { index, seat in
+                HStack(spacing: 12) {
+                    Image(systemName: isEditable ? "line.3.horizontal" : "lock.fill")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 22)
+                        .accessibilityHidden(true)
+
+                    Text(seat.playerDisplayName)
+                        .font(.body.weight(.medium))
+
+                    Spacer(minLength: 12)
+
+                    HStack(spacing: 4) {
+                        Button {
+                            moveSeat(from: index, by: -1)
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!isEditable || index == 0)
+                        .accessibilityLabel("Flyt \(seat.playerDisplayName) op")
+
+                        Button {
+                            moveSeat(from: index, by: 1)
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!isEditable || index == seatOrder.count - 1)
+                        .accessibilityLabel("Flyt \(seat.playerDisplayName) ned")
+                    }
+                    .foregroundStyle(isEditable ? Color.accentColor : .secondary)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 48)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+
+                if index < seatOrder.count - 1 {
+                    Divider()
+                        .padding(.leading, 46)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func moveSeat(from index: Int, by offset: Int) {
+        let target = index + offset
+        guard isEditable,
+              seatOrder.indices.contains(index),
+              seatOrder.indices.contains(target) else { return }
+        withAnimation(.easeInOut(duration: 0.16)) {
+            seatOrder.swapAt(index, target)
+        }
     }
 }
