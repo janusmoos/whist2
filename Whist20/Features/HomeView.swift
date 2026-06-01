@@ -83,7 +83,8 @@ struct HomeView: View {
             gridButton(
                 title: "Spilledage",
                 systemImage: "calendar",
-                tint: homeButtonBlue
+                tint: paletteNavy,
+                foreground: .white
             ) {
                 navigationPath.append(HomeRoute.allGameDays)
             }
@@ -91,7 +92,8 @@ struct HomeView: View {
             gridButton(
                 title: "Seneste spil",
                 systemImage: "clock.arrow.circlepath",
-                tint: homeButtonGreen
+                tint: paletteYellow,
+                foreground: paletteNavy
             ) {
                 navigationPath.append(HomeRoute.senesteSpil)
             }
@@ -99,7 +101,8 @@ struct HomeView: View {
             gridButton(
                 title: "Stilling",
                 systemImage: "list.number",
-                tint: homeButtonOrange
+                tint: paletteAmber,
+                foreground: paletteNavy
             ) {
                 onGoToStilling?()
             }
@@ -107,7 +110,8 @@ struct HomeView: View {
             gridButton(
                 title: "Statistik",
                 systemImage: "chart.bar.fill",
-                tint: homeButtonPurple
+                tint: paletteOrange,
+                foreground: .white
             ) {
                 onGoToStatistik?()
             }
@@ -115,7 +119,8 @@ struct HomeView: View {
             gridButton(
                 title: "Scorecard",
                 systemImage: "tablecells",
-                tint: homeButtonTeal
+                tint: paletteRed,
+                foreground: .white
             ) {
                 navigationPath.append(HomeRoute.scorecard)
             }
@@ -123,7 +128,8 @@ struct HomeView: View {
             gridButton(
                 title: "Indstillinger",
                 systemImage: "gearshape.fill",
-                tint: homeButtonMuted
+                tint: paletteNavy,
+                foreground: .white
             ) {
                 navigationPath.append(HomeRoute.settings)
             }
@@ -134,13 +140,14 @@ struct HomeView: View {
         title: String,
         systemImage: String,
         tint: Color,
+        foreground: Color,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 0) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .font(.system(size: 26, weight: .regular))
+                    .foregroundStyle(foreground.opacity(0.88))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 14)
                     .padding(.top, 15)
@@ -152,7 +159,7 @@ struct HomeView: View {
                     .textCase(.uppercase)
                     .lineLimit(2)
                     .minimumScaleFactor(0.75)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(foreground)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 14)
                     .padding(.bottom, 14)
@@ -212,12 +219,12 @@ struct HomeView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    private var homeButtonBlue: Color { Color(red: 0.25, green: 0.44, blue: 0.72) }
-    private var homeButtonGreen: Color { Color(red: 0.17, green: 0.54, blue: 0.38) }
-    private var homeButtonOrange: Color { Color(red: 0.70, green: 0.38, blue: 0.08) }
-    private var homeButtonPurple: Color { Color(red: 0.46, green: 0.22, blue: 0.68) }
-    private var homeButtonTeal: Color { Color(red: 0.14, green: 0.50, blue: 0.62) }
-    private var homeButtonMuted: Color { Color(red: 0.34, green: 0.34, blue: 0.38) }
+    // Tropica Summer-palette (#011C40, #F2B90F, #F2A413, #F27B13, #D92B04)
+    private var paletteNavy: Color   { Color(red: 1/255,   green: 28/255,  blue: 64/255)  }
+    private var paletteYellow: Color { Color(red: 242/255, green: 185/255, blue: 15/255)  }
+    private var paletteAmber: Color  { Color(red: 242/255, green: 164/255, blue: 19/255)  }
+    private var paletteOrange: Color { Color(red: 242/255, green: 123/255, blue: 19/255)  }
+    private var paletteRed: Color    { Color(red: 217/255, green: 43/255,  blue: 4/255)   }
 
     private func loadDraft(for gameDay: GameDay) -> (draft: HandInputDraft, stepRaw: String?)? {
         guard let json = gameDay.pendingHand?.draftJSON,
