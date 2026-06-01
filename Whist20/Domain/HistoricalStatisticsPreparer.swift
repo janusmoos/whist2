@@ -241,6 +241,8 @@ struct LiveStatisticsHandSnapshot: Equatable, Sendable {
     var bidderSeat: Seat?
     var partnerSeat: Seat?
     var handNumber: Int
+    /// Rå resumeCaption fra RecordedHand – bruges til at udlede bidTricks og actualTricks.
+    var resumeCaption: String
 }
 
 enum LiveHistoricalStatisticsAdapter {
@@ -264,7 +266,8 @@ enum LiveHistoricalStatisticsAdapter {
                         scoresBySeat: HandScorePersistence.decodeScores(hand.scoresBySeatJSON),
                         bidderSeat: Seat(rawValue: hand.bidderSeatRaw),
                         partnerSeat: Seat(rawValue: hand.partnerSeatRaw),
-                        handNumber: hand.handNumber
+                        handNumber: hand.handNumber,
+                        resumeCaption: hand.resumeCaption
                     )
                 },
                 hasPendingHand: day.pendingHand != nil
@@ -323,6 +326,13 @@ enum LiveHistoricalStatisticsAdapter {
                     checksum: checksum
                 )
 
+                let parsedBidTricks = parseBidTricks(from: hand.resumeCaption)
+                let parsedActualTricks = parsedBidTricks.flatMap { bid in
+                    parseDelta(from: hand.resumeCaption).map { delta in
+                        max(0, min(13, bid + delta))
+                    }
+                }
+
                 liveGames.append(
                     HistoricalGame(
                         id: gameId,
@@ -332,7 +342,8 @@ enum LiveHistoricalStatisticsAdapter {
                         sourceGameMarker: handNumber,
                         gameTypeRaw: hand.kindRaw,
                         gameTypeNormalized: gameType,
-                        bidTricks: nil,
+                        bidTricks: parsedBidTricks,
+                        actualTricksTaken: parsedActualTricks,
                         bidderId: hand.bidderSeat.flatMap { playersBySeat[$0]?.id },
                         bidderIds: hand.bidderSeat.flatMap { playersBySeat[$0]?.id }.map { [$0] } ?? [],
                         winnerId: nil,
@@ -470,6 +481,20 @@ enum LiveHistoricalStatisticsAdapter {
 
     private static func normalizedName(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    /// Parser antal meldte stik fra resumeCaption — format: "... meldte X ..."
+    private static func parseBidTricks(from caption: String) -> Int? {
+        guard let range = caption.range(of: "meldte ", options: [.caseInsensitive, .backwards]) else { return nil }
+        let after = caption[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return after.split(separator: " ").first.flatMap { Int($0) }
+    }
+
+    /// Parser delta (faktiske stik minus meldte stik) fra resumeCaption — format: "... || ±N"
+    private static func parseDelta(from caption: String) -> Int? {
+        guard let range = caption.range(of: "||") else { return nil }
+        let token = caption[range.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return Int(token)
     }
 
     private static let isoDateFormatter: ISO8601DateFormatter = {

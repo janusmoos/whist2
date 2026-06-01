@@ -4208,10 +4208,18 @@ private struct HistoricalGameDetailView: View {
         }
     }
 
+    private static let thermometerWidth: CGFloat = 14
+    private static let topPanelHeight: CGFloat = 148
+
     private var outcomeStripColor: Color {
         if bidderScore > 0 { return ActiveGamePosterStyle.positiveScoreColor }
         if bidderScore < 0 { return ActiveGamePosterStyle.negativeScoreColor }
         return ActiveGamePosterStyle.neutralMeterColor
+    }
+
+    private var resultDelta: Int? {
+        guard let bid = detail.game.bidTricks, let actual = detail.game.actualTricksTaken else { return nil }
+        return actual - bid
     }
 
     private var historicalTopPanel: some View {
@@ -4243,31 +4251,89 @@ private struct HistoricalGameDetailView: View {
                 .padding(.vertical, 14)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
 
-                posterPrimaryValue
-                    .frame(width: 112, height: 128)
+                posterPrimaryValueWithBadge
+                    .frame(width: 112, height: Self.topPanelHeight)
 
-                // Space for outcome strip
-                Color.clear.frame(width: 14)
+                Color.clear.frame(width: Self.thermometerWidth)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: Self.topPanelHeight)
 
-            // Outcome strip (forenklet thermometer – grøn/rød/neutral)
-            Rectangle()
-                .fill(outcomeStripColor)
-                .frame(width: 14)
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: ActiveGamePosterStyle.cornerRadius,
-                        topTrailingRadius: ActiveGamePosterStyle.cornerRadius
-                    )
-                )
+            thermometerStrip
                 .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 128)
         .background(cardBackground)
+    }
+
+    private var posterPrimaryValueWithBadge: some View {
+        ZStack(alignment: .topTrailing) {
+            posterPrimaryValue
+
+            if let delta = resultDelta {
+                Text(delta >= 0 ? "+\(delta)" : "\(delta)")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(ActiveGamePosterStyle.contrastTextOnColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 3)
+                    .background {
+                        Capsule().fill(delta >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                    }
+                    .offset(x: 6, y: -4)
+            }
+        }
+    }
+
+    private var thermometerStrip: some View {
+        let bid = detail.game.bidTricks
+        let actual = detail.game.actualTricksTaken
+        let stripColor = outcomeStripColor
+
+        return ZStack(alignment: .bottom) {
+            // Baggrund
+            Rectangle()
+                .fill(stripColor.opacity(0.13))
+
+            if let bidTricks = bid {
+                let bidFraction = CGFloat(max(0, min(13, bidTricks))) / 13.0
+
+                // Bid-niveau
+                Rectangle()
+                    .fill(stripColor)
+                    .frame(height: Self.topPanelHeight * bidFraction)
+
+                // Actual-overlay hvis tilgængeligt
+                if let actualTricks = actual {
+                    let actualFraction = CGFloat(max(0, min(13, actualTricks))) / 13.0
+                    if actualTricks > bidTricks {
+                        Rectangle()
+                            .fill(ActiveGamePosterStyle.positiveScoreColor)
+                            .frame(height: max(0, Self.topPanelHeight * (actualFraction - bidFraction)))
+                            .offset(y: -Self.topPanelHeight * bidFraction)
+                    } else if actualTricks < bidTricks {
+                        // Vis overtaget bid-niveau i rød
+                        Rectangle()
+                            .fill(ActiveGamePosterStyle.negativeScoreColor.opacity(0.55))
+                            .frame(height: max(0, Self.topPanelHeight * (bidFraction - actualFraction)))
+                            .offset(y: 0)
+                    }
+                }
+            } else {
+                // Ingen bidTricks: vis kun farvet stripe
+                Rectangle().fill(stripColor)
+            }
+        }
+        .frame(width: Self.thermometerWidth, height: Self.topPanelHeight)
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: ActiveGamePosterStyle.cornerRadius,
+                topTrailingRadius: ActiveGamePosterStyle.cornerRadius
+            )
+        )
     }
 
     @ViewBuilder
