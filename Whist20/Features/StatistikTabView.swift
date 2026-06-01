@@ -1119,7 +1119,7 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                playerLeaderboard(summaries, profiles: profiles)
+                playerLeaderboard(summaries, profiles: profiles, sessionOverviews: model.sessionOverviews)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -1685,7 +1685,7 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary], profiles: [HistoricalPlayerProfile]) -> some View {
+    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary], profiles: [HistoricalPlayerProfile], sessionOverviews: [HistoricalSessionOverview]) -> some View {
         let profilesByPlayerId = Dictionary(uniqueKeysWithValues: profiles.map { ($0.player.id, $0) })
 
         return VStack(alignment: .leading, spacing: 12) {
@@ -1701,7 +1701,7 @@ struct StatistikTabView: View {
                 ForEach(summaries) { summary in
                     if let profile = profilesByPlayerId[summary.player.id] {
                         NavigationLink {
-                            playerProfileView(profile)
+                            playerProfileView(profile, sessionOverviews: sessionOverviews)
                         } label: {
                             playerRow(summary)
                         }
@@ -1739,7 +1739,10 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerProfileView(_ profile: HistoricalPlayerProfile) -> some View {
+    private func playerProfileView(_ profile: HistoricalPlayerProfile, sessionOverviews: [HistoricalSessionOverview]) -> some View {
+        let bestDayOverview = profile.bestDay.flatMap { day in sessionOverviews.first { $0.session.id == day.sessionId } }
+        let worstDayOverview = profile.worstDay.flatMap { day in sessionOverviews.first { $0.session.id == day.sessionId } }
+
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -1751,10 +1754,30 @@ struct StatistikTabView: View {
                 }
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    sessionMetric(title: "Bedste dag", session: profile.bestDay)
-                    sessionMetric(title: "Værste dag", session: profile.worstDay)
-                    miniMetric(title: "Bedste spil", value: optionalScoreText(profile.bestGame?.selectedPlayerScore))
-                    miniMetric(title: "Værste spil", value: optionalScoreText(profile.worstGame?.selectedPlayerScore))
+                    profileTopTile(
+                        title: "Bedste dag",
+                        score: profile.bestDay?.score,
+                        subtitle: profile.bestDay?.sessionTitle,
+                        destination: bestDayOverview.map { ov in AnyView(sessionDetailView(ov)) }
+                    )
+                    profileTopTile(
+                        title: "Værste dag",
+                        score: profile.worstDay?.score,
+                        subtitle: profile.worstDay?.sessionTitle,
+                        destination: worstDayOverview.map { ov in AnyView(sessionDetailView(ov)) }
+                    )
+                    profileTopTile(
+                        title: "Bedste spil",
+                        score: profile.bestGame?.selectedPlayerScore,
+                        subtitle: profile.bestGame.map { "Spil \($0.game.gameNumberInSession) · \(gameTypeText($0.game))" },
+                        destination: profile.bestGame.map { g in AnyView(HistoricalGameDetailView(detail: g, resumeText: gameResumeText(g))) }
+                    )
+                    profileTopTile(
+                        title: "Værste spil",
+                        score: profile.worstGame?.selectedPlayerScore,
+                        subtitle: profile.worstGame.map { "Spil \($0.game.gameNumberInSession) · \(gameTypeText($0.game))" },
+                        destination: profile.worstGame.map { g in AnyView(HistoricalGameDetailView(detail: g, resumeText: gameResumeText(g))) }
+                    )
                 }
 
                 playerSessionPerformanceSection(profile)
@@ -3090,6 +3113,57 @@ struct StatistikTabView: View {
         .background {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.primary.opacity(0.04))
+        }
+    }
+
+    @ViewBuilder
+    private func profileTopTile(title: String, score: Int?, subtitle: String?, destination: AnyView?) -> some View {
+        let inner = VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                    .fontWeight(.semibold)
+                    .fontWidth(.compressed)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+                Spacer(minLength: 4)
+                if destination != nil {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            Text(optionalScoreText(score))
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 30))
+                .fontWidth(.compressed)
+                .monospacedDigit()
+                .foregroundStyle(score.map(scoreForeground) ?? Color.secondary)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+        }
+
+        if let destination {
+            NavigationLink(destination: destination) {
+                inner
+            }
+            .buttonStyle(.plain)
+        } else {
+            inner
         }
     }
 
