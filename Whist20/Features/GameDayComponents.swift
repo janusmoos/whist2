@@ -53,14 +53,8 @@ struct GameDayPrimaryButtonLabel: View {
             .font(.headline.weight(.semibold))
             .foregroundStyle(ActiveGamePosterStyle.contrastTextOnColor.opacity(isEnabled ? 1 : 0.54))
             .frame(maxWidth: .infinity, minHeight: 56)
-            .background {
-                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                    .fill(
-                        isEnabled
-                            ? tint
-                            : ActiveGamePosterStyle.neutralMeterColor.opacity(0.36)
-                    )
-            }
+            .background(isEnabled ? tint : ActiveGamePosterStyle.neutralMeterColor.opacity(0.36))
+            .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
     }
 }
 
