@@ -233,7 +233,7 @@ struct GameDayEditView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                GameDayFieldPanel(title: "Navn") {
+                GameDayFieldPanel(title: "Spilledagens navn") {
                     TextField("Fx «Lørdag hos Peter»", text: $titleText)
                         .textFieldStyle(.plain)
                         .font(.body)
