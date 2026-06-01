@@ -7,6 +7,7 @@ struct HomeView: View {
 
     @Binding var navigationPath: NavigationPath
     var onGoToStilling: (() -> Void)?
+    var onGoToStatistik: (() -> Void)?
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -74,7 +75,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - 2×2 Grid
+    // MARK: - Gitter
 
     private var quickGrid: some View {
         let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -104,6 +105,22 @@ struct HomeView: View {
             }
 
             gridButton(
+                title: "Statistik",
+                systemImage: "chart.bar.fill",
+                tint: homeButtonPurple
+            ) {
+                onGoToStatistik?()
+            }
+
+            gridButton(
+                title: "Scorecard",
+                systemImage: "tablecells",
+                tint: homeButtonTeal
+            ) {
+                navigationPath.append(HomeRoute.scorecard)
+            }
+
+            gridButton(
                 title: "Indstillinger",
                 systemImage: "gearshape.fill",
                 tint: homeButtonMuted
@@ -121,35 +138,43 @@ struct HomeView: View {
     ) -> some View {
         Button(action: action) {
             VStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 27, weight: .semibold))
-                    .frame(height: 30)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(tint.opacity(0.13))
+                        .frame(width: 46, height: 46)
+                    Image(systemName: systemImage)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(tint)
+                }
+
                 Text(title)
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 23))
+                    .font(.custom(ActiveGamePosterStyle.fontName, size: 20))
                     .textCase(.uppercase)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
             }
-            .frame(maxWidth: .infinity, minHeight: 88)
-            .padding(.vertical, 6)
-            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity, minHeight: 90)
+            .padding(.vertical, 8)
             .background {
                 RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
                     .fill(ActiveGamePosterStyle.panelColor)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                            .strokeBorder(ActiveGamePosterStyle.highlightBorderColor.opacity(0.62), lineWidth: 1)
-                    }
+            }
+            .overlay(alignment: .bottom) {
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: ActiveGamePosterStyle.cornerRadius,
+                    bottomTrailingRadius: ActiveGamePosterStyle.cornerRadius,
+                    topTrailingRadius: 0,
+                    style: .continuous
+                )
+                .fill(tint)
+                .frame(height: 3.5)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
                     .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                    .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.28), lineWidth: 0.8)
-                    .padding(4)
             }
         }
         .buttonStyle(.plain)
@@ -206,7 +231,9 @@ struct HomeView: View {
     private var homeButtonBlue: Color { Color(red: 0.43, green: 0.56, blue: 0.75) }
     private var homeButtonGreen: Color { Color(red: 0.38, green: 0.66, blue: 0.53) }
     private var homeButtonOrange: Color { Color(red: 0.79, green: 0.53, blue: 0.21) }
-    private var homeButtonMuted: Color { ActiveGamePosterStyle.darkInkColor.opacity(0.62) }
+    private var homeButtonPurple: Color { Color(red: 0.56, green: 0.35, blue: 0.76) }
+    private var homeButtonTeal: Color { Color(red: 0.28, green: 0.62, blue: 0.72) }
+    private var homeButtonMuted: Color { ActiveGamePosterStyle.darkInkColor.opacity(0.55) }
 
     private func loadDraft(for gameDay: GameDay) -> (draft: HandInputDraft, stepRaw: String?)? {
         guard let json = gameDay.pendingHand?.draftJSON,

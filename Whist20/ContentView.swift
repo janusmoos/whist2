@@ -63,10 +63,17 @@ struct ContentView: View {
         Group {
             switch selectedTab {
             case .home:
-                HomeView(navigationPath: $homeNavigationPath, onGoToStilling: {
-                    statisticsShowCurrentDay = true
-                    selectedTab = .statistics
-                })
+                HomeView(
+                    navigationPath: $homeNavigationPath,
+                    onGoToStilling: {
+                        statisticsShowCurrentDay = true
+                        selectedTab = .statistics
+                    },
+                    onGoToStatistik: {
+                        statisticsShowCurrentDay = false
+                        selectedTab = .statistics
+                    }
+                )
             case .recentGames:
                 NavigationStack {
                     SenesteSpilView {
