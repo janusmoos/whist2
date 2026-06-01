@@ -1703,11 +1703,11 @@ struct StatistikTabView: View {
                         NavigationLink {
                             playerProfileView(profile, sessionOverviews: sessionOverviews)
                         } label: {
-                            playerRow(summary)
+                            playerRow(profile)
                         }
                         .buttonStyle(.plain)
                     } else {
-                        playerRow(summary)
+                        playerRow(nil)
                     }
                 }
             }
@@ -1753,7 +1753,32 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                playerMiniSessionChart(profile)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    profileTopTile(
+                        title: "Bedste dag",
+                        score: profile.bestDay?.score,
+                        subtitle: profile.bestDay?.sessionTitle,
+                        destination: bestDayOverview.map { ov in AnyView(sessionDetailView(ov)) }
+                    )
+                    profileTopTile(
+                        title: "Værste dag",
+                        score: profile.worstDay?.score,
+                        subtitle: profile.worstDay?.sessionTitle,
+                        destination: worstDayOverview.map { ov in AnyView(sessionDetailView(ov)) }
+                    )
+                    profileTopTile(
+                        title: "Bedste spil",
+                        score: profile.bestGame?.selectedPlayerScore,
+                        subtitle: profile.bestGame.map { "Spil \($0.game.gameNumberInSession) · \(gameTypeText($0.game))" },
+                        destination: profile.bestGame.map { g in AnyView(HistoricalGameDetailView(detail: g, resumeText: gameResumeText(g))) }
+                    )
+                    profileTopTile(
+                        title: "Værste spil",
+                        score: profile.worstGame?.selectedPlayerScore,
+                        subtitle: profile.worstGame.map { "Spil \($0.game.gameNumberInSession) · \(gameTypeText($0.game))" },
+                        destination: profile.worstGame.map { g in AnyView(HistoricalGameDetailView(detail: g, resumeText: gameResumeText(g))) }
+                    )
+                }
 
                 playerSessionPerformanceSection(profile)
 
@@ -2997,29 +3022,50 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerRow(_ summary: HistoricalPlayerScoreSummary) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func playerRow(_ profile: HistoricalPlayerProfile?) -> some View {
+        let summary = profile?.summary
+        let sessionScores = profile?.sessionScores ?? []
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(summary.player.name)
+                    Text(summary?.player.name ?? "-")
                         .font(.body.weight(.semibold))
-                    Text("\(summary.gamesPlayed) spil · snit \(averageText(summary.averageScore))")
+                    Text(summary.map { "\($0.gamesPlayed) spil · snit \(averageText($0.averageScore))" } ?? "")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer(minLength: 10)
 
-                Text(scoreText(summary.totalScore))
-                    .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(scoreForeground(summary.totalScore))
+                if let summary {
+                    Text(scoreText(summary.totalScore))
+                        .font(.title3.weight(.bold).monospacedDigit())
+                        .foregroundStyle(scoreForeground(summary.totalScore))
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                miniMetric(title: "Bedste spil", value: optionalScoreText(summary.bestSingleGame))
-                miniMetric(title: "Værste spil", value: optionalScoreText(summary.worstSingleGame))
-                sessionMetric(title: "Bedste dag", session: summary.bestSession)
-                sessionMetric(title: "Værste dag", session: summary.worstSession)
+            if !sessionScores.isEmpty {
+                Chart {
+                    ForEach(sessionScores) { s in
+                        BarMark(
+                            x: .value("Spilledag", s.sessionIndex),
+                            y: .value("Point", s.score)
+                        )
+                        .foregroundStyle(s.score >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                    }
+                    RuleMark(y: .value("Nul", 0))
+                        .foregroundStyle(Color.secondary.opacity(0.45))
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .chartLegend(.hidden)
+                .frame(height: 56)
+                .accessibilityHidden(true)
             }
         }
         .padding(14)
@@ -3033,7 +3079,7 @@ struct StatistikTabView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(summary.player.name), \(scoreText(summary.totalScore)) point, gennemsnit \(averageText(summary.averageScore))"
+            summary.map { "\($0.player.name), \(scoreText($0.totalScore)) point, gennemsnit \(averageText($0.averageScore))" } ?? ""
         )
     }
 
@@ -3088,39 +3134,6 @@ struct StatistikTabView: View {
         .background {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.primary.opacity(0.04))
-        }
-    }
-
-    private func playerMiniSessionChart(_ profile: HistoricalPlayerProfile) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Chart {
-                ForEach(profile.sessionScores) { sessionScore in
-                    BarMark(
-                        x: .value("Spilledag", sessionScore.sessionIndex),
-                        y: .value("Point", sessionScore.score)
-                    )
-                    .foregroundStyle(sessionScore.score >= 0
-                        ? ActiveGamePosterStyle.positiveScoreColor
-                        : ActiveGamePosterStyle.negativeScoreColor)
-                }
-                RuleMark(y: .value("Nul", 0))
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.3))
-                    .lineStyle(StrokeStyle(lineWidth: 1))
-            }
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-            .chartLegend(.hidden)
-            .frame(height: 96)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background {
-            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                .fill(ActiveGamePosterStyle.panelColor)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
     }
 
