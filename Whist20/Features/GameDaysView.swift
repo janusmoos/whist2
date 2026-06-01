@@ -59,7 +59,7 @@ struct GameDaysView: View {
                     GameDayPrimaryButtonLabel(
                         title: activeGameDay != nil ? "Afslut denne spilledag" : "Start ny spilledag",
                         systemImage: activeGameDay != nil ? "xmark.circle" : "calendar.badge.plus",
-                        tint: activeGameDay != nil ? .orange : ActiveGamePosterStyle.selectedGreenColor
+                        tint: activeGameDay != nil ? ActiveGamePosterStyle.activeOrangeColor : ActiveGamePosterStyle.selectedGreenColor
                     )
                 }
                 .buttonStyle(.plain)

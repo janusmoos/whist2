@@ -61,10 +61,6 @@ struct GameDayPrimaryButtonLabel: View {
                             : ActiveGamePosterStyle.neutralMeterColor.opacity(0.36)
                     )
             }
-            .overlay {
-                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                    .strokeBorder(ActiveGamePosterStyle.highlightBorderColor.opacity(isEnabled ? 0.50 : 0.22), lineWidth: 1)
-            }
     }
 }
 
