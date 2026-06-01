@@ -188,7 +188,7 @@ struct StatistikTabView: View {
                 VStack(spacing: 10) {
                     if let currentOverview {
                         NavigationLink {
-                            currentDayView(currentOverview)
+                            AnyView(currentDayView(currentOverview))
                         } label: {
                             navigationCard(
                                 title: "Nuværende spilledag",
@@ -201,7 +201,7 @@ struct StatistikTabView: View {
                     }
 
                     NavigationLink {
-                        allSessionsView(model)
+                        AnyView(allSessionsView(model))
                     } label: {
                         navigationCard(
                             title: "Alle spilledage",
@@ -213,7 +213,7 @@ struct StatistikTabView: View {
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        playersOverviewView(model)
+                        AnyView(playersOverviewView(model))
                     } label: {
                         navigationCard(
                             title: "Spillere",
@@ -225,7 +225,7 @@ struct StatistikTabView: View {
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        gameTypesOverviewView(model)
+                        AnyView(gameTypesOverviewView(model))
                     } label: {
                         navigationCard(
                             title: "Spiltyper",
@@ -237,7 +237,7 @@ struct StatistikTabView: View {
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        trendsOverviewView(model)
+                        AnyView(trendsOverviewView(model))
                     } label: {
                         navigationCard(
                             title: "Tendenser",
@@ -250,7 +250,7 @@ struct StatistikTabView: View {
                 }
 
                 NavigationLink {
-                    dataQualityView(model)
+                    AnyView(dataQualityView(model))
                 } label: {
                     navigationCard(
                         title: "Datagrundlag",
