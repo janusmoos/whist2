@@ -6,6 +6,7 @@ struct HomeView: View {
     @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
 
     @Binding var navigationPath: NavigationPath
+    var onGoToStilling: (() -> Void)?
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -62,8 +63,6 @@ struct HomeView: View {
                     } else {
                         missingContent(title: "Kamp findes ikke")
                     }
-                case .standings:
-                    StandingsView()
                 case .settings:
                     AppSettingsView()
                 case .scorecard:
@@ -101,7 +100,7 @@ struct HomeView: View {
                 systemImage: "list.number",
                 tint: homeButtonOrange
             ) {
-                navigationPath.append(HomeRoute.standings)
+                onGoToStilling?()
             }
 
             gridButton(

@@ -9,7 +9,6 @@ enum HomeRoute: Hashable {
     case gameDay(UUID, openAddHand: Bool)
     case hand(gameDayId: UUID, handId: UUID)
     case newGameDay
-    case standings
     case settings
     case scorecard
     case allGameDays

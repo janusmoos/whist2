@@ -82,6 +82,7 @@ struct StatistikTabView: View {
     @State private var recentSessionLimit = 10
     @ObservedObject private var store: HistoricalStatisticsStore
     private let gameDays: [GameDay]
+    @Binding var showCurrentDay: Bool
 
     private let recentSessionLimitOptions = [5, 10, 15, 20, 25, 50]
     private let plannedStatistics = [
@@ -107,9 +108,10 @@ struct StatistikTabView: View {
         ),
     ]
 
-    init(store: HistoricalStatisticsStore, gameDays: [GameDay]) {
+    init(store: HistoricalStatisticsStore, gameDays: [GameDay], showCurrentDay: Binding<Bool> = .constant(false)) {
         self.store = store
         self.gameDays = gameDays
+        self._showCurrentDay = showCurrentDay
     }
 
     var body: some View {
@@ -133,12 +135,30 @@ struct StatistikTabView: View {
             }
             .navigationTitle("Statistik")
             .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(isPresented: $showCurrentDay) {
+                if case let .loaded(model) = store.state, let overview = model.currentOverview {
+                    currentDayView(overview)
+                        .navigationTitle("Stilling i dag")
+                } else {
+                    ContentUnavailableView(
+                        "Ingen aktiv spilledag",
+                        systemImage: "calendar",
+                        description: Text("Start en ny spilledag for at se stilling.")
+                    )
+                    .navigationTitle("Stilling i dag")
+                }
+            }
         }
         .task {
             await store.loadIfNeeded(gameDays: gameDays)
         }
         .onChange(of: gameDayStatisticsFingerprint) { _, _ in
             store.gameDaysDidChange(gameDays)
+        }
+        .onChange(of: showCurrentDay) { _, newValue in
+            if newValue {
+                Task { await store.loadIfNeeded(gameDays: gameDays) }
+            }
         }
     }
 
