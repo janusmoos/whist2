@@ -235,24 +235,54 @@ struct ScorecardView: View {
     // MARK: - Rangerings-note
 
     private var rankingNote: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.5))
-                .padding(.top, 1)
+        VStack(alignment: .leading, spacing: 0) {
+            posterSectionHeader("Rangering")
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("RANGERING")
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 12))
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+            posterDivider
 
-                Text("Tabellen er sorteret fra lavest til højest. Sol-spil er indsat på deres plads i hierarkiet — fx ligger Sol (4 pt) over 9 alm (2 pt) men under 9 med melding, dvs. sans, halve, gode eller 1. VIP (4 pt).")
-                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.55))
+            // Rækkefølge-liste
+            VStack(spacing: 0) {
+                ForEach(Array(rankingItems.enumerated()), id: \.offset) { index, item in
+                    if index > 0 { posterDivider }
+                    HStack(spacing: 12) {
+                        ScorecardGameTypeIcon(kind: item.kind)
+                            .frame(width: 22, height: 30)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(item.label)
+                                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14).weight(.semibold))
+                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                            if let sub = item.sublabel {
+                                Text(sub)
+                                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.5))
+                            }
+                        }
+                        Spacer()
+                        Text(item.multiplier)
+                            .font(.custom(ActiveGamePosterStyle.fontName, size: 16))
+                            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                }
+            }
+
+            posterDivider
+
+            // Forklaringstekst
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.4))
+                    .padding(.top, 1)
+                Text("Sol-spil er indsat på deres plads i hierarkiet — fx ligger Sol (4 pt) over 9 alm, men under 9 med melding.")
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.5))
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(ActiveGamePosterStyle.panelColor)
         .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
@@ -261,6 +291,21 @@ struct ScorecardView: View {
                 .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
     }
+
+    private struct RankingItem {
+        var kind: ScorecardGameTypeIcon.Kind
+        var label: String
+        var sublabel: String?
+        var multiplier: String
+    }
+
+    private let rankingItems: [RankingItem] = [
+        RankingItem(kind: .almindelige, label: "Almindelige",  sublabel: nil,            multiplier: "× 1"),
+        RankingItem(kind: .sans,        label: "Sans",         sublabel: "ingen trumf",  multiplier: "× 2"),
+        RankingItem(kind: .halve,       label: "Halve",        sublabel: "halv kulør",   multiplier: "× 2"),
+        RankingItem(kind: .gode,        label: "Gode",         sublabel: "klør trumf",   multiplier: "× 2"),
+        RankingItem(kind: .vip,         label: "VIP",          sublabel: "1./2./3.",     multiplier: "× 2–8"),
+    ]
 
     // MARK: - Helpers
 
@@ -285,6 +330,51 @@ struct ScorecardView: View {
             .fill(ActiveGamePosterStyle.borderColor)
             .frame(height: 0.5)
             .padding(.horizontal, 8)
+    }
+}
+
+// MARK: - Spiltype-ikon (samme kortdesign som i Statistik)
+
+private struct ScorecardGameTypeIcon: View {
+    enum Kind {
+        case almindelige, sans, halve, gode, vip
+    }
+
+    var kind: Kind
+    private let color = ActiveGamePosterStyle.darkInkColor
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .strokeBorder(color, lineWidth: 1.8)
+            content
+                .foregroundStyle(color)
+                .padding(2)
+        }
+        .aspectRatio(0.72, contentMode: .fit)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch kind {
+        case .almindelige:
+            EmptyView()
+        case .sans:
+            Image(systemName: "xmark.circle")
+                .font(.system(size: 12, weight: .semibold))
+        case .halve:
+            HStack(spacing: 0) {
+                Color.clear
+                color
+            }
+        case .gode:
+            Text(Suit.clubs.cardSymbol)
+                .font(.system(size: 13, weight: .black))
+        case .vip:
+            Text("V")
+                .font(.system(size: 10, weight: .black, design: .rounded))
+        }
     }
 }
 
