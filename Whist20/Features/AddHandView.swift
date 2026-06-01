@@ -656,11 +656,6 @@ private struct HalveTrumpStepView: View {
             }
 
             Section {
-                Text("Vælg trumf for halve-spillet. Den bruges i pointberegning og vises på Aktivt spil med det samme.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
                 optionalSuitPicker(selection: $draft.trumpAfterPlay, excludedSuits: draft.halveTrumpExcludedSuits)
             } header: {
                 Text("Trumf")
