@@ -83,12 +83,12 @@ struct HomeView: View {
             heroButton
 
             LazyVGrid(columns: columns, spacing: 12) {
-                // #2 Seneste spil — lime: frisk, legende, kig tilbage
+                // #2 Seneste spil
                 gridButton(
                     title: "Seneste spil",
                     systemImage: "clock.arrow.circlepath",
-                    tint: paletteLime,
-                    foreground: paletteNavy
+                    tint: paletteMidGreen,
+                    foreground: paletteDarkTeal
                 ) {
                     navigationPath.append(HomeRoute.senesteSpil)
                 }
@@ -113,12 +113,12 @@ struct HomeView: View {
                     navigationPath.append(HomeRoute.allGameDays)
                 }
 
-                // #5 Statistik — navy: analytisk, seriøs data
+                // #5 Statistik
                 gridButton(
                     title: "Statistik",
                     systemImage: "chart.bar.fill",
-                    tint: paletteNavy,
-                    foreground: .white
+                    tint: paletteAmber,
+                    foreground: paletteNavy
                 ) {
                     onGoToStatistik?()
                 }
@@ -133,12 +133,12 @@ struct HomeView: View {
                     navigationPath.append(HomeRoute.scorecard)
                 }
 
-                // #7 Indstillinger — rav: neutral utility-varme
+                // #7 Indstillinger
                 gridButton(
                     title: "Indstillinger",
                     systemImage: "gearshape.fill",
-                    tint: paletteAmber,
-                    foreground: paletteNavy
+                    tint: paletteNavy,
+                    foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.settings)
                 }
@@ -194,7 +194,7 @@ struct HomeView: View {
                 return HeroConfig(
                     title: "Start nyt spil",
                     systemImage: "plus.circle.fill",
-                    tint: paletteOrange,
+                    tint: ActiveGamePosterStyle.selectedGreenColor,
                     foreground: .white,
                     action: { navigationPath.append(HomeRoute.gameDay(day.id, openAddHand: true)) }
                 )
@@ -203,8 +203,8 @@ struct HomeView: View {
             return HeroConfig(
                 title: "Start ny spilledag",
                 systemImage: "calendar.badge.plus",
-                tint: paletteMidGreen,
-                foreground: paletteDarkTeal,
+                tint: ActiveGamePosterStyle.selectedGreenColor,
+                foreground: .white,
                 action: { navigationPath.append(HomeRoute.newGameDay) }
             )
         }
