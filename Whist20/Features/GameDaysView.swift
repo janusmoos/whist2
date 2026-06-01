@@ -39,18 +39,20 @@ struct GameDaysView: View {
                 }
             } else {
                 List {
-                    Section {
-                        Button(action: requestNewGameDay) {
-                            GameDayPrimaryButtonLabel(
-                                title: "Start ny spilledag",
-                                systemImage: "calendar.badge.plus"
-                            )
+                    if activeGameDay == nil {
+                        Section {
+                            Button(action: requestNewGameDay) {
+                                GameDayPrimaryButtonLabel(
+                                    title: "Start ny spilledag",
+                                    systemImage: "calendar.badge.plus"
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
-                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
 
                     if let activeGameDay {
                         sectionTitle("Denne spilledag")
