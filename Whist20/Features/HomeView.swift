@@ -27,6 +27,7 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 28)
             }
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("Whist 2.0")
             .navigationBarTitleDisplayMode(.large)
             .environment(\.homeNavigationPath, $navigationPath)
