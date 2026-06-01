@@ -1110,20 +1110,10 @@ struct StatistikTabView: View {
             }
 
         return ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Spillere")
-                        .font(.largeTitle.weight(.bold))
-                    Text("Overblik først. Tryk på en spiller for alle detaljer.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                playerLeaderboard(summaries, profiles: profiles, sessionOverviews: model.sessionOverviews)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .padding(.bottom, 12)
+            playerLeaderboard(summaries, profiles: profiles, sessionOverviews: model.sessionOverviews)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .padding(.bottom, 12)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Spillere")
@@ -1688,27 +1678,17 @@ struct StatistikTabView: View {
     private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary], profiles: [HistoricalPlayerProfile], sessionOverviews: [HistoricalSessionOverview]) -> some View {
         let profilesByPlayerId = Dictionary(uniqueKeysWithValues: profiles.map { ($0.player.id, $0) })
 
-        return VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Spillere")
-                    .font(.headline)
-                Text("Tryk på en spiller for bedste/værste dag, bedste/værste spil og meldingsstatistik.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            VStack(spacing: 10) {
-                ForEach(summaries) { summary in
-                    if let profile = profilesByPlayerId[summary.player.id] {
-                        NavigationLink {
-                            playerProfileView(profile, sessionOverviews: sessionOverviews)
-                        } label: {
-                            playerRow(profile)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        playerRow(nil)
+        return VStack(alignment: .leading, spacing: 10) {
+            ForEach(summaries) { summary in
+                if let profile = profilesByPlayerId[summary.player.id] {
+                    NavigationLink {
+                        playerProfileView(profile, sessionOverviews: sessionOverviews)
+                    } label: {
+                        playerRow(profile)
                     }
+                    .buttonStyle(.plain)
+                } else {
+                    playerRow(nil)
                 }
             }
         }
@@ -3070,12 +3050,12 @@ struct StatistikTabView: View {
         }
         .padding(14)
         .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
