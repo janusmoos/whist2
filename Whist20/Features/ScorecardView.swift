@@ -22,21 +22,20 @@ struct ScorecardView: View {
 
     private let columns = ["alm", "sans\nhalve\ngode\n1. vip", "2. VIP", "3. VIP"]
 
-    // Sol-rækker bruger tints fra Warm Patina-paletten
     private let rows: [TableRow] = [
         .normal(tricks: 8, base: 1),
         .normal(tricks: 9, base: 2),
         .sol(label: "Sol", points: 4, maxTricks: 1,
-             tint: Color(red: 35/255, green: 185/255, blue: 154/255).opacity(0.13)),
+             tint: Color(red: 240/255, green: 196/255, blue: 24/255).opacity(0.22)),   // gul
         .normal(tricks: 10, base: 4),
         .sol(label: "Ren sol", points: 8, maxTricks: 0,
-             tint: Color(red: 35/255, green: 185/255, blue: 154/255).opacity(0.22)),
+             tint: Color(red: 230/255, green: 126/255, blue: 37/255).opacity(0.22)),   // orange
         .normal(tricks: 11, base: 8),
         .sol(label: "Halv bordl.", points: 16, maxTricks: 0,
-             tint: Color(red: 35/255, green: 185/255, blue: 154/255).opacity(0.32)),
+             tint: Color(red: 231/255, green: 76/255, blue: 59/255).opacity(0.22)),    // rød
         .normal(tricks: 12, base: 16),
         .sol(label: "Hel bordl.", points: 32, maxTricks: 0,
-             tint: Color(red: 35/255, green: 185/255, blue: 154/255).opacity(0.44)),
+             tint: Color(red: 130/255, green: 20/255, blue: 20/255).opacity(0.22)),    // mørkerød
         .normal(tricks: 13, base: 32),
     ]
 
