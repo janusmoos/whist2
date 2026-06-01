@@ -15,9 +15,14 @@ final class HistoricalStatisticsStore: ObservableObject {
     private let loader: HistoricalDataJSONLoader
     private var hasStartedLoading = false
     private var historicalData: HistoricalWhistData?
+    private var liveUpdateTask: Task<Void, Never>?
 
     init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
         self.loader = loader
+    }
+
+    deinit {
+        liveUpdateTask?.cancel()
     }
 
     func loadIfNeeded(gameDays: [GameDay]) async {
@@ -50,12 +55,26 @@ final class HistoricalStatisticsStore: ObservableObject {
     func gameDaysDidChange(_ gameDays: [GameDay]) {
         guard let historicalData else { return }
         let liveSnapshots = LiveHistoricalStatisticsAdapter.snapshots(from: gameDays)
-        let model = HistoricalStatisticsPreparer.prepareHubModel(
-            historicalData: historicalData,
-            liveSnapshots: liveSnapshots
-        )
-        state = .loaded(model)
+        liveUpdateTask?.cancel()
+        liveUpdateTask = Task { [historicalData] in
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard !Task.isCancelled else { return }
+
+            let model = await Task.detached(priority: .userInitiated) {
+                HistoricalStatisticsPreparer.prepareHubModel(
+                    historicalData: historicalData,
+                    liveSnapshots: liveSnapshots
+                )
+            }.value
+
+            guard !Task.isCancelled else { return }
+            state = .loaded(model)
+        }
     }
+}
+
+private struct GameDayStatisticsFingerprint: Equatable {
+    var value: Int
 }
 
 struct StatistikTabView: View {
@@ -123,45 +142,38 @@ struct StatistikTabView: View {
         }
     }
 
-    private var gameDayStatisticsFingerprint: String {
-        gameDays
-            .sorted { lhs, rhs in
+    private var gameDayStatisticsFingerprint: GameDayStatisticsFingerprint {
+        var hasher = Hasher()
+        for day in gameDays.sorted(by: { lhs, rhs in
                 if lhs.createdAt != rhs.createdAt {
                     return lhs.createdAt < rhs.createdAt
                 }
                 return lhs.id.uuidString < rhs.id.uuidString
-            }
-            .map { day in
-                let handPart = day.hands
-                    .sorted { lhs, rhs in
+            }) {
+            hasher.combine(day.id)
+            hasher.combine(day.createdAt)
+            hasher.combine(day.title)
+            hasher.combine(day.endedAt)
+            hasher.combine(day.seatOrderJSON)
+            hasher.combine(day.pendingHand?.id)
+            hasher.combine(day.pendingHand?.updatedAt)
+
+            for hand in day.hands.sorted(by: { lhs, rhs in
                         if lhs.handNumber != rhs.handNumber {
                             return lhs.handNumber < rhs.handNumber
                         }
                         return lhs.playedAt < rhs.playedAt
-                    }
-                    .map { hand in
-                        [
-                            hand.id.uuidString,
-                            "\(hand.handNumber)",
-                            "\(hand.playedAt.timeIntervalSince1970)",
-                            hand.kindRaw,
-                            hand.scoresBySeatJSON,
-                            "\(hand.bidderSeatRaw)",
-                            "\(hand.partnerSeatRaw)",
-                        ].joined(separator: ":")
-                    }
-                    .joined(separator: ",")
-                return [
-                    day.id.uuidString,
-                    "\(day.createdAt.timeIntervalSince1970)",
-                    day.title,
-                    day.endedAt.map { "\($0.timeIntervalSince1970)" } ?? "",
-                    day.seatOrderJSON,
-                    day.pendingHand?.id.uuidString ?? "",
-                    handPart,
-                ].joined(separator: "|")
+                    }) {
+                hasher.combine(hand.id)
+                hasher.combine(hand.handNumber)
+                hasher.combine(hand.playedAt)
+                hasher.combine(hand.kindRaw)
+                hasher.combine(hand.scoresBySeatJSON)
+                hasher.combine(hand.bidderSeatRaw)
+                hasher.combine(hand.partnerSeatRaw)
             }
-            .joined(separator: "||")
+        }
+        return GameDayStatisticsFingerprint(value: hasher.finalize())
     }
 
     private func statisticsHub(_ model: HistoricalStatisticsHubModel) -> some View {
