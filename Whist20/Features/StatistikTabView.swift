@@ -1760,11 +1760,21 @@ struct StatistikTabView: View {
                 playerSessionPerformanceSection(profile)
 
                 if let bestGame = profile.bestGame {
-                    gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                    NavigationLink {
+                        historicalGameDetailPage(title: "Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                    } label: {
+                        gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 if let worstGame = profile.worstGame {
-                    gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                    NavigationLink {
+                        historicalGameDetailPage(title: "Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                    } label: {
+                        gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 playerBidSection(profile)
@@ -1789,6 +1799,55 @@ struct StatistikTabView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private func historicalGameDetailPage(title: String, detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(gameSubtitle(detail))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Pointfordeling")
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 13))
+                        .fontWeight(.semibold)
+                        .fontWidth(.compressed)
+                        .textCase(.uppercase)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+
+                    gameScoreStrip(detail, highlightedPlayerId: highlightedPlayerId)
+                }
+                .padding(16)
+                .background(cardBackground)
+                .padding(.horizontal, 20)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Spildetaljer")
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 13))
+                        .fontWeight(.semibold)
+                        .fontWidth(.compressed)
+                        .textCase(.uppercase)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+
+                    metricLine("Melding", gameTypeText(detail.game))
+                    metricLine("Melder/vinder", playerListText(detail.game.bidderIds, fallback: detail.game.bidderId))
+                    metricLine("Makker", detail.game.partnerId ?? "-")
+                    metricLine("Giver", detail.game.dealerId ?? "-")
+                    metricLine("Dato", detail.session.date ?? "-")
+                    metricLine("Sted", detail.session.location ?? "-")
+                }
+                .padding(16)
+                .background(cardBackground)
+                .padding(.horizontal, 20)
+            }
+            .padding(.vertical, 16)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
     private func playerSessionPerformanceSection(_ profile: HistoricalPlayerProfile) -> some View {
         let newestFirst = profile.sessionScores.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
 
@@ -1796,7 +1855,7 @@ struct StatistikTabView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Gevinst/tab pr. spilledag")
                     .font(.headline)
-                Text("Søjler over nul er gevinst, søjler under nul er tab. Listen under grafen viser seneste spilledag først.")
+                Text("Søjler over nul er gevinst, søjler under nul er tab.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -1819,8 +1878,39 @@ struct StatistikTabView: View {
             .chartYAxisLabel("Point")
             .accessibilityLabel("Søjlediagram for \(profile.player.name)s gevinst og tab pr. spilledag")
 
+            NavigationLink {
+                playerSessionListView(profile: profile, sessionScores: newestFirst)
+            } label: {
+                HStack {
+                    Text("Se alle spilledage")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.primary.opacity(0.04))
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .background(cardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+    }
+
+    private func playerSessionListView(profile: HistoricalPlayerProfile, sessionScores: [HistoricalPlayerSessionScore]) -> some View {
+        ScrollView {
             VStack(spacing: 8) {
-                ForEach(newestFirst) { sessionScore in
+                ForEach(sessionScores) { sessionScore in
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(sessionScore.sessionTitle)
@@ -1829,28 +1919,29 @@ struct StatistikTabView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-
                         Spacer(minLength: 12)
-
                         Text(scoreText(sessionScore.score))
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(scoreForeground(sessionScore.score))
                     }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 10)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
                     .background {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.primary.opacity(0.04))
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(ActiveGamePosterStyle.panelColor)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.5), lineWidth: 1)
+                            }
                     }
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
         }
-        .padding(16)
-        .background(cardBackground)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Spilledage — \(profile.player.name)")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func playerBidSection(_ profile: HistoricalPlayerProfile) -> some View {
@@ -2643,7 +2734,7 @@ struct StatistikTabView: View {
                 .padding(.vertical, 8)
                 .background {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(score.player.id == highlightedPlayerId ? Color.accentColor.opacity(0.16) : Color.primary.opacity(0.04))
+                        .fill(score.player.id == highlightedPlayerId ? ActiveGamePosterStyle.selectedGreenColor.opacity(0.16) : Color.primary.opacity(0.04))
                 }
             }
         }
@@ -3081,7 +3172,7 @@ struct StatistikTabView: View {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(stat.gameType.capitalized)
+                Text(displayGameTypeName(stat.gameType))
                     .font(.subheadline.weight(.semibold))
             }
 
@@ -3404,6 +3495,21 @@ struct StatistikTabView: View {
 
     private func canonicalGameType(for game: HistoricalGame) -> String? {
         HistoricalGameTypeClassifier.canonicalGameType(for: game)
+    }
+
+    private func displayGameTypeName(_ normalized: String) -> String {
+        let lower = normalized.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if lower.contains("ren_sol") || lower.contains("ren sol") { return "Ren sol" }
+        if lower.contains("halv bord") || lower.contains("halv bordlaeg") { return "Halv bordlægger" }
+        if lower.contains("bordl") || lower.contains("bordlaeg") { return "Bordlægger" }
+        if lower.contains("sol") { return "Sol" }
+        if lower.contains("vip") { return "VIP" }
+        if lower.contains("sans") || lower.contains("sang") { return "Sans" }
+        if lower.contains("gode") { return "Gode" }
+        if lower.contains("halve") { return "Halve" }
+        if lower == "alm" || lower.hasPrefix("alm ") || lower == "almindelige" { return "Almindelige" }
+        if lower.contains("duestraf") || lower.contains("duefejl") { return "Duestraf" }
+        return normalized.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     private func bidTrickDistribution(from data: HistoricalWhistData) -> [HistoricalBidTrickBucket] {
