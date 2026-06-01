@@ -2337,12 +2337,6 @@ struct StatistikTabView: View {
                         .frame(width: winWidth, height: barHeight)
                         .position(x: centerX + winWidth / 2, y: 18)
 
-                    Text("\(lossPct)%")
-                        .font(.caption2.weight(.bold).monospacedDigit())
-                        .foregroundStyle(red)
-                        .frame(width: valueLabelWidth, alignment: .trailing)
-                        .position(x: centerX - lossWidth - valueLabelGap - valueLabelWidth / 2, y: 18)
-
                     Text("\(winPct)%")
                         .font(.caption2.weight(.bold).monospacedDigit())
                         .foregroundStyle(green)
