@@ -1976,9 +1976,6 @@ struct StatistikTabView: View {
                 sessionDevelopmentPanel(overview.progressPoints)
                 sessionDailyResultPanel(overview.playerTotals)
 
-                // #3 – afstand til lederen
-                sessionLeaderGapPanel(overview.playerTotals)
-
                 // #4 – bedste og værste spil i dag
                 if let bestGame = overview.bestGame {
                     sessionOutcomeCard("Største gevinst", detail: bestGame, isWin: true)
@@ -2000,15 +1997,15 @@ struct StatistikTabView: View {
                     )
                 }
 
-                // #2 – sejrsprocent
-                sessionWinRatePanel(totalOutcomes)
-
                 sessionBidOutcomeChart(bidOutcomes)
                 countDivergingChart(
                     title: "Tabte/vundne spil på dagen",
                     emptyText: "Ingen spilresultater på dagen.",
                     rows: totalOutcomes
                 )
+
+                // #2 – sejrsprocent
+                sessionWinRatePanel(totalOutcomes)
 
                 // #5 – spiltypeoversigt (allerede her)
                 sessionGameTypeIconBarChart(gameTypeSlices(from: overview.gameDetails))
@@ -4211,38 +4208,65 @@ private struct HistoricalGameDetailView: View {
         }
     }
 
+    private var outcomeStripColor: Color {
+        if bidderScore > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if bidderScore < 0 { return ActiveGamePosterStyle.negativeScoreColor }
+        return ActiveGamePosterStyle.neutralMeterColor
+    }
+
     private var historicalTopPanel: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: -2) {
-                Text(bidderNameText.uppercased())
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
-                    .fontWidth(.compressed)
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
+        ZStack(alignment: .trailing) {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: -2) {
+                    Text(bidderNameText.uppercased())
+                        .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.58)
 
-                Text("MELDTE")
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
-                    .fontWidth(.compressed)
-                    .foregroundStyle(bidderScore >= 0 ? scoreForeground(1) : scoreForeground(-1))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
+                    Text("MELDTE")
+                        .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(bidderScore >= 0 ? scoreForeground(1) : scoreForeground(-1))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.58)
 
-                Text(posterGameTypeTitle)
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
-                    .fontWidth(.compressed)
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.48)
+                    Text(posterGameTypeTitle)
+                        .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.48)
+                }
+                .padding(.leading, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+
+                posterPrimaryValue
+                    .frame(width: 112, height: 128)
+
+                // Space for outcome strip
+                Color.clear.frame(width: 14)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
 
-            posterPrimaryValue
-                .frame(width: 112, height: 128)
+            // Outcome strip (forenklet thermometer – grøn/rød/neutral)
+            Rectangle()
+                .fill(outcomeStripColor)
+                .frame(width: 14)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: ActiveGamePosterStyle.cornerRadius,
+                        topTrailingRadius: ActiveGamePosterStyle.cornerRadius
+                    )
+                )
+                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
         .frame(maxWidth: .infinity)
+        .frame(minHeight: 128)
         .background(cardBackground)
     }
 
