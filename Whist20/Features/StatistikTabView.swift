@@ -1971,32 +1971,12 @@ struct StatistikTabView: View {
             posterSectionTitle("UDVIKLING")
 
             HStack(spacing: 12) {
-                Chart {
-                    RuleMark(y: .value("Nul", 0))
-                        .foregroundStyle(Color.secondary.opacity(0.20))
-                        .lineStyle(StrokeStyle(lineWidth: 1, lineCap: .round))
-
-                    ForEach(points) { point in
-                        LineMark(
-                            x: .value("Spil", point.gameNumber),
-                            y: .value("Point", point.cumulativeScore),
-                            series: .value("Spiller", point.player.name)
-                        )
-                        .foregroundStyle(historicalPlayerLineColor(point.player).opacity(0.78))
-                        .lineStyle(StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
-                        .interpolationMethod(.catmullRom)
-                    }
-                }
-                .chartXScale(domain: sessionChartXDomain(points))
-                .chartYScale(domain: sessionChartYDomain(points))
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-                .chartLegend(.hidden)
-                .chartPlotStyle { plot in
-                    plot
-                        .padding(.horizontal, 2)
-                        .padding(.vertical, 8)
-                }
+                HistoricalSessionTimelineCanvas(
+                    points: points,
+                    xDomain: sessionChartXDomain(points),
+                    yDomain: sessionChartYDomain(points),
+                    colorForPlayer: { historicalPlayerLineColor($0) }
+                )
                 .frame(height: 136)
 
                 sessionChartLabelColumn(points)
@@ -4334,6 +4314,72 @@ private struct HistoricalTimelineCanvas: View {
                 context.stroke(
                     path,
                     with: .color(colorForPlayer(first.playerName).opacity(0.78)),
+                    style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round)
+                )
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+private struct HistoricalSessionTimelineCanvas: View {
+    let points: [HistoricalSessionProgressPoint]
+    let xDomain: ClosedRange<Int>
+    let yDomain: ClosedRange<Int>
+    let colorForPlayer: (HistoricalPlayer) -> Color
+
+    var body: some View {
+        Canvas { context, size in
+            let xSpan = max(1, xDomain.upperBound - xDomain.lowerBound)
+            let ySpan = max(1, yDomain.upperBound - yDomain.lowerBound)
+            let plotRect = CGRect(
+                x: 2,
+                y: 8,
+                width: max(1, size.width - 4),
+                height: max(1, size.height - 16)
+            )
+
+            let yForScore: (Int) -> CGFloat = { score in
+                let fraction = CGFloat(Double(yDomain.upperBound - score) / Double(ySpan))
+                return plotRect.minY + fraction * plotRect.height
+            }
+
+            if yDomain.contains(0) {
+                var zeroPath = Path()
+                let y = yForScore(0)
+                zeroPath.move(to: CGPoint(x: plotRect.minX, y: y))
+                zeroPath.addLine(to: CGPoint(x: plotRect.maxX, y: y))
+                context.stroke(
+                    zeroPath,
+                    with: .color(.secondary.opacity(0.20)),
+                    style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                )
+            }
+
+            let grouped = Dictionary(grouping: points, by: \.player.id)
+            for values in grouped.values {
+                let ordered = values.sorted { lhs, rhs in
+                    lhs.gameNumber < rhs.gameNumber
+                }
+                guard let first = ordered.first else { continue }
+
+                var path = Path()
+                for (index, point) in ordered.enumerated() {
+                    let xFraction = CGFloat(Double(point.gameNumber - xDomain.lowerBound) / Double(xSpan))
+                    let coordinate = CGPoint(
+                        x: plotRect.minX + xFraction * plotRect.width,
+                        y: yForScore(point.cumulativeScore)
+                    )
+                    if index == 0 {
+                        path.move(to: coordinate)
+                    } else {
+                        path.addLine(to: coordinate)
+                    }
+                }
+
+                context.stroke(
+                    path,
+                    with: .color(colorForPlayer(first.player).opacity(0.78)),
                     style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round)
                 )
             }
