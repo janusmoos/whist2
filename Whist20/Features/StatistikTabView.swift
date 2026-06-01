@@ -1761,7 +1761,7 @@ struct StatistikTabView: View {
 
                 if let bestGame = profile.bestGame {
                     NavigationLink {
-                        historicalGameDetailPage(title: "Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                        HistoricalGameDetailView(detail: bestGame, resumeText: gameResumeText(bestGame))
                     } label: {
                         gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
                     }
@@ -1770,7 +1770,7 @@ struct StatistikTabView: View {
 
                 if let worstGame = profile.worstGame {
                     NavigationLink {
-                        historicalGameDetailPage(title: "Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                        HistoricalGameDetailView(detail: worstGame, resumeText: gameResumeText(worstGame))
                     } label: {
                         gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
                     }
@@ -1796,55 +1796,6 @@ struct StatistikTabView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle(profile.player.name)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func historicalGameDetailPage(title: String, detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(gameSubtitle(detail))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Pointfordeling")
-                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 13))
-                        .fontWeight(.semibold)
-                        .fontWidth(.compressed)
-                        .textCase(.uppercase)
-                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
-
-                    gameScoreStrip(detail, highlightedPlayerId: highlightedPlayerId)
-                }
-                .padding(16)
-                .background(cardBackground)
-                .padding(.horizontal, 20)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Spildetaljer")
-                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 13))
-                        .fontWeight(.semibold)
-                        .fontWidth(.compressed)
-                        .textCase(.uppercase)
-                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
-
-                    metricLine("Melding", gameTypeText(detail.game))
-                    metricLine("Melder/vinder", playerListText(detail.game.bidderIds, fallback: detail.game.bidderId))
-                    metricLine("Makker", detail.game.partnerId ?? "-")
-                    metricLine("Giver", detail.game.dealerId ?? "-")
-                    metricLine("Dato", detail.session.date ?? "-")
-                    metricLine("Sted", detail.session.location ?? "-")
-                }
-                .padding(16)
-                .background(cardBackground)
-                .padding(.horizontal, 20)
-            }
-            .padding(.vertical, 16)
-        }
-        .background(Color(uiColor: .systemGroupedBackground))
-        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -1909,35 +1860,48 @@ struct StatistikTabView: View {
 
     private func playerSessionListView(profile: HistoricalPlayerProfile, sessionScores: [HistoricalPlayerSessionScore]) -> some View {
         ScrollView {
-            VStack(spacing: 8) {
-                ForEach(sessionScores) { sessionScore in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(sessionScore.sessionTitle)
-                                .font(.subheadline.weight(.semibold))
-                            Text("\(sessionScore.gamesInSession) spil")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 12)
-                        Text(scoreText(sessionScore.score))
-                            .font(.subheadline.weight(.bold).monospacedDigit())
-                            .foregroundStyle(scoreForeground(sessionScore.score))
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 14)
-                    .background {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(ActiveGamePosterStyle.panelColor)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.5), lineWidth: 1)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("\(sessionScores.count) spilledage · seneste først")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 8) {
+                    ForEach(sessionScores) { sessionScore in
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(sessionScore.sessionTitle)
+                                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
+                                    .fontWeight(.semibold)
+                                    .fontWidth(.compressed)
+                                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                                Text("\(sessionScore.gamesInSession) spil")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+                            Spacer(minLength: 12)
+                            Text(scoreText(sessionScore.score))
+                                .font(.custom(ActiveGamePosterStyle.fontName, size: 28))
+                                .fontWidth(.compressed)
+                                .monospacedDigit()
+                                .foregroundStyle(scoreForeground(sessionScore.score))
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 14)
+                        .background {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .fill(ActiveGamePosterStyle.panelColor)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+                        }
                     }
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+            .padding(.bottom, 12)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Spilledage — \(profile.player.name)")
@@ -2690,28 +2654,49 @@ struct StatistikTabView: View {
     }
 
     private func gameDetailCard(_ title: String, detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let selectedScore = detail.playerScores.first { $0.player.id == highlightedPlayerId }?.score
+        let bidder = playerNameText(detail.game.bidderId, scores: detail.playerScores)
+
+        return HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("Spil \(detail.game.gameNumberInSession) · \(gameTypeText(detail.game))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                if bidder != "-" {
+                    Text("\(bidder) meldte")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Text(gameSubtitle(detail))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            gameScoreStrip(detail, highlightedPlayerId: highlightedPlayerId)
+            Spacer(minLength: 12)
 
-            VStack(alignment: .leading, spacing: 6) {
-                metricLine("Dato", detail.session.date ?? "-")
-                metricLine("Sted", detail.session.location ?? "-")
-                metricLine("Melding", gameTypeText(detail.game))
-                metricLine("Melder/vinder", playerListText(detail.game.bidderIds, fallback: detail.game.bidderId))
-                metricLine("Makker", detail.game.partnerId ?? "-")
-                metricLine("Giver", detail.game.dealerId ?? "-")
+            VStack(alignment: .trailing, spacing: 4) {
+                if let score = selectedScore {
+                    Text(scoreText(score))
+                        .font(.title3.weight(.bold).monospacedDigit())
+                        .foregroundStyle(scoreForeground(score))
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
         }
         .padding(16)
-        .background(cardBackground)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+        }
     }
 
     private func gameQualityWarning(_ detail: HistoricalGameScoreDetail) -> some View {
