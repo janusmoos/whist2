@@ -131,12 +131,13 @@ struct HomeView: View {
                     navigationPath.append(HomeRoute.scorecard)
                 }
 
-                // #7 Indstillinger — creme: neutral, diskret
+                // #7 Indstillinger — creme: neutral, diskret (border for definition)
                 gridButton(
                     title: "Indstillinger",
                     systemImage: "gearshape.fill",
                     tint: paletteCream,
-                    foreground: paletteDarkTeal
+                    foreground: paletteDarkTeal,
+                    borderColor: paletteDarkTeal.opacity(0.35)
                 ) {
                     navigationPath.append(HomeRoute.settings)
                 }
@@ -213,6 +214,7 @@ struct HomeView: View {
         systemImage: String,
         tint: Color,
         foreground: Color,
+        borderColor: Color? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -239,6 +241,12 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, minHeight: 96)
             .background(tint)
             .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
+            .overlay {
+                if let border = borderColor {
+                    RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                        .strokeBorder(border, lineWidth: 1)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -324,70 +332,22 @@ private struct AppSettingsView: View {
     @State private var backupMessage: String?
 
     private var backupGameDay: GameDay? {
-        if let active = GameDay.activeDay(in: gameDays) {
-            return active
-        }
-        return GameDay.focusForStandings(in: gameDays)
+        GameDay.activeDay(in: gameDays) ?? GameDay.focusForStandings(in: gameDays)
     }
 
     var body: some View {
-        Form {
-            Section("Opslagsværk") {
-                NavigationLink(value: HomeRoute.scorecard) {
-                    Label("Scorecard", systemImage: "tablecells")
-                }
+        ScrollView {
+            VStack(spacing: 20) {
+                appearancePanel
+                backupPanel
             }
-
-            Section("Udseende") {
-                Picker("Tema", selection: $appAppearanceModeRaw) {
-                    ForEach(AppAppearanceMode.allCases) { mode in
-                        Text(mode.title)
-                            .tag(mode.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-
-            Section("Backup") {
-                if let day = backupGameDay {
-                    LabeledContent("Session") {
-                        Text(day.title)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    LabeledContent("Lokal kopi") {
-                        Text(backupStatusText)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    Text("Gemmes automatisk efter hvert spil. Filerne ligger i Filer > På min iPhone > Whist 2.0 > \(LocalGameBackupService.directoryName).")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-
-                    if shareFileURLs.isEmpty {
-                        Button {
-                            prepareShareFiles(for: day, showSuccess: true)
-                        } label: {
-                            Label("Klargør eksport", systemImage: "arrow.clockwise")
-                        }
-                    } else {
-                        ShareLink(items: shareFileURLs) {
-                            Label("Eksporter session", systemImage: "square.and.arrow.up")
-                        }
-                    }
-                } else {
-                    Text("Når der findes en spilledag, kan den lokale backup eksporteres herfra.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section {
-                Text("Her kommer snart valg for navne, regler og mere.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 28)
         }
+        .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Indstillinger")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .alert("Backup", isPresented: Binding(
             get: { backupMessage != nil },
             set: { if !$0 { backupMessage = nil } }
@@ -399,17 +359,119 @@ private struct AppSettingsView: View {
         .onAppear {
             if let day = backupGameDay {
                 refreshBackupInfo(for: day)
-                if backupInfo != nil {
-                    prepareShareFiles(for: day, showSuccess: false)
-                }
+                if backupInfo != nil { prepareShareFiles(for: day, showSuccess: false) }
             }
         }
     }
 
-    private var backupStatusText: String {
-        guard let backupInfo else {
-            return "Ingen fil endnu"
+    // MARK: - Udseende
+
+    private var appearancePanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            settingsHeader("Udseende")
+            settingsDivider
+            Picker("Tema", selection: $appAppearanceModeRaw) {
+                ForEach(AppAppearanceMode.allCases) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
+        .posterCard
+    }
+
+    // MARK: - Backup
+
+    private var backupPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            settingsHeader("Backup")
+            if let day = backupGameDay {
+                settingsDivider
+                settingsRow(label: "Session", value: day.title)
+                settingsDivider
+                settingsRow(label: "Lokal kopi", value: backupStatusText)
+                settingsDivider
+                Text("Gemmes automatisk efter hvert spil. Filerne ligger i Filer > På min iPhone > Whist 2.0 > \(LocalGameBackupService.directoryName).")
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.5))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                settingsDivider
+                if shareFileURLs.isEmpty {
+                    Button {
+                        prepareShareFiles(for: day, showSuccess: true)
+                    } label: {
+                        settingsActionLabel("Klargør eksport", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    ShareLink(items: shareFileURLs) {
+                        settingsActionLabel("Eksporter session", systemImage: "square.and.arrow.up")
+                    }
+                }
+            } else {
+                settingsDivider
+                Text("Når der findes en spilledag, kan den lokale backup eksporteres herfra.")
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 13))
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.55))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+            }
+        }
+        .posterCard
+    }
+
+    // MARK: - Helpers
+
+    private func settingsHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.custom(ActiveGamePosterStyle.fontName, size: 13))
+            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.55))
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
+            .padding(.bottom, 8)
+    }
+
+    private func settingsRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+            Spacer()
+            Text(value)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 13))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.55))
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+
+    private func settingsActionLabel(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+            Text(title)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14).weight(.semibold))
+                .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(ActiveGamePosterStyle.borderColor)
+            .frame(height: 0.5)
+            .padding(.horizontal, 8)
+    }
+
+    private var backupStatusText: String {
+        guard let backupInfo else { return "Ingen fil endnu" }
         return backupInfo.modifiedAt.formatted(date: .abbreviated, time: .shortened)
     }
 
@@ -421,12 +483,23 @@ private struct AppSettingsView: View {
         do {
             shareFileURLs = try LocalGameBackupService.shareFiles(for: day)
             refreshBackupInfo(for: day)
-            if showSuccess {
-                backupMessage = "Backup er klar til eksport."
-            }
+            if showSuccess { backupMessage = "Backup er klar til eksport." }
         } catch {
             shareFileURLs = []
             backupMessage = "Kun gemt i appen. Lokal backup kunne ikke skrives."
         }
+    }
+}
+
+private extension View {
+    var posterCard: some View {
+        self
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(ActiveGamePosterStyle.panelColor)
+            .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+            }
     }
 }
