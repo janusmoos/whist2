@@ -137,45 +137,29 @@ struct HomeView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(tint.opacity(0.13))
-                        .frame(width: 46, height: 46)
-                    Image(systemName: systemImage)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(tint)
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 15)
+
+                Spacer(minLength: 10)
 
                 Text(title)
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 20))
+                    .font(.custom(ActiveGamePosterStyle.fontName, size: 19))
                     .textCase(.uppercase)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                    .minimumScaleFactor(0.75)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 14)
             }
-            .frame(maxWidth: .infinity, minHeight: 90)
-            .padding(.vertical, 8)
-            .background {
-                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                    .fill(ActiveGamePosterStyle.panelColor)
-            }
-            .overlay(alignment: .bottom) {
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 0,
-                    bottomLeadingRadius: ActiveGamePosterStyle.cornerRadius,
-                    bottomTrailingRadius: ActiveGamePosterStyle.cornerRadius,
-                    topTrailingRadius: 0,
-                    style: .continuous
-                )
-                .fill(tint)
-                .frame(height: 3.5)
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
-                    .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
-            }
+            .frame(maxWidth: .infinity, minHeight: 96)
+            .background(tint)
+            .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -228,12 +212,12 @@ struct HomeView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    private var homeButtonBlue: Color { Color(red: 0.43, green: 0.56, blue: 0.75) }
-    private var homeButtonGreen: Color { Color(red: 0.38, green: 0.66, blue: 0.53) }
-    private var homeButtonOrange: Color { Color(red: 0.79, green: 0.53, blue: 0.21) }
-    private var homeButtonPurple: Color { Color(red: 0.56, green: 0.35, blue: 0.76) }
-    private var homeButtonTeal: Color { Color(red: 0.28, green: 0.62, blue: 0.72) }
-    private var homeButtonMuted: Color { ActiveGamePosterStyle.darkInkColor.opacity(0.55) }
+    private var homeButtonBlue: Color { Color(red: 0.25, green: 0.44, blue: 0.72) }
+    private var homeButtonGreen: Color { Color(red: 0.17, green: 0.54, blue: 0.38) }
+    private var homeButtonOrange: Color { Color(red: 0.70, green: 0.38, blue: 0.08) }
+    private var homeButtonPurple: Color { Color(red: 0.46, green: 0.22, blue: 0.68) }
+    private var homeButtonTeal: Color { Color(red: 0.14, green: 0.50, blue: 0.62) }
+    private var homeButtonMuted: Color { Color(red: 0.34, green: 0.34, blue: 0.38) }
 
     private func loadDraft(for gameDay: GameDay) -> (draft: HandInputDraft, stepRaw: String?)? {
         guard let json = gameDay.pendingHand?.draftJSON,
