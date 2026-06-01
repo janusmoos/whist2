@@ -193,7 +193,7 @@ struct StatistikTabView: View {
                             navigationCard(
                                 title: "Nuværende spilledag",
                                 subtitle: sessionSubtitle(currentOverview.session),
-                                systemImage: "calendar.badge.clock",
+                                systemImage: "calendar",
                                 metric: "\(currentOverview.gamesPlayed) spil"
                             )
                         }
@@ -206,7 +206,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Alle spilledage",
                             subtitle: "Dato, sted, resultater og spil-detaljer",
-                            systemImage: "rectangle.stack.fill",
+                            systemImage: "calendar.badge.clock",
                             metric: "\(allSnapshot.sessionCount)"
                         )
                     }
