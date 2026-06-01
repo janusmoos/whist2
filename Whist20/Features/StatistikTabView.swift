@@ -1487,11 +1487,10 @@ struct StatistikTabView: View {
                         x: .value("Stik", bucket.title),
                         y: .value("Spil", bucket.count)
                     )
-                    .foregroundStyle(Color(red: 0.11, green: 0.14, blue: 0.18))
+                    .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
                     .cornerRadius(4)
                 }
                 .frame(height: 220)
-                .chartXAxisLabel("Meldte stik")
                 .chartYAxisLabel("Spil")
                 .accessibilityLabel("Bjælkediagram over meldte stik i stikspil")
             }
@@ -2954,8 +2953,6 @@ struct StatistikTabView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-
-            miniMetric(title: "Melder-data", value: "\(overview.gamesWithBidder)")
         }
         .padding(14)
         .background(cardBackground)
@@ -2976,10 +2973,9 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    statTile(title: "Spil", value: "\(overview.games)")
-                    statTile(title: "Resultater", value: "\(overview.playerResultCount)")
-                    statTile(title: "Melder-data", value: "\(overview.gamesWithBidder)")
+                HStack(spacing: 8) {
+                    gameTypeStatTile(title: "SPIL", value: "\(overview.games)")
+                    gameTypeStatTile(title: "RESULTATER", value: "\(overview.playerResultCount)")
                 }
 
                 gameTypePlayerAverageChart(overview.playerAverages)
@@ -3107,7 +3103,12 @@ struct StatistikTabView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(games) { detail in
-                    gameDetailCard("Spil \(detail.game.gameNumberInSession)", detail: detail, highlightedPlayerId: nil)
+                    NavigationLink {
+                        HistoricalGameDetailView(detail: detail, resumeText: gameResumeText(detail))
+                    } label: {
+                        gameDetailCard("Spil \(detail.game.gameNumberInSession)", detail: detail, highlightedPlayerId: nil)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -3250,6 +3251,38 @@ struct StatistikTabView: View {
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(uiColor: .tertiarySystemGroupedBackground))
+        }
+    }
+
+    private func gameTypeStatTile(title: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(title)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                .fontWidth(.compressed)
+                .fontWeight(.semibold)
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+
+            Text(value)
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 36))
+                .fontWidth(.compressed)
+                .monospacedDigit()
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.58)
+        }
+        .padding(.top, 8)
+        .padding(.horizontal, 5)
+        .frame(maxWidth: .infinity)
+        .frame(height: 72)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
     }
 
