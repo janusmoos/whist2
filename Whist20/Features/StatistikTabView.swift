@@ -881,7 +881,7 @@ struct StatistikTabView: View {
             }
             return lhs.name < rhs.name
         }
-        let orderedSessions = overviews.sorted { lhs, rhs in lhs.sessionIndex < rhs.sessionIndex }
+        let orderedSessions = overviews.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
         let maxAbsScore = max(
             scoresByPlayerId.values.flatMap { $0.map { abs($0.score) } }.max() ?? 1,
             1
