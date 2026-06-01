@@ -264,18 +264,7 @@ struct GameDayEditView: View {
 
                     SeatOrderEditor(seatOrder: $seatOrder, isEditable: canEditSeatOrder)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 92)
-        }
-        .background(Color(uiColor: .systemGroupedBackground))
-        .navigationTitle("Rediger spilledag")
-        .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                Divider()
+
                 Button {
                     saveChanges()
                 } label: {
@@ -283,11 +272,15 @@ struct GameDayEditView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(trimmedTitle.isEmpty)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 28)
         }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Rediger spilledag")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func saveChanges() {
@@ -315,7 +308,8 @@ private struct SeatOrderEditor: View {
         VStack(spacing: 0) {
             ForEach(Array(seatOrder.enumerated()), id: \.element) { index, seat in
                 HStack(spacing: 12) {
-                    Image(systemName: isEditable ? "line.3.horizontal" : "lock.fill")
+                    Text("\(index + 1)")
+                        .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(ActiveGamePosterStyle.mutedInkColor)
                         .frame(width: 22)
                         .accessibilityHidden(true)
