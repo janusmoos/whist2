@@ -1960,6 +1960,7 @@ struct StatistikTabView: View {
     private func sessionDetailView(_ overview: HistoricalSessionOverview) -> some View {
         let sessionStreaks = sessionScoreStreakSummary(from: overview.progressPoints)
         let bidOutcomes = sessionBidOutcomeRows(from: overview)
+        let totalOutcomes = sessionTotalOutcomeRows(from: overview)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -1971,11 +1972,19 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                // #1 – kumulativ stilling pr. runde (linjediagram)
                 sessionDevelopmentPanel(overview.progressPoints)
                 sessionDailyResultPanel(overview.playerTotals)
 
+                // #3 – afstand til lederen
+                sessionLeaderGapPanel(overview.playerTotals)
+
+                // #4 – bedste og værste spil i dag
                 if let bestGame = overview.bestGame {
                     sessionOutcomeCard("Største gevinst", detail: bestGame, isWin: true)
+                }
+                if let worstGame = overview.worstGame {
+                    sessionOutcomeCard("Største tab", detail: worstGame, isWin: false)
                 }
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -1991,12 +2000,17 @@ struct StatistikTabView: View {
                     )
                 }
 
+                // #2 – sejrsprocent
+                sessionWinRatePanel(totalOutcomes)
+
                 sessionBidOutcomeChart(bidOutcomes)
                 countDivergingChart(
                     title: "Tabte/vundne spil på dagen",
                     emptyText: "Ingen spilresultater på dagen.",
-                    rows: sessionTotalOutcomeRows(from: overview)
+                    rows: totalOutcomes
                 )
+
+                // #5 – spiltypeoversigt (allerede her)
                 sessionGameTypeIconBarChart(gameTypeSlices(from: overview.gameDetails))
 
                 sessionGamesSection(overview.gameDetails)
@@ -2195,6 +2209,113 @@ struct StatistikTabView: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(score.player.name), \(scoreText(score.score)) point")
                 }
+            }
+        }
+    }
+
+    // MARK: – Afstand til lederen
+    @ViewBuilder
+    private func sessionLeaderGapPanel(_ scores: [HistoricalPlayerGameScore]) -> some View {
+        let sorted = scores.sorted { $0.score > $1.score }
+        if sorted.count > 1, let leader = sorted.first {
+            VStack(alignment: .leading, spacing: 10) {
+                posterSectionTitle("AFSTAND TIL LEDEREN")
+
+                HStack(spacing: 8) {
+                    ForEach(scores.sorted { $0.player.displayOrder < $1.player.displayOrder }) { score in
+                        let gap = score.score - leader.score
+                        let isLeader = gap == 0
+                        VStack(spacing: 2) {
+                            Text(score.player.name.uppercased())
+                                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                                .fontWidth(.compressed)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.62)
+
+                            Text(isLeader ? "LEDER" : scoreText(gap))
+                                .font(.custom(ActiveGamePosterStyle.fontName, size: 28))
+                                .fontWidth(.compressed)
+                                .monospacedDigit()
+                                .foregroundStyle(isLeader ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.58)
+                        }
+                        .padding(.top, 8)
+                        .padding(.horizontal, 5)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 66)
+                        .background {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .fill(ActiveGamePosterStyle.panelColor)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .strokeBorder(
+                                    isLeader ? ActiveGamePosterStyle.selectedGreenColor : ActiveGamePosterStyle.borderColor,
+                                    lineWidth: isLeader ? 2 : 1
+                                )
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(isLeader ? "\(score.player.name), fører" : "\(score.player.name), \(scoreText(gap)) fra lederen")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: – Sejrsprocent
+    @ViewBuilder
+    private func sessionWinRatePanel(_ rows: [SessionBidOutcomeRow]) -> some View {
+        let relevantRows = rows.filter { $0.wins + $0.losses > 0 }
+        if !relevantRows.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                posterSectionTitle("SEJRSPROCENT")
+
+                VStack(spacing: 8) {
+                    ForEach(relevantRows) { row in
+                        let total = row.wins + row.losses
+                        let winFraction = CGFloat(row.wins) / CGFloat(total)
+                        let pct = Int((Double(row.wins) / Double(total) * 100).rounded())
+
+                        HStack(spacing: 10) {
+                            Text(row.player.name)
+                                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
+                                .fontWidth(.compressed)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                                .frame(width: 78, alignment: .leading)
+
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                        .fill(ActiveGamePosterStyle.negativeScoreColor.opacity(0.22))
+
+                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                        .fill(ActiveGamePosterStyle.positiveScoreColor)
+                                        .frame(width: max(geo.size.width * winFraction, winFraction > 0 ? 10 : 0))
+                                }
+                            }
+                            .frame(height: 14)
+
+                            Text("\(pct)%")
+                                .font(.custom(ActiveGamePosterStyle.fontName, size: 20))
+                                .fontWidth(.compressed)
+                                .monospacedDigit()
+                                .foregroundStyle(pct >= 50 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                                .frame(width: 42, alignment: .trailing)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(row.player.name), \(row.wins) sejre ud af \(total) spil, \(pct) procent")
+                    }
+                }
+            }
+            .padding(16)
+            .background(cardBackground)
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
             }
         }
     }
