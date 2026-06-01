@@ -206,7 +206,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Alle spilledage",
                             subtitle: "Dato, sted, resultater og spil-detaljer",
-                            systemImage: "calendar",
+                            systemImage: "calendar.badge.checkmark",
                             metric: "\(allSnapshot.sessionCount)"
                         )
                     }
@@ -218,7 +218,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Spillere",
                             subtitle: "Profiler, bedste/værste spil og meldinger",
-                            systemImage: "person.3",
+                            systemImage: "person.3.sequence",
                             metric: "\(data.players.count)"
                         )
                     }
@@ -230,7 +230,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Spiltyper",
                             subtitle: "Succes pr. type med tydelig sample size",
-                            systemImage: "rectangle.stack.badge.play",
+                            systemImage: "suit.club.fill",
                             metric: "\(model.gameTypeCount)"
                         )
                     }
@@ -242,7 +242,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Tendenser",
                             subtitle: "Udvikling over tid og seneste perioder",
-                            systemImage: "chart.xyaxis.line",
+                            systemImage: "chart.line.uptrend.xyaxis",
                             metric: "5-50"
                         )
                     }
@@ -769,12 +769,12 @@ struct StatistikTabView: View {
     private func navigationCard(title: String, subtitle: String, systemImage: String, metric: String) -> some View {
         HStack(spacing: 14) {
             Image(systemName: systemImage)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 34, height: 34)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                .frame(width: 56, height: 56)
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.12))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(ActiveGamePosterStyle.panelColor)
                 }
 
             VStack(alignment: .leading, spacing: 3) {
