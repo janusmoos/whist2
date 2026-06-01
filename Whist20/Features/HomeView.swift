@@ -138,10 +138,19 @@ struct HomeView: View {
             .background {
                 RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
                     .fill(ActiveGamePosterStyle.panelColor)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                            .strokeBorder(ActiveGamePosterStyle.highlightBorderColor.opacity(0.62), lineWidth: 1)
+                    }
             }
             .overlay {
                 RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
                     .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.28), lineWidth: 0.8)
+                    .padding(4)
             }
         }
         .buttonStyle(.plain)
