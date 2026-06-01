@@ -23,30 +23,13 @@ struct GameDaysView: View {
     var body: some View {
         Group {
             if gameDays.isEmpty {
-                VStack(spacing: 18) {
-                    ContentUnavailableView(
-                        "Ingen spilledage endnu",
-                        systemImage: "calendar",
-                        description: Text("Spilledage gemmes på enheden.")
-                    )
-
-                    Button(action: requestNewGameDay) {
-                        Label("Start ny spilledag", systemImage: "calendar.badge.plus")
-                            .font(.headline)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                }
-                .padding(.horizontal, 24)
+                ContentUnavailableView(
+                    "Ingen spilledage endnu",
+                    systemImage: "calendar",
+                    description: Text("Spilledage gemmes på enheden.")
+                )
             } else {
                 List {
-                    Section {
-                        topActionCard
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
-
                     if let activeGameDay {
                         sectionTitle("Denne spilledag")
 
@@ -66,7 +49,24 @@ struct GameDaysView: View {
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Divider()
+                Button(action: activeGameDay != nil ? { showEndGameDayConfirm = true } : requestNewGameDay) {
+                    GameDayPrimaryButtonLabel(
+                        title: activeGameDay != nil ? "Afslut denne spilledag" : "Start ny spilledag",
+                        systemImage: activeGameDay != nil ? "xmark.circle" : "calendar.badge.plus",
+                        tint: activeGameDay != nil ? .orange : ActiveGamePosterStyle.selectedGreenColor
+                    )
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
         }
         .navigationTitle("Spilledage")
         .navigationBarTitleDisplayMode(.inline)
@@ -131,33 +131,6 @@ struct GameDaysView: View {
                 }
                 .tint(.indigo)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var topActionCard: some View {
-        if activeGameDay != nil {
-            Button {
-                showEndGameDayConfirm = true
-            } label: {
-                Text("Afslut denne spilledag")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(.orange)
-        } else {
-            Button(action: requestNewGameDay) {
-                Label("Start ny spilledag", systemImage: "calendar.badge.plus")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(.accentColor)
         }
     }
 

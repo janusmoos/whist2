@@ -17,6 +17,7 @@
 		B2A100352CF0000000120035 /* ScoringEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100342CF0000000120034 /* ScoringEngineTests.swift */; };
 		B2A100392CF0000000120039 /* ScoringDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100362CF0000000120036 /* ScoringDemoView.swift */; };
 		B2A1003A2CF000000012003A /* GameDaysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100372CF0000000120037 /* GameDaysView.swift */; };
+		B2A1012C2CF000000012012C /* GameDayComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1012B2CF000000012012B /* GameDayComponents.swift */; };
 		B2A100402CF0000000120040 /* GameDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1003F2CF000000012003F /* GameDay.swift */; };
 		B2A100472CF0000000120047 /* RecordedHand.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100462CF0000000120046 /* RecordedHand.swift */; };
 		B2A100492CF0000000120049 /* AddHandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100482CF0000000120048 /* AddHandView.swift */; };
@@ -83,6 +84,7 @@
 		B2A100342CF0000000120034 /* ScoringEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoringEngineTests.swift; sourceTree = "<group>"; };
 		B2A100362CF0000000120036 /* ScoringDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoringDemoView.swift; sourceTree = "<group>"; };
 		B2A100372CF0000000120037 /* GameDaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDaysView.swift; sourceTree = "<group>"; };
+		B2A1012B2CF000000012012B /* GameDayComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDayComponents.swift; sourceTree = "<group>"; };
 		B2A1003F2CF000000012003F /* GameDay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDay.swift; sourceTree = "<group>"; };
 		B2A100462CF0000000120046 /* RecordedHand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordedHand.swift; sourceTree = "<group>"; };
 		B2A100482CF0000000120048 /* AddHandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddHandView.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				B2A1007B2CF000000012007B /* HomeNavigationEnvironment.swift */,
 				B2A100362CF0000000120036 /* ScoringDemoView.swift */,
 				B2A100372CF0000000120037 /* GameDaysView.swift */,
+				B2A1012B2CF000000012012B /* GameDayComponents.swift */,
 				B2A100552CF0000000120055 /* GameDayStartView.swift */,
 				B2A100812CF0000000120081 /* SenesteSpilComponents.swift */,
 				B2A100872CF0000000120087 /* SenesteSpilDiscreteTable.swift */,
@@ -398,6 +401,7 @@
 				B2A100332CF0000000120033 /* ScoringEngine.swift in Sources */,
 				B2A100392CF0000000120039 /* ScoringDemoView.swift in Sources */,
 				B2A1003A2CF000000012003A /* GameDaysView.swift in Sources */,
+				B2A1012C2CF000000012012C /* GameDayComponents.swift in Sources */,
 				B2A100402CF0000000120040 /* GameDay.swift in Sources */,
 				B2A100472CF0000000120047 /* RecordedHand.swift in Sources */,
 				B2A100522CF0000000120052 /* PendingHand.swift in Sources */,
