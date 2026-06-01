@@ -54,11 +54,7 @@ struct NewGameDayView: View {
 
     private var editFormContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                GameDayFormIntro(
-                    text: "Giv spilledagen et navn og eventuelle noter. Du kan ændre det senere under spilledagens indstillinger."
-                )
-
+            VStack(alignment: .leading, spacing: 10) {
                 GameDayFieldPanel(title: "Navn") {
                     TextField("Fx «Lørdag hos Peter»", text: $titleText)
                         .textFieldStyle(.plain)
@@ -70,8 +66,8 @@ struct NewGameDayView: View {
                     TextField("Sted, mad, aftaler …", text: $notesText, axis: .vertical)
                         .textFieldStyle(.plain)
                         .font(.body)
-                        .lineLimit(4...10)
-                        .frame(minHeight: 112, alignment: .topLeading)
+                        .lineLimit(3...8)
+                        .frame(minHeight: 76, alignment: .topLeading)
                 }
 
                 GameDayFieldPanel(title: "Rækkefølge ved bordet", contentPadding: 0) {
@@ -80,8 +76,8 @@ struct NewGameDayView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
+            .padding(.top, 10)
+            .padding(.bottom, 92)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .safeAreaInset(edge: .bottom) {
@@ -241,9 +237,7 @@ struct GameDayEditView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                GameDayFormIntro(text: "Rediger navn, noter og bordrækkefølge for spilledagen.")
-
+            VStack(alignment: .leading, spacing: 10) {
                 GameDayFieldPanel(title: "Navn") {
                     TextField("Fx «Lørdag hos Peter»", text: $titleText)
                         .textFieldStyle(.plain)
@@ -255,8 +249,8 @@ struct GameDayEditView: View {
                     TextField("Sted, mad, aftaler …", text: $notesText, axis: .vertical)
                         .textFieldStyle(.plain)
                         .font(.body)
-                        .lineLimit(4...10)
-                        .frame(minHeight: 112, alignment: .topLeading)
+                        .lineLimit(3...8)
+                        .frame(minHeight: 76, alignment: .topLeading)
                 }
 
                 GameDayFieldPanel(title: "Rækkefølge ved bordet", contentPadding: 0) {
@@ -273,8 +267,8 @@ struct GameDayEditView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
+            .padding(.top, 10)
+            .padding(.bottom, 92)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Rediger spilledag")
@@ -357,7 +351,7 @@ private struct SeatOrderEditor: View {
                     .foregroundStyle(isEditable ? ActiveGamePosterStyle.selectedGreenColor : .secondary)
                 }
                 .padding(.horizontal, 14)
-                .frame(height: 54)
+                .frame(height: 50)
                 .background(ActiveGamePosterStyle.panelColor)
 
                 if index < seatOrder.count - 1 {
@@ -380,25 +374,13 @@ private struct SeatOrderEditor: View {
     }
 }
 
-private struct GameDayFormIntro: View {
-    var text: String
-
-    var body: some View {
-        Text(text)
-            .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16))
-            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.72))
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 4)
-    }
-}
-
 private struct GameDayFieldPanel<Content: View>: View {
     var title: String
-    var contentPadding: CGFloat = 14
+    var contentPadding: CGFloat = 12
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
                 .fontWidth(.compressed)
@@ -406,11 +388,11 @@ private struct GameDayFieldPanel<Content: View>: View {
                 .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.72))
                 .textCase(.uppercase)
                 .padding(.horizontal, max(contentPadding, 14))
-                .padding(.top, 12)
+                .padding(.top, 9)
 
             content
                 .padding(.horizontal, contentPadding)
-                .padding(.bottom, contentPadding == 0 ? 0 : 14)
+                .padding(.bottom, contentPadding == 0 ? 0 : 10)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
