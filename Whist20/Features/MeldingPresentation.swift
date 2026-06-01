@@ -101,6 +101,8 @@ private let meldingBoxTitleFont: Font = .system(size: 15, weight: .semibold)
 private let meldingTileLabelFont: Font = .system(size: 13, weight: .semibold)
 private let meldingTileValueFont: Font = .system(size: 15, weight: .semibold)
 let meldingSeatButtonFontSize: CGFloat = 14
+let meldingSeatButtonHorizontalPadding: CGFloat = 12
+let meldingSeatButtonVerticalPadding: CGFloat = 12
 private let meldingWheelValueFont: Font = .system(size: 17)
 
 struct MeldingStatusCard: View {
@@ -295,8 +297,8 @@ struct MelderSeatButtonGrid: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
+                        .padding(.horizontal, meldingSeatButtonHorizontalPadding)
+                        .padding(.vertical, meldingSeatButtonVerticalPadding)
                 }
                 .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                 .accessibilityLabel("Melder: \(seat.playerDisplayName)")
@@ -325,8 +327,8 @@ struct PartnerSeatButtonGrid: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
+                        .padding(.horizontal, meldingSeatButtonHorizontalPadding)
+                        .padding(.vertical, meldingSeatButtonVerticalPadding)
                 }
                 .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                 .accessibilityLabel("Makker: \(seat.playerDisplayName)")

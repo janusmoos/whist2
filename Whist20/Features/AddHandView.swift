@@ -443,12 +443,13 @@ private struct BidStepView: View {
                         draft.dutySeat = seat
                     } label: {
                         Text(seat.playerDisplayName)
-                            .font(.caption.weight(.semibold))
+                            .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
                             .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.84))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, meldingSeatButtonHorizontalPadding)
+                            .padding(.vertical, meldingSeatButtonVerticalPadding)
                     }
                     .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                     .overlay(alignment: .topLeading) {
@@ -894,20 +895,24 @@ private struct ResultStepView: View {
                     Button {
                         draft.partner = seat
                     } label: {
-                        HStack(spacing: 0) {
+                        ZStack {
                             Text(seat.playerDisplayName)
                                 .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
                                 .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.82))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
-                            Spacer(minLength: 4)
+                                .frame(maxWidth: .infinity, alignment: .center)
+
                             if let s = scores, let v = s[seat] {
-                                scoreBadge(v)
+                                HStack {
+                                    Spacer(minLength: 0)
+                                    scoreBadge(v)
+                                }
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
+                        .padding(.horizontal, meldingSeatButtonHorizontalPadding)
+                        .padding(.vertical, meldingSeatButtonVerticalPadding)
                     }
                     .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                     .accessibilityLabel("Makker: \(seat.playerDisplayName), \(scores?[seat].map { "\($0) point" } ?? "")")
@@ -1336,12 +1341,13 @@ private struct OptionalMelderSeatButtonGrid: View {
                     selectedSeat = seat
                 } label: {
                     Text(seat.playerDisplayName)
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: meldingSeatButtonFontSize, weight: on ? .bold : .semibold))
                         .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(on ? 0.96 : 0.84))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, meldingSeatButtonHorizontalPadding)
+                        .padding(.vertical, meldingSeatButtonVerticalPadding)
                 }
                 .buttonStyle(MeldingSeatChoiceButtonStyle(isSelected: on))
                 .overlay(alignment: .topLeading) {
