@@ -209,6 +209,7 @@ struct GameDayEditView: View {
     @State private var titleText: String
     @State private var notesText: String
     @State private var seatOrder: [Seat]
+    @State private var showEndGameDayConfirm = false
 
     init(gameDay: GameDay) {
         self.gameDay = gameDay
@@ -231,7 +232,7 @@ struct GameDayEditView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 GameDayFieldPanel(title: "Navn") {
                     TextField("Fx «Lørdag hos Peter»", text: $titleText)
                         .textFieldStyle(.plain)
@@ -243,8 +244,8 @@ struct GameDayEditView: View {
                     TextField("Sted, mad, aftaler …", text: $notesText, axis: .vertical)
                         .textFieldStyle(.plain)
                         .font(.body)
-                        .lineLimit(3...8)
-                        .frame(minHeight: 76, alignment: .topLeading)
+                        .lineLimit(1...3)
+                        .frame(minHeight: 36, alignment: .topLeading)
                 }
 
                 GameDayFieldPanel(title: "Rækkefølge ved bordet", contentPadding: 0) {
@@ -253,7 +254,7 @@ struct GameDayEditView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 14)
-                            .padding(.top, 12)
+                            .padding(.top, 10)
                     }
 
                     SeatOrderEditor(seatOrder: $seatOrder, isEditable: canEditSeatOrder)
@@ -266,6 +267,18 @@ struct GameDayEditView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(trimmedTitle.isEmpty)
+                .padding(.top, 4)
+
+                Button {
+                    showEndGameDayConfirm = true
+                } label: {
+                    GameDayPrimaryButtonLabel(
+                        title: "Afslut spilledag",
+                        systemImage: "xmark.circle",
+                        tint: ActiveGamePosterStyle.activeOrangeColor
+                    )
+                }
+                .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
@@ -275,6 +288,15 @@ struct GameDayEditView: View {
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Rediger spilledag")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
+            Button("Annuller", role: .cancel) {}
+            Button("Afslut", role: .destructive) {
+                gameDay.close(modelContext: modelContext)
+                dismiss()
+            }
+        } message: {
+            Text(GameDaySessionDialogs.endGameDayMessage(hasPendingHand: gameDay.pendingHand != nil))
+        }
     }
 
     private func saveChanges() {
@@ -309,7 +331,7 @@ private struct SeatOrderEditor: View {
                         .accessibilityHidden(true)
 
                     Text(seat.playerDisplayName)
-                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 20))
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16))
                         .fontWeight(.semibold)
                         .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
 
@@ -320,7 +342,7 @@ private struct SeatOrderEditor: View {
                             moveSeat(from: index, by: -1)
                         } label: {
                             Image(systemName: "chevron.up")
-                                .frame(width: 32, height: 32)
+                                .frame(width: 28, height: 28)
                         }
                         .buttonStyle(.plain)
                         .disabled(!isEditable || index == 0)
@@ -330,7 +352,7 @@ private struct SeatOrderEditor: View {
                             moveSeat(from: index, by: 1)
                         } label: {
                             Image(systemName: "chevron.down")
-                                .frame(width: 32, height: 32)
+                                .frame(width: 28, height: 28)
                         }
                         .buttonStyle(.plain)
                         .disabled(!isEditable || index == seatOrder.count - 1)
@@ -339,7 +361,7 @@ private struct SeatOrderEditor: View {
                     .foregroundStyle(isEditable ? ActiveGamePosterStyle.selectedGreenColor : .secondary)
                 }
                 .padding(.horizontal, 14)
-                .frame(height: 50)
+                .frame(height: 42)
                 .background(ActiveGamePosterStyle.panelColor)
 
                 if index < seatOrder.count - 1 {

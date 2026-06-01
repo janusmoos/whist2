@@ -10,7 +10,6 @@ struct GameDaysView: View {
 
     @State private var showResumeBlocked = false
     @State private var showNeedsEndActiveFirst = false
-    @State private var showEndGameDayConfirm = false
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -41,11 +40,10 @@ struct GameDaysView: View {
             } else {
                 List {
                     Section {
-                        Button(action: activeGameDay != nil ? { showEndGameDayConfirm = true } : requestNewGameDay) {
+                        Button(action: requestNewGameDay) {
                             GameDayPrimaryButtonLabel(
-                                title: activeGameDay != nil ? "Afslut denne spilledag" : "Start ny spilledag",
-                                systemImage: activeGameDay != nil ? "xmark.circle" : "calendar.badge.plus",
-                                tint: activeGameDay != nil ? ActiveGamePosterStyle.activeOrangeColor : ActiveGamePosterStyle.selectedGreenColor
+                                title: "Start ny spilledag",
+                                systemImage: "calendar.badge.plus"
                             )
                         }
                         .buttonStyle(.plain)
@@ -87,18 +85,6 @@ struct GameDaysView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Der er allerede en aktiv spilledag. Afslut den her på Spilledage, før I opretter en ny.")
-        }
-        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
-            Button("Annuller", role: .cancel) {}
-            Button("Afslut", role: .destructive) {
-                activeGameDay?.close(modelContext: modelContext)
-            }
-        } message: {
-            Text(
-                GameDaySessionDialogs.endGameDayMessage(
-                    hasPendingHand: activeGameDay?.pendingHand != nil
-                )
-            )
         }
     }
 
