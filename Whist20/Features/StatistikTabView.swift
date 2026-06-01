@@ -1844,9 +1844,6 @@ struct StatistikTabView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Gevinst/tab pr. spilledag")
                     .font(.headline)
-                Text("Søjler over nul er gevinst, søjler under nul er tab.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
 
             Chart {

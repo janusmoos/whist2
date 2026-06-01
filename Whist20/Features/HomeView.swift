@@ -23,8 +23,6 @@ struct HomeView: View {
                 VStack(spacing: 20) {
                     quickGrid
                         .padding(.top, 8)
-
-                    activeGameSection
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 28)
@@ -83,42 +81,42 @@ struct HomeView: View {
             heroButton
 
             LazyVGrid(columns: columns, spacing: 12) {
-                // #2 Seneste spil
+                // #2 Seneste spil — teal: frisk, dynamisk
                 gridButton(
                     title: "Seneste spil",
                     systemImage: "clock.arrow.circlepath",
-                    tint: paletteMidGreen,
-                    foreground: paletteDarkTeal
+                    tint: paletteTeal,
+                    foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.senesteSpil)
                 }
 
-                // #3 Stilling — guld: 1. plads, konkurrence
+                // #3 Stilling — gul: guld, 1. plads
                 gridButton(
                     title: "Stilling",
                     systemImage: "list.number",
                     tint: paletteYellow,
-                    foreground: paletteNavy
+                    foreground: paletteDarkTeal
                 ) {
                     onGoToStilling?()
                 }
 
-                // #4 Spilledage — mørk teal: historik, dybe optegnelser
+                // #4 Spilledage — midnat: dybe optegnelser, historik
                 gridButton(
                     title: "Spilledage",
                     systemImage: "calendar",
-                    tint: paletteDarkTeal,
+                    tint: paletteMidnight,
                     foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.allGameDays)
                 }
 
-                // #5 Statistik
+                // #5 Statistik — orange: data, analytisk varme
                 gridButton(
                     title: "Statistik",
                     systemImage: "chart.bar.fill",
-                    tint: paletteAmber,
-                    foreground: paletteNavy
+                    tint: paletteOrange,
+                    foreground: .white
                 ) {
                     onGoToStatistik?()
                 }
@@ -133,12 +131,12 @@ struct HomeView: View {
                     navigationPath.append(HomeRoute.scorecard)
                 }
 
-                // #7 Indstillinger
+                // #7 Indstillinger — creme: neutral, diskret
                 gridButton(
                     title: "Indstillinger",
                     systemImage: "gearshape.fill",
-                    tint: paletteNavy,
-                    foreground: .white
+                    tint: paletteCream,
+                    foreground: paletteDarkTeal
                 ) {
                     navigationPath.append(HomeRoute.settings)
                 }
@@ -186,7 +184,7 @@ struct HomeView: View {
                 return HeroConfig(
                     title: "Se aktive spil",
                     systemImage: "play.fill",
-                    tint: paletteOrange,
+                    tint: paletteTeal,
                     foreground: .white,
                     action: { navigationPath.append(HomeRoute.activeGame(gameDayId: day.id)) }
                 )
@@ -293,15 +291,14 @@ struct HomeView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    // Tropica Summer (#011C40, #F2B90F, #F2A413, #F27B13, #D92B04) + grøn palette (#CCCC52, #8FB259, #192B33)
-    private var paletteNavy: Color     { Color(red: 1/255,   green: 28/255,  blue: 64/255)  }
-    private var paletteYellow: Color   { Color(red: 242/255, green: 185/255, blue: 15/255)  }
-    private var paletteAmber: Color    { Color(red: 242/255, green: 164/255, blue: 19/255)  }
-    private var paletteOrange: Color   { Color(red: 242/255, green: 123/255, blue: 19/255)  }
-    private var paletteRed: Color      { Color(red: 217/255, green: 43/255,  blue: 4/255)   }
-    private var paletteLime: Color     { Color(red: 204/255, green: 204/255, blue: 82/255)  }
-    private var paletteMidGreen: Color { Color(red: 143/255, green: 178/255, blue: 89/255)  }
-    private var paletteDarkTeal: Color { Color(red: 25/255,  green: 43/255,  blue: 51/255)  }
+    // Warm Patina (#F0C418, #E67E25, #E74C3B, #23B99A, #F5EFE0) + #2C3E50 (midnat)
+    private var paletteYellow: Color   { Color(red: 240/255, green: 196/255, blue: 24/255)  } // #F0C418
+    private var paletteOrange: Color   { Color(red: 230/255, green: 126/255, blue: 37/255)  } // #E67E25
+    private var paletteRed: Color      { Color(red: 231/255, green: 76/255,  blue: 59/255)  } // #E74C3B
+    private var paletteTeal: Color     { Color(red: 35/255,  green: 185/255, blue: 154/255) } // #23B99A
+    private var paletteCream: Color    { Color(red: 245/255, green: 239/255, blue: 224/255) } // #F5EFE0
+    private var paletteMidnight: Color { Color(red: 44/255,  green: 62/255,  blue: 80/255)  } // #2C3E50
+    private var paletteDarkTeal: Color { Color(red: 25/255,  green: 43/255,  blue: 51/255)  } // #192B33 (mørk tekst)
 
     private func loadDraft(for gameDay: GameDay) -> (draft: HandInputDraft, stepRaw: String?)? {
         guard let json = gameDay.pendingHand?.draftJSON,
