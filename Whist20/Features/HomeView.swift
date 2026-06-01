@@ -81,63 +81,62 @@ struct HomeView: View {
             heroButton
 
             LazyVGrid(columns: columns, spacing: 12) {
-                // #2 Seneste spil — teal: frisk, dynamisk
+                // #2 Seneste spil — Sea Green: frisk, energisk
                 gridButton(
                     title: "Seneste spil",
                     systemImage: "clock.arrow.circlepath",
-                    tint: paletteTeal,
+                    tint: paletteSeaGreen,
                     foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.senesteSpil)
                 }
 
-                // #3 Stilling — gul: guld, 1. plads
+                // #3 Stilling — Soft Fawn: guld, 1. plads
                 gridButton(
                     title: "Stilling",
                     systemImage: "list.number",
-                    tint: paletteYellow,
-                    foreground: paletteDarkTeal
+                    tint: paletteSoftFawn,
+                    foreground: paletteOnyx
                 ) {
                     onGoToStilling?()
                 }
 
-                // #4 Spilledage — midnat: dybe optegnelser, historik
+                // #4 Spilledage — Pine Teal: dybe optegnelser, historik
                 gridButton(
                     title: "Spilledage",
                     systemImage: "calendar",
-                    tint: paletteMidnight,
+                    tint: palettePineTeal,
                     foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.allGameDays)
                 }
 
-                // #5 Statistik — orange: data, analytisk varme
+                // #5 Statistik — Dry Sage: analytisk, jordnær
                 gridButton(
                     title: "Statistik",
                     systemImage: "chart.bar.fill",
-                    tint: paletteOrange,
-                    foreground: .white
+                    tint: paletteDrySage,
+                    foreground: paletteOnyx
                 ) {
                     onGoToStatistik?()
                 }
 
-                // #6 Scorecard — rød: vigtig opslagsside
+                // #6 Scorecard — Onyx: seriøs opslagsside
                 gridButton(
                     title: "Scorecard",
                     systemImage: "tablecells",
-                    tint: paletteRed,
+                    tint: paletteOnyx,
                     foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.scorecard)
                 }
 
-                // #7 Indstillinger — creme: neutral, diskret (border for definition)
+                // #7 Indstillinger — Dark Olive: neutral, sekundær
                 gridButton(
                     title: "Indstillinger",
                     systemImage: "gearshape.fill",
-                    tint: paletteCream,
-                    foreground: paletteDarkTeal,
-                    borderColor: paletteDarkTeal.opacity(0.35)
+                    tint: paletteDarkOlive,
+                    foreground: .white
                 ) {
                     navigationPath.append(HomeRoute.settings)
                 }
@@ -185,7 +184,7 @@ struct HomeView: View {
                 return HeroConfig(
                     title: "Se aktive spil",
                     systemImage: "play.fill",
-                    tint: paletteTeal,
+                    tint: paletteSeaGreen,
                     foreground: .white,
                     action: { navigationPath.append(HomeRoute.activeGame(gameDayId: day.id)) }
                 )
@@ -193,7 +192,7 @@ struct HomeView: View {
                 return HeroConfig(
                     title: "Start nyt spil",
                     systemImage: "plus.circle.fill",
-                    tint: ActiveGamePosterStyle.selectedGreenColor,
+                    tint: paletteSeaGreen,
                     foreground: .white,
                     action: { navigationPath.append(HomeRoute.gameDay(day.id, openAddHand: true)) }
                 )
@@ -202,7 +201,7 @@ struct HomeView: View {
             return HeroConfig(
                 title: "Start ny spilledag",
                 systemImage: "calendar.badge.plus",
-                tint: ActiveGamePosterStyle.selectedGreenColor,
+                tint: paletteBurntOrange,
                 foreground: .white,
                 action: { navigationPath.append(HomeRoute.newGameDay) }
             )
@@ -299,14 +298,14 @@ struct HomeView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    // Warm Patina (#F0C418, #E67E25, #E74C3B, #23B99A, #F5EFE0) + #2C3E50 (midnat)
-    private var paletteYellow: Color   { Color(red: 240/255, green: 196/255, blue: 24/255)  } // #F0C418
-    private var paletteOrange: Color   { Color(red: 230/255, green: 126/255, blue: 37/255)  } // #E67E25
-    private var paletteRed: Color      { Color(red: 231/255, green: 76/255,  blue: 59/255)  } // #E74C3B
-    private var paletteTeal: Color     { Color(red: 35/255,  green: 185/255, blue: 154/255) } // #23B99A
-    private var paletteCream: Color    { Color(red: 245/255, green: 239/255, blue: 224/255) } // #F5EFE0
-    private var paletteMidnight: Color { Color(red: 44/255,  green: 62/255,  blue: 80/255)  } // #2C3E50
-    private var paletteDarkTeal: Color { Color(red: 25/255,  green: 43/255,  blue: 51/255)  } // #192B33 (mørk tekst)
+    // Earthtone Forest palette + tilføjede nuancer
+    private var paletteOnyx: Color        { Color(red: 18/255,  green: 22/255,  blue: 25/255)  } // #121619
+    private var palettePineTeal: Color    { Color(red: 45/255,  green: 71/255,  blue: 57/255)  } // #2D4739
+    private var paletteSeaGreen: Color    { Color(red: 9/255,   green: 129/255, blue: 74/255)  } // #09814A
+    private var paletteDrySage: Color     { Color(red: 188/255, green: 179/255, blue: 130/255) } // #BCB382
+    private var paletteSoftFawn: Color    { Color(red: 229/255, green: 198/255, blue: 135/255) } // #E5C687
+    private var paletteBurntOrange: Color { Color(red: 201/255, green: 106/255, blue: 43/255)  } // #C96A2B (tilføjet)
+    private var paletteDarkOlive: Color   { Color(red: 59/255,  green: 74/255,  blue: 48/255)  } // #3B4A30 (tilføjet)
 
     private func loadDraft(for gameDay: GameDay) -> (draft: HandInputDraft, stepRaw: String?)? {
         guard let json = gameDay.pendingHand?.draftJSON,
