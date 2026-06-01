@@ -109,7 +109,7 @@ struct ScorecardView: View {
             Color.clear.frame(width: Self.solColWidth, height: 1)
 
             Text("\(tricks)")
-                .font(.custom(ActiveGamePosterStyle.fontName, size: 18))
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16).weight(.bold).monospacedDigit())
                 .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                 .frame(width: Self.trickColWidth, alignment: .center)
 
@@ -142,7 +142,7 @@ struct ScorecardView: View {
             Color.clear.frame(maxWidth: .infinity, minHeight: 1)
 
             Text("\(points)")
-                .font(.custom(ActiveGamePosterStyle.fontName, size: 20))
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16).weight(.bold).monospacedDigit())
                 .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
 
             Color.clear.frame(maxWidth: .infinity, minHeight: 1)
@@ -164,7 +164,7 @@ struct ScorecardView: View {
             VStack(spacing: 0) {
                 specialRow(
                     label: "«Gå hjem»-bonus",
-                    value: "+1×",
+                    value: "+1",
                     detail: "Vinder man sit bud, får man én ekstra portion basispoint oven i.",
                     accent: ActiveGamePosterStyle.positiveScoreColor
                 )
@@ -275,7 +275,7 @@ struct ScorecardView: View {
 
     private func pointCell(_ value: Int) -> some View {
         Text("\(value)")
-            .font(.custom(ActiveGamePosterStyle.fontName, size: 18))
+            .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16).monospacedDigit())
             .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
             .frame(maxWidth: .infinity)
     }
