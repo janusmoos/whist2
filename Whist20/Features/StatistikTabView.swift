@@ -218,7 +218,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Spillere",
                             subtitle: "Profiler, bedste/værste spil og meldinger",
-                            systemImage: "person.4",
+                            systemImage: "person.3.sequence.fill",
                             metric: "\(data.players.count)"
                         )
                     }
