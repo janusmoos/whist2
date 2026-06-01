@@ -3180,13 +3180,8 @@ struct StatistikTabView: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(summary?.player.name ?? "-")
-                        .font(.body.weight(.semibold))
-                    Text(summary.map { "\($0.gamesPlayed) spil · snit \(averageText($0.averageScore))" } ?? "")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(summary?.player.name ?? "-")
+                    .font(.body.weight(.semibold))
 
                 Spacer(minLength: 10)
 
