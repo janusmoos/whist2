@@ -108,10 +108,13 @@ struct StatistikTabView: View {
         ),
     ]
 
-    init(store: HistoricalStatisticsStore, gameDays: [GameDay], showCurrentDay: Binding<Bool> = .constant(false)) {
+    var dismissFromHome: (() -> Void)?
+
+    init(store: HistoricalStatisticsStore, gameDays: [GameDay], showCurrentDay: Binding<Bool> = .constant(false), dismissFromHome: (() -> Void)? = nil) {
         self.store = store
         self.gameDays = gameDays
         self._showCurrentDay = showCurrentDay
+        self.dismissFromHome = dismissFromHome
     }
 
     var body: some View {
@@ -135,6 +138,19 @@ struct StatistikTabView: View {
             }
             .navigationTitle("Statistik")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                if let dismiss = dismissFromHome {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(action: dismiss) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "chevron.left")
+                                    .fontWeight(.semibold)
+                                Text("Forside")
+                            }
+                        }
+                    }
+                }
+            }
             .navigationDestination(isPresented: $showCurrentDay) {
                 if case let .loaded(model) = store.state, let overview = model.currentOverview {
                     currentDayView(overview)

@@ -79,60 +79,128 @@ struct HomeView: View {
 
     private var quickGrid: some View {
         let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-        return LazyVGrid(columns: columns, spacing: 12) {
-            gridButton(
-                title: "Spilledage",
-                systemImage: "calendar",
-                tint: paletteNavy,
-                foreground: .white
-            ) {
-                navigationPath.append(HomeRoute.allGameDays)
-            }
+        return VStack(spacing: 12) {
+            heroButton
 
-            gridButton(
-                title: "Seneste spil",
-                systemImage: "clock.arrow.circlepath",
-                tint: paletteYellow,
-                foreground: paletteNavy
-            ) {
-                navigationPath.append(HomeRoute.senesteSpil)
-            }
+            LazyVGrid(columns: columns, spacing: 12) {
+                gridButton(
+                    title: "Spilledage",
+                    systemImage: "calendar",
+                    tint: paletteNavy,
+                    foreground: .white
+                ) {
+                    navigationPath.append(HomeRoute.allGameDays)
+                }
 
-            gridButton(
-                title: "Stilling",
-                systemImage: "list.number",
-                tint: paletteAmber,
-                foreground: paletteNavy
-            ) {
-                onGoToStilling?()
-            }
+                gridButton(
+                    title: "Seneste spil",
+                    systemImage: "clock.arrow.circlepath",
+                    tint: paletteYellow,
+                    foreground: paletteNavy
+                ) {
+                    navigationPath.append(HomeRoute.senesteSpil)
+                }
 
-            gridButton(
-                title: "Statistik",
-                systemImage: "chart.bar.fill",
-                tint: paletteOrange,
-                foreground: .white
-            ) {
-                onGoToStatistik?()
-            }
+                gridButton(
+                    title: "Stilling",
+                    systemImage: "list.number",
+                    tint: paletteAmber,
+                    foreground: paletteNavy
+                ) {
+                    onGoToStilling?()
+                }
 
-            gridButton(
-                title: "Scorecard",
-                systemImage: "tablecells",
-                tint: paletteRed,
-                foreground: .white
-            ) {
-                navigationPath.append(HomeRoute.scorecard)
-            }
+                gridButton(
+                    title: "Statistik",
+                    systemImage: "chart.bar.fill",
+                    tint: paletteOrange,
+                    foreground: .white
+                ) {
+                    onGoToStatistik?()
+                }
 
-            gridButton(
-                title: "Indstillinger",
-                systemImage: "gearshape.fill",
-                tint: paletteNavy,
-                foreground: .white
-            ) {
-                navigationPath.append(HomeRoute.settings)
+                gridButton(
+                    title: "Scorecard",
+                    systemImage: "tablecells",
+                    tint: paletteRed,
+                    foreground: .white
+                ) {
+                    navigationPath.append(HomeRoute.scorecard)
+                }
+
+                gridButton(
+                    title: "Indstillinger",
+                    systemImage: "gearshape.fill",
+                    tint: paletteNavy,
+                    foreground: .white
+                ) {
+                    navigationPath.append(HomeRoute.settings)
+                }
             }
+        }
+    }
+
+    // MARK: - Hero-knap
+
+    private var heroButton: some View {
+        let cfg = heroConfig
+        return Button(action: cfg.action) {
+            HStack(spacing: 14) {
+                Image(systemName: cfg.systemImage)
+                    .font(.system(size: 26, weight: .regular))
+                    .foregroundStyle(cfg.foreground.opacity(0.88))
+                Text(cfg.title)
+                    .font(.custom(ActiveGamePosterStyle.fontName, size: 22))
+                    .textCase(.uppercase)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .foregroundStyle(cfg.foreground)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, minHeight: 96)
+            .background(cfg.tint)
+            .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(cfg.title)
+    }
+
+    private struct HeroConfig {
+        var title: String
+        var systemImage: String
+        var tint: Color
+        var foreground: Color
+        var action: () -> Void
+    }
+
+    private var heroConfig: HeroConfig {
+        if let day = activeGameDay {
+            if hasActivePendingHand {
+                return HeroConfig(
+                    title: "Se aktive spil",
+                    systemImage: "play.fill",
+                    tint: ActiveGamePosterStyle.activeOrangeColor,
+                    foreground: .white,
+                    action: { navigationPath.append(HomeRoute.activeGame(gameDayId: day.id)) }
+                )
+            } else {
+                return HeroConfig(
+                    title: "Start nyt spil",
+                    systemImage: "plus.circle.fill",
+                    tint: ActiveGamePosterStyle.activeOrangeColor,
+                    foreground: .white,
+                    action: { navigationPath.append(HomeRoute.gameDay(day.id, openAddHand: true)) }
+                )
+            }
+        } else {
+            return HeroConfig(
+                title: "Start ny spilledag",
+                systemImage: "calendar.badge.plus",
+                tint: ActiveGamePosterStyle.selectedGreenColor,
+                foreground: .white,
+                action: { navigationPath.append(HomeRoute.newGameDay) }
+            )
         }
     }
 
