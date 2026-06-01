@@ -206,7 +206,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Alle spilledage",
                             subtitle: "Dato, sted, resultater og spil-detaljer",
-                            systemImage: "calendar.badge.checkmark",
+                            systemImage: "rectangle.stack.fill",
                             metric: "\(allSnapshot.sessionCount)"
                         )
                     }
@@ -218,7 +218,7 @@ struct StatistikTabView: View {
                         navigationCard(
                             title: "Spillere",
                             subtitle: "Profiler, bedste/værste spil og meldinger",
-                            systemImage: "person.3.sequence",
+                            systemImage: "person.4",
                             metric: "\(data.players.count)"
                         )
                     }
