@@ -73,16 +73,7 @@ struct NewGameDayView: View {
                 GameDayFieldPanel(title: "Rækkefølge ved bordet", contentPadding: 0) {
                     SeatOrderEditor(seatOrder: $seatOrder, isEditable: true)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 92)
-        }
-        .background(Color(uiColor: .systemGroupedBackground))
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                Divider()
+
                 Button {
                     saveGameDay()
                 } label: {
@@ -90,11 +81,14 @@ struct NewGameDayView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(trimmedTitle.isEmpty)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.top, 6)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 28)
         }
+        .background(Color(uiColor: .systemGroupedBackground))
     }
 
     private var postSaveContent: some View {

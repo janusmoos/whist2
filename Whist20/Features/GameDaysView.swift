@@ -23,13 +23,37 @@ struct GameDaysView: View {
     var body: some View {
         Group {
             if gameDays.isEmpty {
-                ContentUnavailableView(
-                    "Ingen spilledage endnu",
-                    systemImage: "calendar",
-                    description: Text("Spilledage gemmes på enheden.")
-                )
+                VStack(spacing: 20) {
+                    ContentUnavailableView(
+                        "Ingen spilledage endnu",
+                        systemImage: "calendar",
+                        description: Text("Spilledage gemmes på enheden.")
+                    )
+                    Button(action: requestNewGameDay) {
+                        GameDayPrimaryButtonLabel(
+                            title: "Start ny spilledag",
+                            systemImage: "calendar.badge.plus"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 24)
+                }
             } else {
                 List {
+                    Section {
+                        Button(action: activeGameDay != nil ? { showEndGameDayConfirm = true } : requestNewGameDay) {
+                            GameDayPrimaryButtonLabel(
+                                title: activeGameDay != nil ? "Afslut denne spilledag" : "Start ny spilledag",
+                                systemImage: activeGameDay != nil ? "xmark.circle" : "calendar.badge.plus",
+                                tint: activeGameDay != nil ? ActiveGamePosterStyle.activeOrangeColor : ActiveGamePosterStyle.selectedGreenColor
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
                     if let activeGameDay {
                         sectionTitle("Denne spilledag")
 
@@ -51,22 +75,6 @@ struct GameDaysView: View {
                 }
                 .listStyle(.insetGrouped)
             }
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                Divider()
-                Button(action: activeGameDay != nil ? { showEndGameDayConfirm = true } : requestNewGameDay) {
-                    GameDayPrimaryButtonLabel(
-                        title: activeGameDay != nil ? "Afslut denne spilledag" : "Start ny spilledag",
-                        systemImage: activeGameDay != nil ? "xmark.circle" : "calendar.badge.plus",
-                        tint: activeGameDay != nil ? ActiveGamePosterStyle.activeOrangeColor : ActiveGamePosterStyle.selectedGreenColor
-                    )
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-            }
-            .background(Color(uiColor: .systemGroupedBackground))
         }
         .navigationTitle("Spilledage")
         .navigationBarTitleDisplayMode(.inline)

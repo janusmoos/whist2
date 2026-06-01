@@ -48,7 +48,7 @@ struct ContentView: View {
     /// Reserverer plads til den faste bundmenu (`MainTabBar`). Måles ved layout — med ekstra luft,
     /// så sidste indhold kan scrolles fri af det hævede midterkort.
     @State private var mainTabBarOverlapHeight: CGFloat = 62
-    private let mainTabBarExtraContentClearance: CGFloat = 34
+    private let mainTabBarExtraContentClearance: CGFloat = 56
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
