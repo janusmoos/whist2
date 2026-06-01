@@ -2267,54 +2267,93 @@ struct StatistikTabView: View {
     private func sessionWinRatePanel(_ rows: [SessionBidOutcomeRow]) -> some View {
         let relevantRows = rows.filter { $0.wins + $0.losses > 0 }
         if !relevantRows.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                posterSectionTitle("SEJRSPROCENT")
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Sejrsprocent")
+                    .font(.headline)
 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     ForEach(relevantRows) { row in
-                        let total = row.wins + row.losses
-                        let winFraction = CGFloat(row.wins) / CGFloat(total)
-                        let pct = Int((Double(row.wins) / Double(total) * 100).rounded())
-
-                        HStack(spacing: 10) {
-                            Text(row.player.name)
-                                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
-                                .fontWidth(.compressed)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
-                                .frame(width: 78, alignment: .leading)
-
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                        .fill(ActiveGamePosterStyle.negativeScoreColor.opacity(0.22))
-
-                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                        .fill(ActiveGamePosterStyle.positiveScoreColor)
-                                        .frame(width: max(geo.size.width * winFraction, winFraction > 0 ? 10 : 0))
-                                }
-                            }
-                            .frame(height: 14)
-
-                            Text("\(pct)%")
-                                .font(.custom(ActiveGamePosterStyle.fontName, size: 20))
-                                .fontWidth(.compressed)
-                                .monospacedDigit()
-                                .foregroundStyle(pct >= 50 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
-                                .frame(width: 42, alignment: .trailing)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(row.player.name), \(row.wins) sejre ud af \(total) spil, \(pct) procent")
+                        sessionWinRateChartRow(row)
                     }
                 }
             }
             .padding(16)
-            .background(cardBackground)
+            .background {
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .fill(ActiveGamePosterStyle.panelColor)
+            }
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
                     .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
             }
         }
+    }
+
+    private func sessionWinRateChartRow(_ row: SessionBidOutcomeRow) -> some View {
+        let total = row.wins + row.losses
+        let winPct = total > 0 ? Int((Double(row.wins) / Double(total) * 100).rounded()) : 0
+        let lossPct = 100 - winPct
+        let green = scoreForeground(1)
+        let red = scoreForeground(-1)
+        let barHeight: CGFloat = 13
+        let valueLabelWidth: CGFloat = 34
+        let valueLabelGap: CGFloat = 5
+
+        return HStack(alignment: .center, spacing: 10) {
+            Text(row.player.name)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
+                .fontWidth(.compressed)
+                .fontWeight(.semibold)
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .frame(width: 78, alignment: .leading)
+
+            GeometryReader { geometry in
+                let centerX = geometry.size.width * 0.5
+                let availableSideWidth = max(
+                    18,
+                    min(
+                        centerX - valueLabelWidth - valueLabelGap,
+                        geometry.size.width - centerX - valueLabelWidth - valueLabelGap
+                    )
+                )
+                let winWidth = winPct == 0 ? CGFloat(0) : max(8, availableSideWidth * CGFloat(winPct) / 100.0)
+                let lossWidth = lossPct == 0 ? CGFloat(0) : max(8, availableSideWidth * CGFloat(lossPct) / 100.0)
+
+                ZStack {
+                    Rectangle()
+                        .fill(ActiveGamePosterStyle.borderColor.opacity(0.48))
+                        .frame(width: 1, height: 28)
+                        .position(x: centerX, y: 18)
+
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(red.opacity(row.losses == 0 ? 0.24 : 0.94))
+                        .frame(width: lossWidth, height: barHeight)
+                        .position(x: centerX - lossWidth / 2, y: 18)
+
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(green.opacity(row.wins == 0 ? 0.24 : 0.94))
+                        .frame(width: winWidth, height: barHeight)
+                        .position(x: centerX + winWidth / 2, y: 18)
+
+                    Text("\(lossPct)%")
+                        .font(.caption2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(red)
+                        .frame(width: valueLabelWidth, alignment: .trailing)
+                        .position(x: centerX - lossWidth - valueLabelGap - valueLabelWidth / 2, y: 18)
+
+                    Text("\(winPct)%")
+                        .font(.caption2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(green)
+                        .frame(width: valueLabelWidth, alignment: .leading)
+                        .position(x: centerX + winWidth + valueLabelGap + valueLabelWidth / 2, y: 18)
+                }
+            }
+            .frame(height: 36)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(row.player.name): \(winPct) procent vundne, \(lossPct) procent tabte")
     }
 
     private func posterSectionTitle(_ title: String) -> some View {
