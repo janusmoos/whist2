@@ -20,6 +20,7 @@ export type PosterSnapshot = {
   allyNames?: string[];
   scoreItems?: PosterScoreItem[];
   resumeLine: string;
+  handNumber?: number | null;
 };
 
 export type ThemeMode = "auto" | "light" | "dark";

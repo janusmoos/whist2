@@ -145,6 +145,7 @@ function resolveLastHandPoster(
     const base = posterFromCaption(last.caption, "MELDTE");
     return {
       ...base,
+      handNumber: last.handNumber,
       scoreItems: last.scoresBySeat.map((score, i) => ({
         name: names[i] ?? `#${i + 1}`,
         score,
@@ -155,6 +156,24 @@ function resolveLastHandPoster(
   if (s.lastCompletedHandCaption) {
     return posterFromCaption(s.lastCompletedHandCaption, "MELDTE");
   }
+  return null;
+}
+
+function resolveLastHandNumber(
+  s: LiveSession,
+  hands: HandSummary[],
+  poster: PosterSnapshot | null
+): number | null {
+  const lastHand = hands.length > 0 ? hands[hands.length - 1] : null;
+  if (lastHand?.handNumber != null && lastHand.handNumber > 0) {
+    return lastHand.handNumber;
+  }
+  if (poster?.handNumber != null && poster.handNumber > 0) {
+    return poster.handNumber;
+  }
+  const fromResume = poster?.resumeLine.match(/Spil #(\d+)/i);
+  if (fromResume) return Number(fromResume[1]);
+  if ((s.handCount ?? 0) > 0) return s.handCount ?? null;
   return null;
 }
 
@@ -178,6 +197,7 @@ function ActiveSessionView({
   const handCount = s.handCount ?? 0;
   const pendingPoster = resolvePendingPoster(s);
   const lastHandPoster = resolveLastHandPoster(s, hands, names);
+  const lastHandNumber = resolveLastHandNumber(s, hands, lastHandPoster);
 
   return (
     <div>
@@ -208,6 +228,7 @@ function ActiveSessionView({
         />
         <PosterBox
           title="Seneste afsluttede spil"
+          handNumber={lastHandNumber}
           poster={lastHandPoster}
           emptyText="Ingen afsluttede kampe endnu."
         />

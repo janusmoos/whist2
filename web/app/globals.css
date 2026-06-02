@@ -361,6 +361,10 @@ main {
   text-align: center;
 }
 
+.poster-box-hand-num {
+  letter-spacing: 0.03em;
+}
+
 .poster-box--live .poster-box-title {
   color: var(--text);
 }

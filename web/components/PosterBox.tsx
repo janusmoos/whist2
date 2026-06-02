@@ -216,19 +216,26 @@ export function PosterBox({
   live,
   poster,
   emptyText,
+  handNumber,
   children,
 }: {
   title: string;
   live?: boolean;
   poster?: PosterSnapshot | null;
   emptyText?: string;
+  handNumber?: number | null;
   children?: ReactNode;
 }) {
   return (
     <section className={`poster-box${live ? " poster-box--live" : ""}`}>
       <header className="poster-box-header">
         {live ? <span className="poster-live-dot" aria-hidden="true" /> : null}
-        <h3 className="poster-box-title">{title}</h3>
+        <h3 className="poster-box-title">
+          {title}
+          {handNumber != null && handNumber > 0 ? (
+            <span className="poster-box-hand-num"> – #{handNumber}</span>
+          ) : null}
+        </h3>
       </header>
 
       {children ? (
