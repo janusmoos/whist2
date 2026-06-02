@@ -329,6 +329,10 @@ main {
   gap: 0.45rem;
 }
 
+.two-box-row .poster-box-header {
+  justify-content: center;
+}
+
 .poster-live-dot {
   width: 0.55rem;
   height: 0.55rem;
@@ -346,6 +350,11 @@ main {
   color: var(--muted);
   margin: 0;
   line-height: 1.1;
+}
+
+.two-box-row .poster-box-title {
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 
 .poster-box--live .poster-box-title {
@@ -746,7 +755,20 @@ main {
 
 /* ── Session + sektioner ── */
 
-.session-header { margin-bottom: 1.25rem; }
+.session-header {
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.session-index {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.4rem;
+}
 
 .session-title {
   font-family: var(--font-display);
@@ -754,6 +776,7 @@ main {
   font-weight: 400;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  text-align: center;
   margin: 0 0 0.2rem;
   color: var(--text);
   line-height: 1.05;
@@ -762,8 +785,9 @@ main {
 .session-meta-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
 }
 
 .session-meta {
@@ -778,7 +802,7 @@ main {
 }
 
 .two-box-row .poster-box {
-  border-width: 5px;
+  border-width: 3px;
 }
 
 @media (min-width: 700px) {

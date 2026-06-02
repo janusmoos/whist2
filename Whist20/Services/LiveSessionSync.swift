@@ -42,6 +42,8 @@ struct LiveSessionPushPayload: Encodable, Sendable {
     var schemaVersion: Int = 2
     var sessionId: UUID
     var updatedAt: Date
+    /// Løbenummer blandt alle spilledage (ældste = 1), til web-visning.
+    var sessionNumber: Int
     var title: String
     /// `active` eller `finished`
     var status: String
@@ -71,7 +73,7 @@ struct LiveSessionPushPayload: Encodable, Sendable {
 enum LiveSessionSnapshotBuilder {
     private static let notesMaxLen = 500
 
-    static func makePayload(from gameDay: GameDay) -> LiveSessionPushPayload? {
+    static func makePayload(from gameDay: GameDay, allGameDays: [GameDay]) -> LiveSessionPushPayload? {
         guard LiveSessionSyncSettings.isConfigured else { return nil }
 
         let names = Seat.all.sorted { $0.rawValue < $1.rawValue }.map(\.playerDisplayName)
@@ -112,6 +114,7 @@ enum LiveSessionSnapshotBuilder {
         return LiveSessionPushPayload(
             sessionId: gameDay.id,
             updatedAt: Date(),
+            sessionNumber: sessionNumber(for: gameDay, among: allGameDays),
             title: gameDay.title,
             status: gameDay.isActive ? "active" : "finished",
             handCount: gameDay.hands.count,
@@ -126,6 +129,14 @@ enum LiveSessionSnapshotBuilder {
             pendingStep: pendingInfo?.step,
             notesPublic: notesPublic
         )
+    }
+
+    private static func sessionNumber(for gameDay: GameDay, among allGameDays: [GameDay]) -> Int {
+        let sorted = allGameDays.sorted {
+            if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+            return $0.id.uuidString < $1.id.uuidString
+        }
+        return (sorted.firstIndex(where: { $0.id == gameDay.id }) ?? 0) + 1
     }
 
     private struct PendingLines {
@@ -280,8 +291,10 @@ final class LiveSessionSyncCoordinator {
     private func pushNow(gameDayId: UUID, modelContext: ModelContext) async {
         var descriptor = FetchDescriptor<GameDay>(predicate: #Predicate { $0.id == gameDayId })
         descriptor.fetchLimit = 1
-        guard let day = try? modelContext.fetch(descriptor).first,
-              let payload = LiveSessionSnapshotBuilder.makePayload(from: day) else { return }
+        guard let day = try? modelContext.fetch(descriptor).first else { return }
+        let allDescriptor = FetchDescriptor<GameDay>(sortBy: [SortDescriptor(\.createdAt)])
+        let allDays = (try? modelContext.fetch(allDescriptor)) ?? []
+        guard let payload = LiveSessionSnapshotBuilder.makePayload(from: day, allGameDays: allDays) else { return }
 
         let fp = makeFingerprint(payload)
         guard lastFingerprints[gameDayId] != fp else { return }

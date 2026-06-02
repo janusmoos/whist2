@@ -12,6 +12,7 @@ import type { PosterSnapshot } from "@/lib/posterTypes";
 type LiveSession = {
   schemaVersion?: number;
   sessionId?: string;
+  sessionNumber?: number;
   title?: string;
   status?: string;
   handCount?: number;
@@ -143,7 +144,15 @@ function resolveLastHandPoster(
 
 // ── Komponent: fuld aktiv spilledag ─────────────────────────────────────────
 
-function ActiveSessionView({ s, now }: { s: LiveSession; now: number }) {
+function ActiveSessionView({
+  s,
+  now,
+  sessionNumber,
+}: {
+  s: LiveSession;
+  now: number;
+  sessionNumber?: number;
+}) {
   const names = s.playerNamesBySeat ?? [];
   const totals = s.totalsBySeat ?? [];
   const hands = s.hands ?? [];
@@ -157,6 +166,9 @@ function ActiveSessionView({ s, now }: { s: LiveSession; now: number }) {
   return (
     <div>
       <div className="session-header">
+        {sessionNumber != null ? (
+          <p className="session-index">Spilledage #{sessionNumber}</p>
+        ) : null}
         <h2 className="session-title">{s.title ?? "Uden titel"}</h2>
         <div className="session-meta-row">
           <span className="session-meta">
@@ -288,8 +300,8 @@ export default function HomePage() {
     <main>
       <div className="site-header">
         <div className="site-header-brand">
-          <h1>Whist</h1>
-          <span className="site-sub">live overblik</span>
+          <h1>Whistklubben</h1>
+          <span className="site-sub">live</span>
         </div>
         <ThemeMenu />
       </div>
@@ -305,7 +317,11 @@ export default function HomePage() {
       ) : null}
 
       {activeSession ? (
-        <ActiveSessionView s={activeSession} now={now} />
+        <ActiveSessionView
+          s={activeSession}
+          now={now}
+          sessionNumber={activeSession.sessionNumber}
+        />
       ) : null}
 
       {finishedSessions.length > 0 ? (

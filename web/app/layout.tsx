@@ -16,7 +16,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "Whist — live overblik",
+  title: "Whistklubben live",
   description: "Igangværende spilledage",
 };
 
