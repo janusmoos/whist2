@@ -182,20 +182,45 @@ private actor LiveSessionAPIClient {
     }
 }
 
-// MARK: - Koordinator (debounce + genindlæs GameDay)
+// MARK: - Synk-prioritet (styrer debounce-varighed)
+
+enum SyncPriority {
+    /// Bruger-hændelse der ændrer vedvarende state: ny dag, gemt hånd, afslut/genoptag.
+    /// Kort debounce — weboverblikktet bør opdateres hurtigt.
+    case committed
+    /// Opdatering af pending draft under meldingsflow (autosave, trin-skift).
+    /// Længere debounce — spammer ikke serveren, mens brugeren trykker rundt.
+    case pending
+
+    var debounceNanoseconds: UInt64 {
+        switch self {
+        case .committed: return 200_000_000    // 200 ms
+        case .pending:   return 1_000_000_000  // 1 s
+        }
+    }
+}
+
+// MARK: - Koordinator (debounce + fingerprint + genindlæs GameDay)
 
 @MainActor
 final class LiveSessionSyncCoordinator {
     static let shared = LiveSessionSyncCoordinator()
 
     private var tasks: [UUID: Task<Void, Never>] = [:]
-    private let debounceNs: UInt64 = 120_000_000
+    /// Seneste sendte fingerprint pr. spilledag — bruges til at undgå gentagelses-push.
+    private var lastFingerprints: [UUID: String] = [:]
 
-    func schedulePush(gameDayId: UUID, modelContext: ModelContext) {
+    /// Planlæg et push for `gameDayId`. Allerede planlagte tasks annulleres og erstattes.
+    /// - Parameter priority: `.committed` (200 ms) ved gemt/afslut, `.pending` (1 s) ved draft-ændringer.
+    func schedulePush(
+        gameDayId: UUID,
+        modelContext: ModelContext,
+        priority: SyncPriority = .committed
+    ) {
         guard LiveSessionSyncSettings.isConfigured else { return }
         tasks[gameDayId]?.cancel()
         tasks[gameDayId] = Task {
-            try? await Task.sleep(nanoseconds: debounceNs)
+            try? await Task.sleep(nanoseconds: priority.debounceNanoseconds)
             guard !Task.isCancelled else { return }
             await pushNow(gameDayId: gameDayId, modelContext: modelContext)
             tasks[gameDayId] = nil
@@ -207,6 +232,27 @@ final class LiveSessionSyncCoordinator {
         descriptor.fetchLimit = 1
         guard let day = try? modelContext.fetch(descriptor).first,
               let payload = LiveSessionSnapshotBuilder.makePayload(from: day) else { return }
+
+        let fp = makeFingerprint(payload)
+        guard lastFingerprints[gameDayId] != fp else { return }
+        lastFingerprints[gameDayId] = fp
+
         await LiveSessionAPIClient.shared.send(payload)
+    }
+
+    /// Sammenligner felter der er synlige på weboverblikktet.
+    /// `updatedAt` er bevidst udeladt — den ændrer sig altid og er ikke web-relevant state.
+    private func makeFingerprint(_ p: LiveSessionPushPayload) -> String {
+        let totals = p.totalsBySeat.map(String.init).joined(separator: ",")
+        return [
+            p.status,
+            String(p.handCount),
+            totals,
+            p.pendingStep ?? "",
+            p.pendingMeldingSummary ?? "",
+            p.pendingResultSummary ?? "",
+            p.lastCompletedHandCaption ?? "",
+            p.notesPublic,
+        ].joined(separator: "\u{1F}")
     }
 }

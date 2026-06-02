@@ -160,7 +160,11 @@ enum HandDraftPersistence {
             #endif
             let gid = gameDay.id
             Task { @MainActor in
-                LiveSessionSyncCoordinator.shared.schedulePush(gameDayId: gid, modelContext: context)
+                LiveSessionSyncCoordinator.shared.schedulePush(
+                    gameDayId: gid,
+                    modelContext: context,
+                    priority: .pending
+                )
             }
         }
     }
