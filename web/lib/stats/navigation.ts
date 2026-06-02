@@ -19,7 +19,7 @@ export type StatsNavIcon =
 /** Spejler navigationskortene i appens StatistikTabView. */
 export const STATS_HUB_NAV: StatsNavItem[] = [
   {
-    href: "/statistik/nuværende-spilledag",
+    href: "/statistik/nuvaerende-spilledag",
     title: "Nuværende spilledag",
     subtitle: "Stilling, udvikling og spilfordeling for i dag",
     metric: "live",

@@ -15,7 +15,7 @@ function metricForItem(
   hubSessions: number | null,
   hubPlayers: number | null
 ): string {
-  if (item.href === "/statistik/nuværende-spilledag") {
+  if (item.href === "/statistik/nuvaerende-spilledag") {
     if (!hasActive) return "—";
     return `${handCount} spil`;
   }
