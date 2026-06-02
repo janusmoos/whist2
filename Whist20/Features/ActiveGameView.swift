@@ -451,10 +451,11 @@ struct ActiveGameCardIllustration: View {
 
     private var normalSubtypeText: String {
         if draft.normalSubtype == .vip {
-            return "VIP \(draft.vipLevel.shortTitle)"
-        }
-        if draft.normalSubtype == .alm {
-            return "Alm"
+            switch draft.vipLevel {
+            case .single: return "VIP i første"
+            case .double: return "VIP i anden"
+            case .triple: return "VIP i tredje"
+            }
         }
         return draft.normalSubtype.title
     }
@@ -650,13 +651,13 @@ struct RecordedHandCardIllustration: View {
 
         private static func parseGameType(from narrative: String) -> String {
             let lower = narrative.lowercased()
-            if lower.contains("vip i tredje") || lower.contains("vip 3") { return "VIP 3" }
-            if lower.contains("vip i anden") || lower.contains("vip 2") { return "VIP 2" }
-            if lower.contains("vip i første") || lower.contains("vip 1") || lower.contains("vip") { return "VIP 1" }
+            if lower.contains("vip i tredje") || lower.contains("vip 3") { return "VIP i tredje" }
+            if lower.contains("vip i anden") || lower.contains("vip 2") { return "VIP i anden" }
+            if lower.contains("vip i første") || lower.contains("vip 1") || lower.contains("vip") { return "VIP i første" }
             if lower.contains("gode") { return "Gode" }
             if lower.contains("halve") { return "Halve" }
             if lower.contains("sans") { return "Sans" }
-            if lower.contains("almindelige") { return "Alm" }
+            if lower.contains("almindelige") { return "Almindelige" }
             return "Spil"
         }
 

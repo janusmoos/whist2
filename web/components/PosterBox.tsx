@@ -5,6 +5,7 @@ import { SuitColoredText } from "@/components/SuitColoredText";
 import type { PosterScoreItem, PosterSnapshot } from "@/lib/posterTypes";
 import {
   actionClass,
+  formatGameTypeLabel,
   scoreLabel,
   scoreToneClass,
   suitColorVar,
@@ -94,7 +95,9 @@ function TrumpPoster({ p, live }: { p: PosterSnapshot; live?: boolean }) {
           >
             {p.actionText}
           </span>
-          <span className="poster-game-type">{(p.gameType ?? "SPIL").toUpperCase()}</span>
+          <span className="poster-game-type">
+            {formatGameTypeLabel(p.gameType).toUpperCase()}
+          </span>
         </div>
         {p.bidTricks != null ? (
           <div className="poster-bid-wrap">
@@ -168,7 +171,9 @@ function SolPoster({ p, live }: { p: PosterSnapshot; live?: boolean }) {
           >
             {p.actionText}
           </span>
-          <span className="poster-game-type">{(p.solType ?? "SOL").toUpperCase()}</span>
+          <span className="poster-game-type">
+            {(p.solType ?? "SOL").toUpperCase()}
+          </span>
         </div>
         <div className="poster-sol-icon-wrap">
           <SolGameIcon solKind={solKind} size={88} />

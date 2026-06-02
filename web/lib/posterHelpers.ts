@@ -40,6 +40,19 @@ export function scoreLabel(n: number): string {
   return n > 0 ? `+${n}` : String(n);
 }
 
+/** Udvider gamle forkortelser (Alm, VIP 1) til fulde spiltype-navne. */
+export function formatGameTypeLabel(raw?: string | null): string {
+  if (!raw?.trim()) return "Spil";
+  const key = raw.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    alm: "Almindelige",
+    "vip 1": "VIP i første",
+    "vip 2": "VIP i anden",
+    "vip 3": "VIP i tredje",
+  };
+  return aliases[key] ?? raw.trim();
+}
+
 export function scoreToneClass(tone?: string): string {
   if (tone === "positive") return " poster-top--pos";
   if (tone === "negative") return " poster-top--neg";

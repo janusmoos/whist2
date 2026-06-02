@@ -22,13 +22,13 @@ function parseBidTricks(text: string): number | null {
 
 function parseGameType(text: string): string {
   const lower = text.toLowerCase();
-  if (lower.includes("vip i tredje") || lower.includes("vip 3")) return "VIP 3";
-  if (lower.includes("vip i anden") || lower.includes("vip 2")) return "VIP 2";
-  if (lower.includes("vip")) return "VIP 1";
+  if (lower.includes("vip i tredje") || lower.includes("vip 3")) return "VIP i tredje";
+  if (lower.includes("vip i anden") || lower.includes("vip 2")) return "VIP i anden";
+  if (lower.includes("vip")) return "VIP i første";
   if (lower.includes("gode")) return "Gode";
   if (lower.includes("halve")) return "Halve";
   if (lower.includes("sans")) return "Sans";
-  if (lower.includes("almindelige") || lower.includes("alm.")) return "Alm";
+  if (lower.includes("almindelige") || lower.includes("alm.")) return "Almindelige";
   if (lower.includes("sol")) return "Sol";
   return "Spil";
 }
