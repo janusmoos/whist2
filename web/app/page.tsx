@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { HandsTable, type HandSummary } from "@/components/HandsTable";
 import { PosterBox } from "@/components/PosterBox";
+import { SessionDayStats } from "@/components/SessionDayStats";
 import { ThemeMenu } from "@/components/ThemeMenu";
 import { posterFromCaption } from "@/lib/parsePosterFallback";
 import type { PosterSnapshot } from "@/lib/posterTypes";
@@ -253,6 +254,10 @@ function ActiveSessionView({
           emptyText="Ingen afsluttede kampe endnu."
         />
       </div>
+
+      {names.length === 4 && hands.length > 0 ? (
+        <SessionDayStats hands={hands} names={names} />
+      ) : null}
 
       {names.length === 4 && hands.length === 0 && (handCount ?? 0) > 0 ? (
         <StandingsStrip names={names} totals={totals} />

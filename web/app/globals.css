@@ -24,6 +24,10 @@ html[data-theme="light"] {
   --menu-bg: #f7f7f5;
   --menu-shadow: rgba(26, 31, 41, 0.12);
   --thermo-neutral: #b8b8b8;
+  --stats-line-1: #1a7a3b;
+  --stats-line-2: #2f6fad;
+  --stats-line-3: #a65c00;
+  --stats-line-4: #7a4a9b;
 }
 
 /* ── Dark mode ── */
@@ -45,6 +49,10 @@ html[data-theme="dark"] {
   --menu-bg: #2e2b26;
   --menu-shadow: rgba(0, 0, 0, 0.35);
   --thermo-neutral: #949494;
+  --stats-line-1: #75db94;
+  --stats-line-2: #7eb8ff;
+  --stats-line-3: #ffb366;
+  --stats-line-4: #c99de8;
 }
 
 /* ── Auto: følg system ── */
@@ -67,6 +75,10 @@ html[data-theme="dark"] {
     --menu-bg: #f7f7f5;
     --menu-shadow: rgba(26, 31, 41, 0.12);
     --thermo-neutral: #b8b8b8;
+    --stats-line-1: #1a7a3b;
+    --stats-line-2: #2f6fad;
+    --stats-line-3: #a65c00;
+    --stats-line-4: #7a4a9b;
   }
 }
 
@@ -89,6 +101,10 @@ html[data-theme="dark"] {
     --menu-bg: #2e2b26;
     --menu-shadow: rgba(0, 0, 0, 0.35);
     --thermo-neutral: #949494;
+    --stats-line-1: #75db94;
+    --stats-line-2: #7eb8ff;
+    --stats-line-3: #ffb366;
+    --stats-line-4: #c99de8;
   }
 }
 
@@ -1160,3 +1176,152 @@ main {
 }
 
 .muted { color: var(--muted); }
+
+/* ── Spilledags-statistik (fase 1) ── */
+
+.session-stats-box {
+  margin-bottom: 1.5rem;
+}
+
+.session-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.session-stats-lead,
+.session-stats-swing {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.session-stats-lead strong,
+.session-stats-swing strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.session-stats-players {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 560px) {
+  .session-stats-players {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.session-stats-player {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-hi);
+  border-radius: calc(var(--radius) - 4px);
+  background: color-mix(in srgb, var(--panel-hi) 55%, var(--panel));
+}
+
+.session-stats-player-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-bottom: 0.4rem;
+}
+
+.session-stats-player-rank {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--muted);
+  min-width: 1.1rem;
+}
+
+.session-stats-player-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-stats-player-total {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.session-stats-player-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem 0.5rem;
+  margin: 0;
+}
+
+.session-stats-player-meta div {
+  min-width: 0;
+}
+
+.session-stats-player-meta dt {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.session-stats-player-meta dd {
+  margin: 0.1rem 0 0;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+}
+
+.session-stats-chart-wrap {
+  border-top: 1px solid var(--border-hi);
+  padding-top: 0.75rem;
+}
+
+.session-stats-chart {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.session-stats-chart-zero {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.session-stats-chart-line {
+  fill: none;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.session-stats-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 0.85rem;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.session-stats-chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.session-stats-chart-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
