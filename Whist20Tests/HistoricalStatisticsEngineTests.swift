@@ -41,7 +41,8 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
                     scoresBySeat: [.north: 10, .east: -10, .south: 5, .west: -5],
                     bidderSeat: .north,
                     partnerSeat: .south,
-                    handNumber: 1
+                    handNumber: 1,
+                    resumeCaption: ""
                 ),
             ],
             hasPendingHand: false
@@ -85,7 +86,8 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
                     scoresBySeat: [.north: 12, .east: -4, .south: -4, .west: -4],
                     bidderSeat: .north,
                     partnerSeat: nil,
-                    handNumber: 1
+                    handNumber: 1,
+                    resumeCaption: ""
                 ),
             ],
             hasPendingHand: false
