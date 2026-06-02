@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, type MouseEvent } from "react";
 import { GameTypeIcon, gameTypeIconKindFromHand } from "@/components/GameTypeIcon";
 import { SuitColoredText } from "@/components/SuitColoredText";
 
@@ -27,40 +27,28 @@ function captionText(caption: string): string {
   return caption.replace(/\|\|[^|]*/g, "");
 }
 
+/** Under denne bredde skjules resumé-kolonnen til fordel for fold-ud. */
+const COMPACT_BELOW_PX = 560;
+
 function useCompactHandsTable(
   wrapRef: React.RefObject<HTMLDivElement | null>,
   layoutKey: string
 ) {
   const [compact, setCompact] = useState(false);
-  const fullWidthRef = useRef(0);
 
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
 
     const measure = () => {
-      const table = wrap.querySelector(".hands-table");
-      if (!table) return;
-
-      const wrapW = wrap.clientWidth;
-      const tableW = table.scrollWidth;
-      const overflowing = tableW > wrapW + 2;
-
-      if (!compact) {
-        if (overflowing) {
-          fullWidthRef.current = tableW;
-          setCompact(true);
-        }
-      } else if (wrapW >= fullWidthRef.current - 4) {
-        setCompact(false);
-      }
+      setCompact(wrap.clientWidth < COMPACT_BELOW_PX);
     };
 
     const ro = new ResizeObserver(measure);
     ro.observe(wrap);
     measure();
     return () => ro.disconnect();
-  }, [compact, layoutKey]);
+  }, [layoutKey]);
 
   return compact;
 }
@@ -71,7 +59,7 @@ function ExpandToggle({
   label,
 }: {
   expanded: boolean;
-  onToggle: () => void;
+  onToggle: (e: MouseEvent<HTMLButtonElement>) => void;
   label: string;
 }) {
   return (
@@ -112,7 +100,23 @@ function HandRow({
 
   return (
     <Fragment>
-      <tr className={compact ? "hands-table-row--compact" : undefined}>
+      <tr
+        className={compact ? "hands-table-row--compact hands-table-row--interactive" : undefined}
+        onClick={compact ? onToggle : undefined}
+        onKeyDown={
+          compact
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onToggle();
+                }
+              }
+            : undefined
+        }
+        tabIndex={compact ? 0 : undefined}
+        role={compact ? "button" : undefined}
+        aria-expanded={compact ? expanded : undefined}
+      >
         <td className="col-num">#{hand.handNumber}</td>
         <td className="col-type">
           <GameTypeIcon kind={gameTypeIconKindFromHand(hand.kind, hand.caption)} />
@@ -129,13 +133,20 @@ function HandRow({
         ))}
         {compact ? (
           <td className="col-expand">
-            <ExpandToggle expanded={expanded} onToggle={onToggle} label={label} />
+            <ExpandToggle
+              expanded={expanded}
+              onToggle={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              label={label}
+            />
           </td>
         ) : null}
       </tr>
       {compact && expanded ? (
         <tr className="hands-table-resume-row">
-          <td colSpan={3 + hand.scoresBySeat.length}>
+          <td colSpan={2 + hand.scoresBySeat.length + 1}>
             <ResumeCell caption={hand.caption} />
           </td>
         </tr>

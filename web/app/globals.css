@@ -1013,7 +1013,13 @@ main {
 
 /* Kompakt kamptabel: resumé foldes ud (som i appen) */
 .hands-table--compact {
-  min-width: 280px;
+  min-width: 0;
+  width: 100%;
+}
+
+.hands-table--compact .col-score {
+  min-width: 2.85rem;
+  padding-right: 0.55rem;
 }
 
 .col-expand {
@@ -1027,14 +1033,23 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   padding: 0;
   border: none;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
   line-height: 1;
+}
+
+.hands-table-row--interactive {
+  cursor: pointer;
+}
+
+.hands-table-row--interactive:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
 }
 
 .hands-table-expand:hover {
