@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 type LiveSession = {
+  schemaVersion?: number;
   sessionId?: string;
   title?: string;
   status?: string;
@@ -12,7 +13,7 @@ type LiveSession = {
   lastCompletedHandCaption?: string | null;
   pendingMeldingSummary?: string | null;
   pendingResultSummary?: string | null;
-  pendingStep?: string | null;
+  pendingStep?: "melding" | "halve_trumf" | "resultat" | null;
   notesPublic?: string;
   updatedAt?: string;
   serverUpdatedAt?: string;

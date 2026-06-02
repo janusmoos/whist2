@@ -26,6 +26,8 @@ enum LiveSessionSyncSettings {
 // MARK: - Payload (spejler web-API)
 
 struct LiveSessionPushPayload: Encodable, Sendable {
+    /// Payload-schemaversion. Øges når der tilføjes felter, som breakende ændrer fortolkningen.
+    var schemaVersion: Int = 1
     var sessionId: UUID
     var updatedAt: Date
     var title: String
