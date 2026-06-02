@@ -54,126 +54,115 @@ struct NewGameDayView: View {
 
     private var editFormContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Giv spilledagen et navn og eventuelle noter. Du kan ændre det senere under spilledagens indstillinger.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Navn")
-                        .font(.subheadline.weight(.semibold))
+            VStack(alignment: .leading, spacing: 10) {
+                GameDayFieldPanel(title: "Navn") {
                     TextField("Fx «Lørdag hos Peter»", text: $titleText)
-                        .textFieldStyle(.roundedBorder)
+                        .textFieldStyle(.plain)
+                        .font(.body)
                         .textInputAutocapitalization(.sentences)
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Noter (valgfrit)")
-                        .font(.subheadline.weight(.semibold))
+                GameDayFieldPanel(title: "Noter (valgfrit)") {
                     TextField("Sted, mad, aftaler …", text: $notesText, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(4...10)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .lineLimit(3...8)
+                        .frame(minHeight: 76, alignment: .topLeading)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Rækkefølge ved bordet")
-                        .font(.subheadline.weight(.semibold))
-
-                    List {
-                        ForEach(seatOrder, id: \.self) { seat in
-                            HStack(spacing: 12) {
-                                Image(systemName: "line.3.horizontal")
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityHidden(true)
-                                Text(seat.playerDisplayName)
-                                    .font(.body.weight(.medium))
-                                Spacer()
-                            }
-                            .padding(.vertical, 2)
-                        }
-                        .onMove { from, to in
-                            seatOrder.move(fromOffsets: from, toOffset: to)
-                        }
-                    }
-                    .environment(\.editMode, .constant(.active))
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
-                    .listStyle(.plain)
-                    .frame(height: 48 * 4 + 6)
+                GameDayFieldPanel(title: "Rækkefølge ved bordet", contentPadding: 0) {
+                    SeatOrderEditor(seatOrder: $seatOrder, isEditable: true)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                Divider()
+
                 Button {
                     saveGameDay()
                 } label: {
-                    Text("Gem spilledag")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 52)
+                    GameDayPrimaryButtonLabel(title: "Gem spilledag", systemImage: "checkmark")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 .disabled(trimmedTitle.isEmpty)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(.bar)
+                .padding(.top, 6)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 28)
         }
+        .background(Color(uiColor: .systemGroupedBackground))
     }
 
     private var postSaveContent: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 56))
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(.green, .secondary.opacity(0.35))
-                    .accessibilityHidden(true)
+            VStack(spacing: 18) {
+                VStack(spacing: 16) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 42, weight: .bold))
+                        .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                        .frame(width: 86, height: 86)
+                        .background {
+                            Circle()
+                                .fill(ActiveGamePosterStyle.selectedGreenColor.opacity(0.14))
+                        }
+                        .overlay {
+                            Circle()
+                                .strokeBorder(ActiveGamePosterStyle.selectedGreenColor.opacity(0.30), lineWidth: 1)
+                        }
+                        .accessibilityHidden(true)
 
-                VStack(spacing: 8) {
-                    Text("«\(savedTitle)» er gemt")
-                        .font(.title3.weight(.bold))
-                        .multilineTextAlignment(.center)
-                    Text("I kan gå direkte til meldingen af jeres første kamp, eller åbne spilledagens oversigt.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 8) {
+                        Text(savedTitle.uppercased())
+                            .font(.custom(ActiveGamePosterStyle.fontName, size: 34))
+                            .fontWidth(.compressed)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.62)
+                            .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+
+                        Text("Spilledagen er gemt")
+                            .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 18))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.78))
+
+                        Text("I kan gå direkte til meldingen af jeres første kamp, eller åbne spilledagens oversigt.")
+                            .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
+                            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.66))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 22)
+                .frame(maxWidth: .infinity)
+                .background {
+                    RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                        .fill(ActiveGamePosterStyle.panelColor)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                        .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+                }
 
                 VStack(spacing: 12) {
                     Button {
                         goToFirstHandMelding()
                     } label: {
-                        Label("Start spilledagens første spil", systemImage: "play.circle.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 54)
+                        GameDayPrimaryButtonLabel(title: "Start første spil", systemImage: "play.fill")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                    .buttonStyle(.plain)
 
                     Button {
                         goToGameDayHub()
                     } label: {
-                        Text("Gå til spilledags-oversigt")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                        GameDaySecondaryButtonLabel(title: "Gå til spilledags-oversigt")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.plain)
                 }
-                .padding(.top, 8)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 32)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 28)
             .frame(maxWidth: .infinity)
         }
+        .background(Color(uiColor: .systemGroupedBackground))
     }
 
     private func saveGameDay() {
@@ -220,6 +209,7 @@ struct GameDayEditView: View {
     @State private var titleText: String
     @State private var notesText: String
     @State private var seatOrder: [Seat]
+    @State private var showEndGameDayConfirm = false
 
     init(gameDay: GameDay) {
         self.gameDay = gameDay
@@ -242,85 +232,70 @@ struct GameDayEditView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Rediger navn, noter og bordrækkefølge for spilledagen.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Navn")
-                        .font(.subheadline.weight(.semibold))
+            VStack(alignment: .leading, spacing: 8) {
+                GameDayFieldPanel(title: "Spilledagens navn") {
                     TextField("Fx «Lørdag hos Peter»", text: $titleText)
-                        .textFieldStyle(.roundedBorder)
+                        .textFieldStyle(.plain)
+                        .font(.body)
                         .textInputAutocapitalization(.sentences)
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Noter (valgfrit)")
-                        .font(.subheadline.weight(.semibold))
+                GameDayFieldPanel(title: "Noter (valgfrit)") {
                     TextField("Sted, mad, aftaler …", text: $notesText, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(4...10)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .lineLimit(1...3)
+                        .frame(minHeight: 36, alignment: .topLeading)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Rækkefølge ved bordet")
-                        .font(.subheadline.weight(.semibold))
-
+                GameDayFieldPanel(title: "Rækkefølge ved bordet", contentPadding: 0) {
                     if !canEditSeatOrder {
                         Text("Rækkefølgen kan kun ændres, før der er gemt spil eller kladde på spilledagen.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .padding(.horizontal, 14)
+                            .padding(.top, 10)
                     }
 
-                    List {
-                        ForEach(seatOrder, id: \.self) { seat in
-                            HStack(spacing: 12) {
-                                Image(systemName: canEditSeatOrder ? "line.3.horizontal" : "lock.fill")
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityHidden(true)
-                                Text(seat.playerDisplayName)
-                                    .font(.body.weight(.medium))
-                                Spacer()
-                            }
-                            .padding(.vertical, 2)
-                        }
-                        .onMove { from, to in
-                            guard canEditSeatOrder else { return }
-                            seatOrder.move(fromOffsets: from, toOffset: to)
-                        }
-                    }
-                    .environment(\.editMode, .constant(canEditSeatOrder ? .active : .inactive))
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
-                    .listStyle(.plain)
-                    .frame(height: 48 * 4 + 6)
+                    SeatOrderEditor(seatOrder: $seatOrder, isEditable: canEditSeatOrder)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 100)
-        }
-        .navigationTitle("Rediger spilledag")
-        .navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                Divider()
+
                 Button {
                     saveChanges()
                 } label: {
-                    Text("Gem ændringer")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 52)
+                    GameDayPrimaryButtonLabel(title: "Gem ændringer", systemImage: "checkmark")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 .disabled(trimmedTitle.isEmpty)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(.bar)
+                .padding(.top, 4)
+
+                Button {
+                    showEndGameDayConfirm = true
+                } label: {
+                    GameDayPrimaryButtonLabel(
+                        title: "Afslut spilledag",
+                        systemImage: "xmark.circle",
+                        tint: ActiveGamePosterStyle.activeOrangeColor
+                    )
+                }
+                .buttonStyle(.plain)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 28)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Rediger spilledag")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
+            Button("Annuller", role: .cancel) {}
+            Button("Afslut", role: .destructive) {
+                gameDay.close(modelContext: modelContext)
+                dismiss()
+            }
+        } message: {
+            Text(GameDaySessionDialogs.endGameDayMessage(hasPendingHand: gameDay.pendingHand != nil))
         }
     }
 
@@ -340,3 +315,72 @@ struct GameDayEditView: View {
         dismiss()
     }
 }
+
+private struct SeatOrderEditor: View {
+    @Binding var seatOrder: [Seat]
+    var isEditable: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(seatOrder.enumerated()), id: \.element) { index, seat in
+                HStack(spacing: 12) {
+                    Text("\(index + 1)")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(ActiveGamePosterStyle.mutedInkColor)
+                        .frame(width: 22)
+                        .accessibilityHidden(true)
+
+                    Text(seat.playerDisplayName)
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 16))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+
+                    Spacer(minLength: 12)
+
+                    HStack(spacing: 4) {
+                        Button {
+                            moveSeat(from: index, by: -1)
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!isEditable || index == 0)
+                        .accessibilityLabel("Flyt \(seat.playerDisplayName) op")
+
+                        Button {
+                            moveSeat(from: index, by: 1)
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!isEditable || index == seatOrder.count - 1)
+                        .accessibilityLabel("Flyt \(seat.playerDisplayName) ned")
+                    }
+                    .foregroundStyle(isEditable ? ActiveGamePosterStyle.selectedGreenColor : .secondary)
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 42)
+                .background(ActiveGamePosterStyle.panelColor)
+
+                if index < seatOrder.count - 1 {
+                    Divider()
+                        .padding(.leading, 46)
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func moveSeat(from index: Int, by offset: Int) {
+        let target = index + offset
+        guard isEditable,
+              seatOrder.indices.contains(index),
+              seatOrder.indices.contains(target) else { return }
+        withAnimation(.easeInOut(duration: 0.16)) {
+            seatOrder.swapAt(index, target)
+        }
+    }
+}
+

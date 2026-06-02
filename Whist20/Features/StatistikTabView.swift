@@ -14,34 +14,75 @@ final class HistoricalStatisticsStore: ObservableObject {
 
     private let loader: HistoricalDataJSONLoader
     private var hasStartedLoading = false
+    private var historicalData: HistoricalWhistData?
+    private var liveUpdateTask: Task<Void, Never>?
 
     init(loader: HistoricalDataJSONLoader = HistoricalDataJSONLoader()) {
         self.loader = loader
     }
 
-    func loadIfNeeded() async {
+    deinit {
+        liveUpdateTask?.cancel()
+    }
+
+    func loadIfNeeded(gameDays: [GameDay]) async {
         guard !hasStartedLoading else { return }
         hasStartedLoading = true
         state = .loading
 
         let loader = loader
+        let liveSnapshots = LiveHistoricalStatisticsAdapter.snapshots(from: gameDays)
         let result = await Task.detached(priority: .userInitiated) {
-            Result { try HistoricalStatisticsHubModel(loader: loader) }
+            Result {
+                let data = try loader.load()
+                let model = HistoricalStatisticsPreparer.prepareHubModel(
+                    historicalData: data,
+                    liveSnapshots: liveSnapshots
+                )
+                return (data, model)
+            }
         }.value
 
         switch result {
-        case let .success(model):
+        case let .success((data, model)):
+            historicalData = data
             state = .loaded(model)
         case let .failure(error):
             state = .failure(error)
         }
     }
+
+    func gameDaysDidChange(_ gameDays: [GameDay]) {
+        guard let historicalData else { return }
+        let liveSnapshots = LiveHistoricalStatisticsAdapter.snapshots(from: gameDays)
+        liveUpdateTask?.cancel()
+        liveUpdateTask = Task { [historicalData] in
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard !Task.isCancelled else { return }
+
+            let model = await Task.detached(priority: .userInitiated) {
+                HistoricalStatisticsPreparer.prepareHubModel(
+                    historicalData: historicalData,
+                    liveSnapshots: liveSnapshots
+                )
+            }.value
+
+            guard !Task.isCancelled else { return }
+            state = .loaded(model)
+        }
+    }
+}
+
+private struct GameDayStatisticsFingerprint: Equatable {
+    var value: Int
 }
 
 struct StatistikTabView: View {
     @State private var selectedScope: HistoricalStatisticsScope = .current
     @State private var recentSessionLimit = 10
     @ObservedObject private var store: HistoricalStatisticsStore
+    private let gameDays: [GameDay]
+    @Binding var showCurrentDay: Bool
 
     private let recentSessionLimitOptions = [5, 10, 15, 20, 25, 50]
     private let plannedStatistics = [
@@ -67,8 +108,13 @@ struct StatistikTabView: View {
         ),
     ]
 
-    init(store: HistoricalStatisticsStore) {
+    var dismissFromHome: (() -> Void)?
+
+    init(store: HistoricalStatisticsStore, gameDays: [GameDay], showCurrentDay: Binding<Bool> = .constant(false), dismissFromHome: (() -> Void)? = nil) {
         self.store = store
+        self.gameDays = gameDays
+        self._showCurrentDay = showCurrentDay
+        self.dismissFromHome = dismissFromHome
     }
 
     var body: some View {
@@ -92,10 +138,78 @@ struct StatistikTabView: View {
             }
             .navigationTitle("Statistik")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                if let dismiss = dismissFromHome {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(action: dismiss) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "chevron.left")
+                                    .fontWeight(.semibold)
+                                Text("Forside")
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showCurrentDay) {
+                if case let .loaded(model) = store.state, let overview = model.currentOverview {
+                    currentDayView(overview)
+                        .navigationTitle("Stilling i dag")
+                } else {
+                    ContentUnavailableView(
+                        "Ingen aktiv spilledag",
+                        systemImage: "calendar",
+                        description: Text("Start en ny spilledag for at se stilling.")
+                    )
+                    .navigationTitle("Stilling i dag")
+                }
+            }
         }
         .task {
-            await store.loadIfNeeded()
+            await store.loadIfNeeded(gameDays: gameDays)
         }
+        .onChange(of: gameDayStatisticsFingerprint) { _, _ in
+            store.gameDaysDidChange(gameDays)
+        }
+        .onChange(of: showCurrentDay) { _, newValue in
+            if newValue {
+                Task { await store.loadIfNeeded(gameDays: gameDays) }
+            }
+        }
+    }
+
+    private var gameDayStatisticsFingerprint: GameDayStatisticsFingerprint {
+        var hasher = Hasher()
+        for day in gameDays.sorted(by: { lhs, rhs in
+                if lhs.createdAt != rhs.createdAt {
+                    return lhs.createdAt < rhs.createdAt
+                }
+                return lhs.id.uuidString < rhs.id.uuidString
+            }) {
+            hasher.combine(day.id)
+            hasher.combine(day.createdAt)
+            hasher.combine(day.title)
+            hasher.combine(day.endedAt)
+            hasher.combine(day.seatOrderJSON)
+            hasher.combine(day.pendingHand?.id)
+            hasher.combine(day.pendingHand?.updatedAt)
+
+            for hand in day.hands.sorted(by: { lhs, rhs in
+                        if lhs.handNumber != rhs.handNumber {
+                            return lhs.handNumber < rhs.handNumber
+                        }
+                        return lhs.playedAt < rhs.playedAt
+                    }) {
+                hasher.combine(hand.id)
+                hasher.combine(hand.handNumber)
+                hasher.combine(hand.playedAt)
+                hasher.combine(hand.kindRaw)
+                hasher.combine(hand.scoresBySeatJSON)
+                hasher.combine(hand.bidderSeatRaw)
+                hasher.combine(hand.partnerSeatRaw)
+            }
+        }
+        return GameDayStatisticsFingerprint(value: hasher.finalize())
     }
 
     private func statisticsHub(_ model: HistoricalStatisticsHubModel) -> some View {
@@ -110,12 +224,12 @@ struct StatistikTabView: View {
                 VStack(spacing: 10) {
                     if let currentOverview {
                         NavigationLink {
-                            currentDayView(currentOverview)
+                            AnyView(currentDayView(currentOverview))
                         } label: {
                             navigationCard(
                                 title: "Nuværende spilledag",
                                 subtitle: sessionSubtitle(currentOverview.session),
-                                systemImage: "calendar.badge.clock",
+                                systemImage: "calendar",
                                 metric: "\(currentOverview.gamesPlayed) spil"
                             )
                         }
@@ -123,48 +237,48 @@ struct StatistikTabView: View {
                     }
 
                     NavigationLink {
-                        allSessionsView(data)
+                        AnyView(allSessionsView(model))
                     } label: {
                         navigationCard(
                             title: "Alle spilledage",
                             subtitle: "Dato, sted, resultater og spil-detaljer",
-                            systemImage: "calendar",
+                            systemImage: "calendar.badge.clock",
                             metric: "\(allSnapshot.sessionCount)"
                         )
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        playersOverviewView(data)
+                        AnyView(playersOverviewView(model))
                     } label: {
                         navigationCard(
                             title: "Spillere",
                             subtitle: "Profiler, bedste/værste spil og meldinger",
-                            systemImage: "person.3",
+                            systemImage: "person.3.sequence.fill",
                             metric: "\(data.players.count)"
                         )
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        gameTypesOverviewView(data)
+                        AnyView(gameTypesOverviewView(model))
                     } label: {
                         navigationCard(
                             title: "Spiltyper",
                             subtitle: "Succes pr. type med tydelig sample size",
-                            systemImage: "rectangle.stack.badge.play",
+                            systemImage: "suit.club.fill",
                             metric: "\(model.gameTypeCount)"
                         )
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
-                        trendsOverviewView(data)
+                        AnyView(trendsOverviewView(model))
                     } label: {
                         navigationCard(
                             title: "Tendenser",
                             subtitle: "Udvikling over tid og seneste perioder",
-                            systemImage: "chart.xyaxis.line",
+                            systemImage: "chart.line.uptrend.xyaxis",
                             metric: "5-50"
                         )
                     }
@@ -172,7 +286,7 @@ struct StatistikTabView: View {
                 }
 
                 NavigationLink {
-                    dataQualityView(data)
+                    AnyView(dataQualityView(model))
                 } label: {
                     navigationCard(
                         title: "Datagrundlag",
@@ -490,11 +604,12 @@ struct StatistikTabView: View {
         }
     }
 
-    private func trendsContent(data: HistoricalWhistData, snapshot: HistoricalStatisticsSnapshot) -> some View {
-        let trends = HistoricalStatisticsEngine.playerTrendSummaries(from: data)
-        let gameTypeTrends = HistoricalStatisticsEngine.gameTypeTrendSummaries(from: data)
-
-        return ScrollView {
+    private func trendsContent(
+        snapshot: HistoricalStatisticsSnapshot,
+        trends: [HistoricalPlayerTrendSummary],
+        gameTypeTrends: [HistoricalGameTypeTrendSummary]
+    ) -> some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Tendenser")
@@ -690,12 +805,12 @@ struct StatistikTabView: View {
     private func navigationCard(title: String, subtitle: String, systemImage: String, metric: String) -> some View {
         HStack(spacing: 14) {
             Image(systemName: systemImage)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 34, height: 34)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                .frame(width: 56, height: 56)
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.12))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(ActiveGamePosterStyle.panelColor)
                 }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -731,9 +846,10 @@ struct StatistikTabView: View {
             .navigationTitle("Nuværende")
     }
 
-    private func allSessionsView(_ data: HistoricalWhistData) -> some View {
-        let overviews = HistoricalStatisticsEngine.sessionOverviews(from: data)
-        let playerSessionScores = HistoricalStatisticsEngine.playerSessionScores(from: data)
+    private func allSessionsView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let data = model.data
+        let overviews = model.sessionOverviews
+        let playerSessionScores = model.playerSessionScores
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -781,7 +897,7 @@ struct StatistikTabView: View {
             }
             return lhs.name < rhs.name
         }
-        let orderedSessions = overviews.sorted { lhs, rhs in lhs.sessionIndex < rhs.sessionIndex }
+        let orderedSessions = overviews.sorted { lhs, rhs in lhs.sessionIndex > rhs.sessionIndex }
         let maxAbsScore = max(
             scoresByPlayerId.values.flatMap { $0.map { abs($0.score) } }.max() ?? 1,
             1
@@ -1019,9 +1135,9 @@ struct StatistikTabView: View {
             .joined(separator: ", ")
     }
 
-    private func playersOverviewView(_ data: HistoricalWhistData) -> some View {
-        let profiles = HistoricalStatisticsEngine.playerProfiles(from: data)
-        let summaries = HistoricalStatisticsEngine.playerScoreSummaries(from: data)
+    private func playersOverviewView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let profiles = model.playerProfiles
+        let summaries = model.playerSummaries
             .sorted { lhs, rhs in
                 if lhs.player.displayOrder != rhs.player.displayOrder {
                     return lhs.player.displayOrder < rhs.player.displayOrder
@@ -1030,28 +1146,19 @@ struct StatistikTabView: View {
             }
 
         return ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Spillere")
-                        .font(.largeTitle.weight(.bold))
-                    Text("Overblik først. Tryk på en spiller for alle detaljer.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                playerLeaderboard(summaries, profiles: profiles)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .padding(.bottom, 12)
+            playerLeaderboard(summaries, profiles: profiles, sessionOverviews: model.sessionOverviews)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .padding(.bottom, 12)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("Spillere")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func gameTypesOverviewView(_ data: HistoricalWhistData) -> some View {
-        let overviews = gameTypeOverviews(from: data)
+    private func gameTypesOverviewView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let data = model.data
+        let overviews = model.gameTypeOverviews
         let trickDistribution = bidTrickDistribution(from: data)
         let solDistribution = solGameDistribution(from: data)
         let vipDistribution = vipGameDistribution(from: data)
@@ -1107,25 +1214,23 @@ struct StatistikTabView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func trendsOverviewView(_ data: HistoricalWhistData) -> some View {
-        let scopedData = HistoricalStatisticsEngine.scopedData(
-            from: data,
-            scope: selectedScope,
-            recentSessionLimit: recentSessionLimit
-        )
-        let snapshot = HistoricalStatisticsEngine.snapshot(
-            from: data,
-            scope: selectedScope,
-            recentSessionLimit: recentSessionLimit
-        )
+    private func trendsOverviewView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let key = HistoricalStatisticsScopeCacheKey(scope: selectedScope, recentLimit: recentSessionLimit)
+        let snapshot = model.snapshotsByScope[key] ?? model.allSnapshot
+        let playerTrends = model.playerTrendSummariesByScope[key] ?? []
+        let gameTypeTrends = model.gameTypeTrendSummariesByScope[key] ?? []
 
-        return trendsContent(data: scopedData, snapshot: snapshot)
+        return trendsContent(
+            snapshot: snapshot,
+            trends: playerTrends,
+            gameTypeTrends: gameTypeTrends
+        )
             .navigationTitle("Tendenser")
             .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func dataQualityView(_ data: HistoricalWhistData) -> some View {
-        let snapshot = HistoricalStatisticsEngine.snapshot(from: data, scope: .all)
+    private func dataQualityView(_ model: HistoricalStatisticsHubModel) -> some View {
+        let snapshot = model.allSnapshot
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -1398,11 +1503,10 @@ struct StatistikTabView: View {
                         x: .value("Stik", bucket.title),
                         y: .value("Spil", bucket.count)
                     )
-                    .foregroundStyle(Color(red: 0.11, green: 0.14, blue: 0.18))
+                    .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
                     .cornerRadius(4)
                 }
                 .frame(height: 220)
-                .chartXAxisLabel("Meldte stik")
                 .chartYAxisLabel("Spil")
                 .accessibilityLabel("Bjælkediagram over meldte stik i stikspil")
             }
@@ -1606,30 +1710,20 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary], profiles: [HistoricalPlayerProfile]) -> some View {
+    private func playerLeaderboard(_ summaries: [HistoricalPlayerScoreSummary], profiles: [HistoricalPlayerProfile], sessionOverviews: [HistoricalSessionOverview]) -> some View {
         let profilesByPlayerId = Dictionary(uniqueKeysWithValues: profiles.map { ($0.player.id, $0) })
 
-        return VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Spillere")
-                    .font(.headline)
-                Text("Tryk på en spiller for bedste/værste dag, bedste/værste spil og meldingsstatistik.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            VStack(spacing: 10) {
-                ForEach(summaries) { summary in
-                    if let profile = profilesByPlayerId[summary.player.id] {
-                        NavigationLink {
-                            playerProfileView(profile)
-                        } label: {
-                            playerRow(summary)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        playerRow(summary)
+        return VStack(alignment: .leading, spacing: 10) {
+            ForEach(summaries) { summary in
+                if let profile = profilesByPlayerId[summary.player.id] {
+                    NavigationLink {
+                        playerProfileView(profile, sessionOverviews: sessionOverviews)
+                    } label: {
+                        playerRow(profile)
                     }
+                    .buttonStyle(.plain)
+                } else {
+                    playerRow(nil)
                 }
             }
         }
@@ -1660,7 +1754,10 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerProfileView(_ profile: HistoricalPlayerProfile) -> some View {
+    private func playerProfileView(_ profile: HistoricalPlayerProfile, sessionOverviews: [HistoricalSessionOverview]) -> some View {
+        let bestDayOverview = profile.bestDay.flatMap { day in sessionOverviews.first { $0.session.id == day.sessionId } }
+        let worstDayOverview = profile.worstDay.flatMap { day in sessionOverviews.first { $0.session.id == day.sessionId } }
+
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -1672,20 +1769,50 @@ struct StatistikTabView: View {
                 }
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    sessionMetric(title: "Bedste dag", session: profile.bestDay)
-                    sessionMetric(title: "Værste dag", session: profile.worstDay)
-                    miniMetric(title: "Bedste spil", value: optionalScoreText(profile.bestGame?.selectedPlayerScore))
-                    miniMetric(title: "Værste spil", value: optionalScoreText(profile.worstGame?.selectedPlayerScore))
+                    profileTopTile(
+                        title: "Bedste dag",
+                        score: profile.bestDay?.score,
+                        subtitle: profile.bestDay?.sessionTitle,
+                        destination: bestDayOverview.map { ov in AnyView(sessionDetailView(ov)) }
+                    )
+                    profileTopTile(
+                        title: "Værste dag",
+                        score: profile.worstDay?.score,
+                        subtitle: profile.worstDay?.sessionTitle,
+                        destination: worstDayOverview.map { ov in AnyView(sessionDetailView(ov)) }
+                    )
+                    profileTopTile(
+                        title: "Bedste spil",
+                        score: profile.bestGame?.selectedPlayerScore,
+                        subtitle: profile.bestGame.map { "Spil \($0.game.gameNumberInSession) · \(gameTypeText($0.game))" },
+                        destination: profile.bestGame.map { g in AnyView(HistoricalGameDetailView(detail: g, resumeText: gameResumeText(g))) }
+                    )
+                    profileTopTile(
+                        title: "Værste spil",
+                        score: profile.worstGame?.selectedPlayerScore,
+                        subtitle: profile.worstGame.map { "Spil \($0.game.gameNumberInSession) · \(gameTypeText($0.game))" },
+                        destination: profile.worstGame.map { g in AnyView(HistoricalGameDetailView(detail: g, resumeText: gameResumeText(g))) }
+                    )
                 }
 
                 playerSessionPerformanceSection(profile)
 
                 if let bestGame = profile.bestGame {
-                    gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                    NavigationLink {
+                        HistoricalGameDetailView(detail: bestGame, resumeText: gameResumeText(bestGame))
+                    } label: {
+                        gameDetailCard("Bedste spil", detail: bestGame, highlightedPlayerId: profile.player.id)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 if let worstGame = profile.worstGame {
-                    gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                    NavigationLink {
+                        HistoricalGameDetailView(detail: worstGame, resumeText: gameResumeText(worstGame))
+                    } label: {
+                        gameDetailCard("Værste spil", detail: worstGame, highlightedPlayerId: profile.player.id)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 playerBidSection(profile)
@@ -1717,9 +1844,6 @@ struct StatistikTabView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Gevinst/tab pr. spilledag")
                     .font(.headline)
-                Text("Søjler over nul er gevinst, søjler under nul er tab. Listen under grafen viser seneste spilledag først.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
 
             Chart {
@@ -1740,31 +1864,26 @@ struct StatistikTabView: View {
             .chartYAxisLabel("Point")
             .accessibilityLabel("Søjlediagram for \(profile.player.name)s gevinst og tab pr. spilledag")
 
-            VStack(spacing: 8) {
-                ForEach(newestFirst) { sessionScore in
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(sessionScore.sessionTitle)
-                                .font(.subheadline.weight(.semibold))
-                            Text("\(sessionScore.gamesInSession) spil")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer(minLength: 12)
-
-                        Text(scoreText(sessionScore.score))
-                            .font(.subheadline.weight(.bold).monospacedDigit())
-                            .foregroundStyle(scoreForeground(sessionScore.score))
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 10)
-                    .background {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.primary.opacity(0.04))
-                    }
+            NavigationLink {
+                playerSessionListView(profile: profile, sessionScores: newestFirst)
+            } label: {
+                HStack {
+                    Text("Se alle spilledage")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.primary.opacity(0.04))
                 }
             }
+            .buttonStyle(.plain)
         }
         .padding(16)
         .background(cardBackground)
@@ -1772,6 +1891,56 @@ struct StatistikTabView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         }
+    }
+
+    private func playerSessionListView(profile: HistoricalPlayerProfile, sessionScores: [HistoricalPlayerSessionScore]) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("\(sessionScores.count) spilledage · seneste først")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 8) {
+                    ForEach(sessionScores) { sessionScore in
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(sessionScore.sessionTitle)
+                                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
+                                    .fontWeight(.semibold)
+                                    .fontWidth(.compressed)
+                                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                                Text("\(sessionScore.gamesInSession) spil")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 12)
+                            Text(scoreText(sessionScore.score))
+                                .font(.custom(ActiveGamePosterStyle.fontName, size: 28))
+                                .fontWidth(.compressed)
+                                .monospacedDigit()
+                                .foregroundStyle(scoreForeground(sessionScore.score))
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 14)
+                        .background {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .fill(ActiveGamePosterStyle.panelColor)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .padding(.bottom, 12)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Spilledage — \(profile.player.name)")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func playerBidSection(_ profile: HistoricalPlayerProfile) -> some View {
@@ -1803,6 +1972,7 @@ struct StatistikTabView: View {
     private func sessionDetailView(_ overview: HistoricalSessionOverview) -> some View {
         let sessionStreaks = sessionScoreStreakSummary(from: overview.progressPoints)
         let bidOutcomes = sessionBidOutcomeRows(from: overview)
+        let totalOutcomes = sessionTotalOutcomeRows(from: overview)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -1814,11 +1984,16 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                // #1 – kumulativ stilling pr. runde (linjediagram)
                 sessionDevelopmentPanel(overview.progressPoints)
                 sessionDailyResultPanel(overview.playerTotals)
 
+                // #4 – bedste og værste spil i dag
                 if let bestGame = overview.bestGame {
                     sessionOutcomeCard("Største gevinst", detail: bestGame, isWin: true)
+                }
+                if let worstGame = overview.worstGame {
+                    sessionOutcomeCard("Største tab", detail: worstGame, isWin: false)
                 }
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -1838,8 +2013,13 @@ struct StatistikTabView: View {
                 countDivergingChart(
                     title: "Tabte/vundne spil på dagen",
                     emptyText: "Ingen spilresultater på dagen.",
-                    rows: sessionTotalOutcomeRows(from: overview)
+                    rows: totalOutcomes
                 )
+
+                // #2 – sejrsprocent
+                sessionWinRatePanel(totalOutcomes)
+
+                // #5 – spiltypeoversigt (allerede her)
                 sessionGameTypeIconBarChart(gameTypeSlices(from: overview.gameDetails))
 
                 sessionGamesSection(overview.gameDetails)
@@ -1892,32 +2072,12 @@ struct StatistikTabView: View {
             posterSectionTitle("UDVIKLING")
 
             HStack(spacing: 12) {
-                Chart {
-                    RuleMark(y: .value("Nul", 0))
-                        .foregroundStyle(Color.secondary.opacity(0.20))
-                        .lineStyle(StrokeStyle(lineWidth: 1, lineCap: .round))
-
-                    ForEach(points) { point in
-                        LineMark(
-                            x: .value("Spil", point.gameNumber),
-                            y: .value("Point", point.cumulativeScore),
-                            series: .value("Spiller", point.player.name)
-                        )
-                        .foregroundStyle(historicalPlayerLineColor(point.player).opacity(0.78))
-                        .lineStyle(StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
-                        .interpolationMethod(.catmullRom)
-                    }
-                }
-                .chartXScale(domain: sessionChartXDomain(points))
-                .chartYScale(domain: sessionChartYDomain(points))
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-                .chartLegend(.hidden)
-                .chartPlotStyle { plot in
-                    plot
-                        .padding(.horizontal, 2)
-                        .padding(.vertical, 8)
-                }
+                HistoricalSessionTimelineCanvas(
+                    points: points,
+                    xDomain: sessionChartXDomain(points),
+                    yDomain: sessionChartYDomain(points),
+                    colorForPlayer: { historicalPlayerLineColor($0) }
+                )
                 .frame(height: 136)
 
                 sessionChartLabelColumn(points)
@@ -2060,6 +2220,146 @@ struct StatistikTabView: View {
                 }
             }
         }
+    }
+
+    // MARK: – Afstand til lederen
+    @ViewBuilder
+    private func sessionLeaderGapPanel(_ scores: [HistoricalPlayerGameScore]) -> some View {
+        let sorted = scores.sorted { $0.score > $1.score }
+        if sorted.count > 1, let leader = sorted.first {
+            VStack(alignment: .leading, spacing: 10) {
+                posterSectionTitle("AFSTAND TIL LEDEREN")
+
+                HStack(spacing: 8) {
+                    ForEach(scores.sorted { $0.player.displayOrder < $1.player.displayOrder }) { score in
+                        let gap = score.score - leader.score
+                        let isLeader = gap == 0
+                        VStack(spacing: 2) {
+                            Text(score.player.name.uppercased())
+                                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                                .fontWidth(.compressed)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.62)
+
+                            Text(isLeader ? "LEDER" : scoreText(gap))
+                                .font(.custom(ActiveGamePosterStyle.fontName, size: 28))
+                                .fontWidth(.compressed)
+                                .monospacedDigit()
+                                .foregroundStyle(isLeader ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.58)
+                        }
+                        .padding(.top, 8)
+                        .padding(.horizontal, 5)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 66)
+                        .background {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .fill(ActiveGamePosterStyle.panelColor)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                                .strokeBorder(
+                                    isLeader ? ActiveGamePosterStyle.selectedGreenColor : ActiveGamePosterStyle.borderColor,
+                                    lineWidth: isLeader ? 2 : 1
+                                )
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(isLeader ? "\(score.player.name), fører" : "\(score.player.name), \(scoreText(gap)) fra lederen")
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: – Sejrsprocent
+    @ViewBuilder
+    private func sessionWinRatePanel(_ rows: [SessionBidOutcomeRow]) -> some View {
+        let relevantRows = rows.filter { $0.wins + $0.losses > 0 }
+        if !relevantRows.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Sejrsprocent")
+                    .font(.headline)
+
+                VStack(spacing: 6) {
+                    ForEach(relevantRows) { row in
+                        sessionWinRateChartRow(row)
+                    }
+                }
+            }
+            .padding(16)
+            .background {
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .fill(ActiveGamePosterStyle.panelColor)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+            }
+        }
+    }
+
+    private func sessionWinRateChartRow(_ row: SessionBidOutcomeRow) -> some View {
+        let total = row.wins + row.losses
+        let winPct = total > 0 ? Int((Double(row.wins) / Double(total) * 100).rounded()) : 0
+        let lossPct = 100 - winPct
+        let green = scoreForeground(1)
+        let red = scoreForeground(-1)
+        let barHeight: CGFloat = 13
+        let valueLabelWidth: CGFloat = 34
+        let valueLabelGap: CGFloat = 5
+
+        return HStack(alignment: .center, spacing: 10) {
+            Text(row.player.name)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
+                .fontWidth(.compressed)
+                .fontWeight(.semibold)
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .frame(width: 78, alignment: .leading)
+
+            GeometryReader { geometry in
+                let centerX = geometry.size.width * 0.5
+                let availableSideWidth = max(
+                    18,
+                    min(
+                        centerX - valueLabelWidth - valueLabelGap,
+                        geometry.size.width - centerX - valueLabelWidth - valueLabelGap
+                    )
+                )
+                let winWidth = winPct == 0 ? CGFloat(0) : max(8, availableSideWidth * CGFloat(winPct) / 100.0)
+                let lossWidth = lossPct == 0 ? CGFloat(0) : max(8, availableSideWidth * CGFloat(lossPct) / 100.0)
+
+                ZStack {
+                    Rectangle()
+                        .fill(ActiveGamePosterStyle.borderColor.opacity(0.48))
+                        .frame(width: 1, height: 28)
+                        .position(x: centerX, y: 18)
+
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(red.opacity(row.losses == 0 ? 0.24 : 0.94))
+                        .frame(width: lossWidth, height: barHeight)
+                        .position(x: centerX - lossWidth / 2, y: 18)
+
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(green.opacity(row.wins == 0 ? 0.24 : 0.94))
+                        .frame(width: winWidth, height: barHeight)
+                        .position(x: centerX + winWidth / 2, y: 18)
+
+                    Text("\(winPct)%")
+                        .font(.caption2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(green)
+                        .frame(width: valueLabelWidth, alignment: .leading)
+                        .position(x: centerX + winWidth + valueLabelGap + valueLabelWidth / 2, y: 18)
+                }
+            }
+            .frame(height: 36)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(row.player.name): \(winPct) procent vundne, \(lossPct) procent tabte")
     }
 
     private func posterSectionTitle(_ title: String) -> some View {
@@ -2540,28 +2840,49 @@ struct StatistikTabView: View {
     }
 
     private func gameDetailCard(_ title: String, detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let selectedScore = detail.playerScores.first { $0.player.id == highlightedPlayerId }?.score
+        let bidder = playerNameText(detail.game.bidderId, scores: detail.playerScores)
+
+        return HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("Spil \(detail.game.gameNumberInSession) · \(gameTypeText(detail.game))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                if bidder != "-" {
+                    Text("\(bidder) meldte")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Text(gameSubtitle(detail))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            gameScoreStrip(detail, highlightedPlayerId: highlightedPlayerId)
+            Spacer(minLength: 12)
 
-            VStack(alignment: .leading, spacing: 6) {
-                metricLine("Dato", detail.session.date ?? "-")
-                metricLine("Sted", detail.session.location ?? "-")
-                metricLine("Melding", gameTypeText(detail.game))
-                metricLine("Melder/vinder", playerListText(detail.game.bidderIds, fallback: detail.game.bidderId))
-                metricLine("Makker", detail.game.partnerId ?? "-")
-                metricLine("Giver", detail.game.dealerId ?? "-")
+            VStack(alignment: .trailing, spacing: 4) {
+                if let score = selectedScore {
+                    Text(scoreText(score))
+                        .font(.title3.weight(.bold).monospacedDigit())
+                        .foregroundStyle(scoreForeground(score))
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
         }
         .padding(16)
-        .background(cardBackground)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+        }
     }
 
     private func gameQualityWarning(_ detail: HistoricalGameScoreDetail) -> some View {
@@ -2584,7 +2905,7 @@ struct StatistikTabView: View {
                 .padding(.vertical, 8)
                 .background {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(score.player.id == highlightedPlayerId ? Color.accentColor.opacity(0.16) : Color.primary.opacity(0.04))
+                        .fill(score.player.id == highlightedPlayerId ? ActiveGamePosterStyle.selectedGreenColor.opacity(0.16) : Color.primary.opacity(0.04))
                 }
             }
         }
@@ -2645,8 +2966,6 @@ struct StatistikTabView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-
-            miniMetric(title: "Melder-data", value: "\(overview.gamesWithBidder)")
         }
         .padding(14)
         .background(cardBackground)
@@ -2667,10 +2986,9 @@ struct StatistikTabView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    statTile(title: "Spil", value: "\(overview.games)")
-                    statTile(title: "Resultater", value: "\(overview.playerResultCount)")
-                    statTile(title: "Melder-data", value: "\(overview.gamesWithBidder)")
+                HStack(spacing: 8) {
+                    gameTypeStatTile(title: "SPIL", value: "\(overview.games)")
+                    gameTypeStatTile(title: "RESULTATER", value: "\(overview.playerResultCount)")
                 }
 
                 gameTypePlayerAverageChart(overview.playerAverages)
@@ -2798,7 +3116,12 @@ struct StatistikTabView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(games) { detail in
-                    gameDetailCard("Spil \(detail.game.gameNumberInSession)", detail: detail, highlightedPlayerId: nil)
+                    NavigationLink {
+                        HistoricalGameDetailView(detail: detail, resumeText: gameResumeText(detail))
+                    } label: {
+                        gameDetailCard("Spil \(detail.game.gameNumberInSession)", detail: detail, highlightedPlayerId: nil)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -2864,43 +3187,59 @@ struct StatistikTabView: View {
         }
     }
 
-    private func playerRow(_ summary: HistoricalPlayerScoreSummary) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func playerRow(_ profile: HistoricalPlayerProfile?) -> some View {
+        let summary = profile?.summary
+        let sessionScores = profile?.sessionScores ?? []
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(summary.player.name)
-                        .font(.body.weight(.semibold))
-                    Text("\(summary.gamesPlayed) spil · snit \(averageText(summary.averageScore))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(summary?.player.name ?? "-")
+                    .font(.body.weight(.semibold))
 
                 Spacer(minLength: 10)
 
-                Text(scoreText(summary.totalScore))
-                    .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(scoreForeground(summary.totalScore))
+                if let summary {
+                    Text(scoreText(summary.totalScore))
+                        .font(.title3.weight(.bold).monospacedDigit())
+                        .foregroundStyle(scoreForeground(summary.totalScore))
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                miniMetric(title: "Bedste spil", value: optionalScoreText(summary.bestSingleGame))
-                miniMetric(title: "Værste spil", value: optionalScoreText(summary.worstSingleGame))
-                sessionMetric(title: "Bedste dag", session: summary.bestSession)
-                sessionMetric(title: "Værste dag", session: summary.worstSession)
+            if !sessionScores.isEmpty {
+                Chart {
+                    ForEach(sessionScores) { s in
+                        BarMark(
+                            x: .value("Spilledag", s.sessionIndex),
+                            y: .value("Point", s.score)
+                        )
+                        .foregroundStyle(s.score >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                    }
+                    RuleMark(y: .value("Nul", 0))
+                        .foregroundStyle(Color.secondary.opacity(0.45))
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .chartLegend(.hidden)
+                .frame(height: 56)
+                .accessibilityHidden(true)
             }
         }
         .padding(14)
         .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(summary.player.name), \(scoreText(summary.totalScore)) point, gennemsnit \(averageText(summary.averageScore))"
+            summary.map { "\($0.player.name), \(scoreText($0.totalScore)) point, gennemsnit \(averageText($0.averageScore))" } ?? ""
         )
     }
 
@@ -2920,6 +3259,38 @@ struct StatistikTabView: View {
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(uiColor: .tertiarySystemGroupedBackground))
+        }
+    }
+
+    private func gameTypeStatTile(title: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(title)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                .fontWidth(.compressed)
+                .fontWeight(.semibold)
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+
+            Text(value)
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 36))
+                .fontWidth(.compressed)
+                .monospacedDigit()
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.58)
+        }
+        .padding(.top, 8)
+        .padding(.horizontal, 5)
+        .frame(maxWidth: .infinity)
+        .frame(height: 72)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
         }
     }
 
@@ -2955,6 +3326,57 @@ struct StatistikTabView: View {
         .background {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.primary.opacity(0.04))
+        }
+    }
+
+    @ViewBuilder
+    private func profileTopTile(title: String, score: Int?, subtitle: String?, destination: AnyView?) -> some View {
+        let inner = VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11))
+                    .fontWeight(.semibold)
+                    .fontWidth(.compressed)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.6))
+                Spacer(minLength: 4)
+                if destination != nil {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            Text(optionalScoreText(score))
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 30))
+                .fontWidth(.compressed)
+                .monospacedDigit()
+                .foregroundStyle(score.map(scoreForeground) ?? Color.secondary)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .fill(ActiveGamePosterStyle.panelColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+        }
+
+        if let destination {
+            NavigationLink(destination: destination) {
+                inner
+            }
+            .buttonStyle(.plain)
+        } else {
+            inner
         }
     }
 
@@ -3022,7 +3444,7 @@ struct StatistikTabView: View {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(stat.gameType.capitalized)
+                Text(displayGameTypeName(stat.gameType))
                     .font(.subheadline.weight(.semibold))
             }
 
@@ -3347,6 +3769,21 @@ struct StatistikTabView: View {
         HistoricalGameTypeClassifier.canonicalGameType(for: game)
     }
 
+    private func displayGameTypeName(_ normalized: String) -> String {
+        let lower = normalized.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if lower.contains("ren_sol") || lower.contains("ren sol") { return "Ren sol" }
+        if lower.contains("halv bord") || lower.contains("halv bordlaeg") { return "Halv bordlægger" }
+        if lower.contains("bordl") || lower.contains("bordlaeg") { return "Bordlægger" }
+        if lower.contains("sol") { return "Sol" }
+        if lower.contains("vip") { return "VIP" }
+        if lower.contains("sans") || lower.contains("sang") { return "Sans" }
+        if lower.contains("gode") { return "Gode" }
+        if lower.contains("halve") { return "Halve" }
+        if lower == "alm" || lower.hasPrefix("alm ") || lower == "almindelige" { return "Almindelige" }
+        if lower.contains("duestraf") || lower.contains("duefejl") { return "Duestraf" }
+        return normalized.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+
     private func bidTrickDistribution(from data: HistoricalWhistData) -> [HistoricalBidTrickBucket] {
         let grouped = Dictionary(grouping: data.games.compactMap { game -> Int? in
             guard
@@ -3663,10 +4100,6 @@ struct StatistikTabView: View {
         return (names.isEmpty ? "-" : names, targetScore)
     }
 
-    private func gameTypeOverviews(from data: HistoricalWhistData) -> [HistoricalGameTypeOverview] {
-        HistoricalStatisticsPreparer.gameTypeOverviews(from: data)
-    }
-
     private func scoreText(_ value: Int) -> String {
         if value > 0 { return "+\(value)" }
         return "\(value)"
@@ -3849,39 +4282,132 @@ private struct HistoricalGameDetailView: View {
         }
     }
 
+    private static let thermometerWidth: CGFloat = 14
+    private static let topPanelHeight: CGFloat = 148
+
+    private var outcomeStripColor: Color {
+        if bidderScore > 0 { return ActiveGamePosterStyle.positiveScoreColor }
+        if bidderScore < 0 { return ActiveGamePosterStyle.negativeScoreColor }
+        return ActiveGamePosterStyle.neutralMeterColor
+    }
+
+    private var resultDelta: Int? {
+        guard let bid = detail.game.bidTricks, let actual = detail.game.actualTricksTaken else { return nil }
+        return actual - bid
+    }
+
     private var historicalTopPanel: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: -2) {
-                Text(bidderNameText.uppercased())
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
-                    .fontWidth(.compressed)
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
+        ZStack(alignment: .trailing) {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: -2) {
+                    Text(bidderNameText.uppercased())
+                        .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.58)
 
-                Text("MELDTE")
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
-                    .fontWidth(.compressed)
-                    .foregroundStyle(bidderScore >= 0 ? scoreForeground(1) : scoreForeground(-1))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.58)
+                    Text("MELDTE")
+                        .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(bidderScore >= 0 ? scoreForeground(1) : scoreForeground(-1))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.58)
 
-                Text(posterGameTypeTitle)
-                    .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
-                    .fontWidth(.compressed)
-                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.48)
+                    Text(posterGameTypeTitle)
+                        .font(.custom(ActiveGamePosterStyle.fontName, size: 35))
+                        .fontWidth(.compressed)
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.48)
+                }
+                .padding(.leading, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+
+                posterPrimaryValueWithBadge
+                    .frame(width: 112, height: Self.topPanelHeight)
+
+                Color.clear.frame(width: Self.thermometerWidth)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: Self.topPanelHeight)
 
-            posterPrimaryValue
-                .frame(width: 112, height: 128)
+            thermometerStrip
+                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
         .frame(maxWidth: .infinity)
         .background(cardBackground)
+    }
+
+    private var posterPrimaryValueWithBadge: some View {
+        ZStack(alignment: .topTrailing) {
+            posterPrimaryValue
+
+            if let delta = resultDelta {
+                Text(delta >= 0 ? "+\(delta)" : "\(delta)")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(ActiveGamePosterStyle.contrastTextOnColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 3)
+                    .background {
+                        Capsule().fill(delta >= 0 ? ActiveGamePosterStyle.positiveScoreColor : ActiveGamePosterStyle.negativeScoreColor)
+                    }
+                    .offset(x: 6, y: -4)
+            }
+        }
+    }
+
+    private var thermometerStrip: some View {
+        let bid = detail.game.bidTricks
+        let actual = detail.game.actualTricksTaken
+        let stripColor = outcomeStripColor
+
+        return ZStack(alignment: .bottom) {
+            // Baggrund
+            Rectangle()
+                .fill(stripColor.opacity(0.13))
+
+            if let bidTricks = bid {
+                let bidFraction = CGFloat(max(0, min(13, bidTricks))) / 13.0
+
+                // Bid-niveau
+                Rectangle()
+                    .fill(stripColor)
+                    .frame(height: Self.topPanelHeight * bidFraction)
+
+                // Actual-overlay hvis tilgængeligt
+                if let actualTricks = actual {
+                    let actualFraction = CGFloat(max(0, min(13, actualTricks))) / 13.0
+                    if actualTricks > bidTricks {
+                        Rectangle()
+                            .fill(ActiveGamePosterStyle.positiveScoreColor)
+                            .frame(height: max(0, Self.topPanelHeight * (actualFraction - bidFraction)))
+                            .offset(y: -Self.topPanelHeight * bidFraction)
+                    } else if actualTricks < bidTricks {
+                        // Vis overtaget bid-niveau i rød
+                        Rectangle()
+                            .fill(ActiveGamePosterStyle.negativeScoreColor.opacity(0.55))
+                            .frame(height: max(0, Self.topPanelHeight * (bidFraction - actualFraction)))
+                            .offset(y: 0)
+                    }
+                }
+            } else {
+                // Ingen bidTricks: vis kun farvet stripe
+                Rectangle().fill(stripColor)
+            }
+        }
+        .frame(width: Self.thermometerWidth, height: Self.topPanelHeight)
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: ActiveGamePosterStyle.cornerRadius,
+                topTrailingRadius: ActiveGamePosterStyle.cornerRadius
+            )
+        )
     }
 
     @ViewBuilder
@@ -4259,6 +4785,72 @@ private struct HistoricalTimelineCanvas: View {
                 context.stroke(
                     path,
                     with: .color(colorForPlayer(first.playerName).opacity(0.78)),
+                    style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round)
+                )
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+private struct HistoricalSessionTimelineCanvas: View {
+    let points: [HistoricalSessionProgressPoint]
+    let xDomain: ClosedRange<Int>
+    let yDomain: ClosedRange<Int>
+    let colorForPlayer: (HistoricalPlayer) -> Color
+
+    var body: some View {
+        Canvas { context, size in
+            let xSpan = max(1, xDomain.upperBound - xDomain.lowerBound)
+            let ySpan = max(1, yDomain.upperBound - yDomain.lowerBound)
+            let plotRect = CGRect(
+                x: 2,
+                y: 8,
+                width: max(1, size.width - 4),
+                height: max(1, size.height - 16)
+            )
+
+            let yForScore: (Int) -> CGFloat = { score in
+                let fraction = CGFloat(Double(yDomain.upperBound - score) / Double(ySpan))
+                return plotRect.minY + fraction * plotRect.height
+            }
+
+            if yDomain.contains(0) {
+                var zeroPath = Path()
+                let y = yForScore(0)
+                zeroPath.move(to: CGPoint(x: plotRect.minX, y: y))
+                zeroPath.addLine(to: CGPoint(x: plotRect.maxX, y: y))
+                context.stroke(
+                    zeroPath,
+                    with: .color(.secondary.opacity(0.20)),
+                    style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                )
+            }
+
+            let grouped = Dictionary(grouping: points, by: \.player.id)
+            for values in grouped.values {
+                let ordered = values.sorted { lhs, rhs in
+                    lhs.gameNumber < rhs.gameNumber
+                }
+                guard let first = ordered.first else { continue }
+
+                var path = Path()
+                for (index, point) in ordered.enumerated() {
+                    let xFraction = CGFloat(Double(point.gameNumber - xDomain.lowerBound) / Double(xSpan))
+                    let coordinate = CGPoint(
+                        x: plotRect.minX + xFraction * plotRect.width,
+                        y: yForScore(point.cumulativeScore)
+                    )
+                    if index == 0 {
+                        path.move(to: coordinate)
+                    } else {
+                        path.addLine(to: coordinate)
+                    }
+                }
+
+                context.stroke(
+                    path,
+                    with: .color(colorForPlayer(first.player).opacity(0.78)),
                     style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round)
                 )
             }

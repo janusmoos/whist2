@@ -59,6 +59,8 @@ struct HistoricalGame: Codable, Equatable, Identifiable {
     var gameTypeRaw: String?
     var gameTypeNormalized: String?
     var bidTricks: Int?
+    /// Faktisk antal stik hjemtaget (kun tilgængeligt for live-data parseret fra resumeCaption).
+    var actualTricksTaken: Int?
     var bidderId: String?
     var bidderIds: [String]
     var winnerId: String?

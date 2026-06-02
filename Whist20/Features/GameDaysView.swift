@@ -10,7 +10,6 @@ struct GameDaysView: View {
 
     @State private var showResumeBlocked = false
     @State private var showNeedsEndActiveFirst = false
-    @State private var showEndGameDayConfirm = false
 
     private var activeGameDay: GameDay? {
         GameDay.activeDay(in: gameDays)
@@ -23,53 +22,33 @@ struct GameDaysView: View {
     var body: some View {
         Group {
             if gameDays.isEmpty {
-                VStack(spacing: 18) {
-                    ContentUnavailableView(
-                        "Ingen spilledage endnu",
-                        systemImage: "calendar",
-                        description: Text("Spilledage gemmes på enheden.")
-                    )
-
-                    Button(action: requestNewGameDay) {
-                        Label("Start ny spilledag", systemImage: "calendar.badge.plus")
-                            .font(.headline)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                }
-                .padding(.horizontal, 24)
+                emptyState
             } else {
                 List {
-                    Section {
-                        topActionCard
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 12, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                    if activeGameDay == nil {
+                        newGameDayButtonRow
                     }
 
                     if let activeGameDay {
-                        sectionTitle("Denne spilledag")
-
-                        Section {
-                            gameDayRow(activeGameDay)
-                        }
+                        sectionHeader("Denne spilledag")
+                        gameDayRow(activeGameDay)
                     }
 
                     if !finishedGameDays.isEmpty {
-                        sectionTitle("Alle afsluttede spilledage")
-
-                        Section {
-                            ForEach(finishedGameDays, id: \.id) { day in
-                                gameDayRow(day)
-                            }
-                            .onDelete(perform: deleteFinishedDays)
+                        sectionHeader("Afsluttede spilledage")
+                        ForEach(finishedGameDays, id: \.id) { day in
+                            gameDayRow(day)
                         }
+                        .onDelete(perform: deleteFinishedDays)
                     }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color(uiColor: .systemGroupedBackground))
             }
         }
         .navigationTitle("Spilledage")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .alert("Kan ikke genoptage", isPresented: $showResumeBlocked) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -80,102 +59,107 @@ struct GameDaysView: View {
         } message: {
             Text("Der er allerede en aktiv spilledag. Afslut den her på Spilledage, før I opretter en ny.")
         }
-        .alert("Afslut spilledag?", isPresented: $showEndGameDayConfirm) {
-            Button("Annuller", role: .cancel) {}
-            Button("Afslut", role: .destructive) {
-                activeGameDay?.close(modelContext: modelContext)
-            }
-        } message: {
-            Text(
-                GameDaySessionDialogs.endGameDayMessage(
-                    hasPendingHand: activeGameDay?.pendingHand != nil
-                )
+    }
+
+    // MARK: - Empty state
+
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            ContentUnavailableView(
+                "Ingen spilledage endnu",
+                systemImage: "calendar",
+                description: Text("Spilledage gemmes på enheden.")
             )
+            Button(action: requestNewGameDay) {
+                GameDayPrimaryButtonLabel(title: "Start ny spilledag", systemImage: "calendar.badge.plus")
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 24)
         }
     }
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.custom(ActiveGamePosterStyle.fontName, size: 32))
-            .fontWidth(.compressed)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+    // MARK: - Listelementer
+
+    private var newGameDayButtonRow: some View {
+        Button(action: requestNewGameDay) {
+            GameDayPrimaryButtonLabel(title: "Start ny spilledag", systemImage: "calendar.badge.plus")
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.custom(ActiveGamePosterStyle.fontName, size: 22))
+            .foregroundStyle(ActiveGamePosterStyle.sectionHeaderColor)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 20, leading: 20, bottom: 4, trailing: 16))
     }
 
     private func gameDayRow(_ day: GameDay) -> some View {
-        /// Samme `NavigationPath` som forsiden — undgår kæde af implicitte `destination:`-lag.
         NavigationLink(value: day.isActive ? HomeRoute.editGameDay(day.id) : HomeRoute.gameDay(day.id, openAddHand: false)) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(day.title)
-                        .font(.headline)
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15).weight(.semibold))
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
                     Text(day.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
+                        .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.5))
                 }
+
                 Spacer(minLength: 8)
                 statusBadge(for: day)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .background(ActiveGamePosterStyle.panelColor)
+            .clipShape(RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: ActiveGamePosterStyle.cornerRadius, style: .continuous)
+                    .strokeBorder(ActiveGamePosterStyle.borderColor, lineWidth: 1)
+            }
         }
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if !day.isActive, GameDay.activeDay(in: gameDays) == nil {
-                Button {
-                    resume(day)
-                } label: {
+                Button { resume(day) } label: {
                     Label("Genoptag", systemImage: "arrow.uturn.backward.circle.fill")
                 }
-                .tint(.indigo)
+                .tint(ActiveGamePosterStyle.selectedGreenColor)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var topActionCard: some View {
-        if activeGameDay != nil {
-            Button {
-                showEndGameDayConfirm = true
-            } label: {
-                Text("Afslut denne spilledag")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(.orange)
-        } else {
-            Button(action: requestNewGameDay) {
-                Label("Start ny spilledag", systemImage: "calendar.badge.plus")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(.accentColor)
         }
     }
 
     @ViewBuilder
     private func statusBadge(for day: GameDay) -> some View {
         if day.isActive {
-            Text("Aktiv")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(ActiveGamePosterStyle.positiveScoreColor.opacity(0.24))
-                .clipShape(Capsule())
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(ActiveGamePosterStyle.selectedGreenColor)
+                    .frame(width: 6, height: 6)
+                Text("Aktiv")
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 11).weight(.semibold))
+                    .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(ActiveGamePosterStyle.selectedGreenColor.opacity(0.12))
+            .clipShape(Capsule())
         } else {
-            Text("Afsluttet")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+            Text("\(day.hands.count) spil")
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.4))
         }
     }
+
+    // MARK: - Actions
 
     private func requestNewGameDay() {
         guard activeGameDay == nil else {

@@ -23,6 +23,133 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(legacy.games.count, 744)
     }
 
+    func testLiveAdapterAppendsRecordedHandsAsHistoricalSession() {
+        let historicalData = makeMinimalHistoricalData()
+        let dayId = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let handId = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+        let snapshot = LiveStatisticsGameDaySnapshot(
+            id: dayId,
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000),
+            title: "Live testdag",
+            endedAt: nil,
+            seatOrder: [.north, .east, .south, .west],
+            hands: [
+                LiveStatisticsHandSnapshot(
+                    id: handId,
+                    playedAt: Date(timeIntervalSince1970: 1_800_000_060),
+                    kindRaw: "normal",
+                    scoresBySeat: [.north: 10, .east: -10, .south: 5, .west: -5],
+                    bidderSeat: .north,
+                    partnerSeat: .south,
+                    handNumber: 1,
+                    resumeCaption: ""
+                ),
+            ],
+            hasPendingHand: false
+        )
+
+        let combined = LiveHistoricalStatisticsAdapter.combinedData(
+            historicalData: historicalData,
+            liveSnapshots: [snapshot]
+        )
+        let liveSession = combined.sessions.last
+        let liveGame = combined.games.last
+        let liveResults = combined.playerResults.filter { $0.gameId == liveGame?.id }
+
+        XCTAssertEqual(combined.sessions.count, historicalData.sessions.count + 1)
+        XCTAssertEqual(liveSession?.id, "live-\(dayId.uuidString.lowercased())")
+        XCTAssertEqual(liveSession?.sessionNumber, "2")
+        XCTAssertEqual(liveSession?.importedGameCount, 1)
+        XCTAssertEqual(liveGame?.gameTypeNormalized, "Almindelige")
+        XCTAssertEqual(liveGame?.bidderId, "Christian")
+        XCTAssertEqual(liveGame?.partnerId, "Thomas")
+        XCTAssertEqual(liveGame?.dealerId, "Christian")
+        XCTAssertEqual(liveGame?.checksum, 0)
+        XCTAssertEqual(liveResults.count, 4)
+        XCTAssertEqual(liveResults.first { $0.playerId == "Christian" }?.score, 10)
+        XCTAssertEqual(liveResults.first { $0.playerId == "Janus" }?.score, -5)
+    }
+
+    func testLiveAdapterUpdatesEngineTotalsAndCurrentSession() {
+        let historicalData = makeMinimalHistoricalData()
+        let snapshot = LiveStatisticsGameDaySnapshot(
+            id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000),
+            title: "Live testdag",
+            endedAt: nil,
+            seatOrder: [.north, .east, .south, .west],
+            hands: [
+                LiveStatisticsHandSnapshot(
+                    id: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!,
+                    playedAt: Date(timeIntervalSince1970: 1_800_000_060),
+                    kindRaw: "sol",
+                    scoresBySeat: [.north: 12, .east: -4, .south: -4, .west: -4],
+                    bidderSeat: .north,
+                    partnerSeat: nil,
+                    handNumber: 1,
+                    resumeCaption: ""
+                ),
+            ],
+            hasPendingHand: false
+        )
+
+        let model = HistoricalStatisticsPreparer.prepareHubModel(
+            historicalData: historicalData,
+            liveSnapshots: [snapshot]
+        )
+        let christian = model.allSnapshot.playerSummaries.first { $0.player.id == "Christian" }
+        let currentOverview = model.currentOverview
+
+        XCTAssertEqual(model.allSnapshot.sessionCount, 2)
+        XCTAssertEqual(model.allSnapshot.gameCount, 2)
+        XCTAssertEqual(christian?.totalScore, 11)
+        XCTAssertEqual(currentOverview?.session.sourceSheetName, "SwiftData")
+        XCTAssertEqual(currentOverview?.gamesPlayed, 1)
+        XCTAssertEqual(currentOverview?.playerTotals.first { $0.player.id == "Christian" }?.score, 12)
+    }
+
+    func testPreparedHubModelCachesDestinationStatistics() {
+        let historicalData = makeMinimalHistoricalData()
+
+        let model = HistoricalStatisticsPreparer.prepareHubModel(historicalData: historicalData)
+        let allKey = HistoricalStatisticsScopeCacheKey(scope: .all, recentLimit: 10)
+        let currentKey = HistoricalStatisticsScopeCacheKey(scope: .current, recentLimit: 10)
+
+        XCTAssertEqual(model.sessionOverviews, HistoricalStatisticsEngine.sessionOverviews(from: historicalData))
+        XCTAssertEqual(model.playerSessionScores, HistoricalStatisticsEngine.playerSessionScores(from: historicalData))
+        XCTAssertEqual(model.playerProfiles, HistoricalStatisticsEngine.playerProfiles(from: historicalData))
+        XCTAssertEqual(model.playerSummaries, HistoricalStatisticsEngine.playerScoreSummaries(from: historicalData))
+        let expectedGameTypes = HistoricalStatisticsPreparer.gameTypeOverviews(from: historicalData)
+        XCTAssertEqual(model.gameTypeOverviews.map(\.id), expectedGameTypes.map(\.id))
+        XCTAssertEqual(model.gameTypeOverviews.map(\.games), expectedGameTypes.map(\.games))
+        XCTAssertEqual(model.snapshotsByScope[allKey], model.allSnapshot)
+        XCTAssertEqual(model.scopedDataByScope[currentKey]?.sessions.count, 1)
+        XCTAssertEqual(model.playerTrendSummariesByScope[allKey], HistoricalStatisticsEngine.playerTrendSummaries(from: historicalData))
+        XCTAssertEqual(model.gameTypeTrendSummariesByScope[allKey], HistoricalStatisticsEngine.gameTypeTrendSummaries(from: historicalData))
+    }
+
+    func testLiveAdapterIgnoresPendingOnlyGameDays() {
+        let historicalData = makeMinimalHistoricalData()
+        let snapshot = LiveStatisticsGameDaySnapshot(
+            id: UUID(uuidString: "55555555-5555-5555-5555-555555555555")!,
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000),
+            title: "Kladde uden gemte spil",
+            endedAt: nil,
+            seatOrder: [.north, .east, .south, .west],
+            hands: [],
+            hasPendingHand: true
+        )
+
+        let combined = LiveHistoricalStatisticsAdapter.combinedData(
+            historicalData: historicalData,
+            liveSnapshots: [snapshot]
+        )
+
+        XCTAssertEqual(combined.sessions, historicalData.sessions)
+        XCTAssertEqual(combined.games, historicalData.games)
+        XCTAssertEqual(combined.playerResults, historicalData.playerResults)
+    }
+
     func testDecodesHistoricalDataShape() throws {
         let json = """
         {
@@ -841,5 +968,66 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
                 score: value.1
             )
         }
+    }
+
+    private func makeMinimalHistoricalData() -> HistoricalWhistData {
+        HistoricalWhistData(
+            version: "test",
+            generatedAt: "now",
+            players: [
+                HistoricalPlayer(id: "Thomas", name: "Thomas", displayOrder: 1, isActive: true),
+                HistoricalPlayer(id: "Peter", name: "Peter", displayOrder: 2, isActive: true),
+                HistoricalPlayer(id: "Janus", name: "Janus", displayOrder: 3, isActive: true),
+                HistoricalPlayer(id: "Christian", name: "Christian", displayOrder: 4, isActive: true),
+            ],
+            sessions: [
+                HistoricalSession(
+                    id: "s1",
+                    sessionNumber: "1",
+                    date: "2026-05-01",
+                    location: nil,
+                    sourceSheetName: "01",
+                    expectedGameCount: 1,
+                    importedGameCount: 1,
+                    missingScoreRows: 0,
+                    qualityStatus: "ok",
+                    cumulativeBlockStartColumn: nil,
+                    deltaBlockStartColumn: nil,
+                    preferredScoreBlockNumericRows: nil,
+                    headerRow: nil,
+                    columnMapping: nil
+                ),
+            ],
+            games: [
+                HistoricalGame(
+                    id: "g1",
+                    sessionId: "s1",
+                    sessionNumber: "1",
+                    gameNumberInSession: 1,
+                    sourceGameMarker: 1,
+                    gameTypeRaw: "Almindelige",
+                    gameTypeNormalized: "Almindelige",
+                    bidTricks: nil,
+                    bidderId: "Thomas",
+                    bidderIds: ["Thomas"],
+                    winnerId: nil,
+                    winnerIds: [],
+                    partnerId: "Peter",
+                    dealerId: "Thomas",
+                    checksum: 0,
+                    scoreSource: "test",
+                    sourceSheetName: "01",
+                    sourceRow: 1,
+                    qualityFlags: []
+                ),
+            ],
+            playerResults: [
+                HistoricalPlayerResult(id: "g1-Thomas", gameId: "g1", playerId: "Thomas", score: 1, sourceSheetName: "01", sourceRow: 1),
+                HistoricalPlayerResult(id: "g1-Peter", gameId: "g1", playerId: "Peter", score: -1, sourceSheetName: "01", sourceRow: 1),
+                HistoricalPlayerResult(id: "g1-Janus", gameId: "g1", playerId: "Janus", score: 1, sourceSheetName: "01", sourceRow: 1),
+                HistoricalPlayerResult(id: "g1-Christian", gameId: "g1", playerId: "Christian", score: -1, sourceSheetName: "01", sourceRow: 1),
+            ],
+            auditSummary: nil
+        )
     }
 }

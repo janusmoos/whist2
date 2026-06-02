@@ -45,6 +45,8 @@ struct ContentView: View {
     @State private var toastMessage: String?
     @State private var toastWorkItem: DispatchWorkItem?
     @StateObject private var statisticsStore = HistoricalStatisticsStore()
+    @State private var statisticsShowCurrentDay = false
+    @State private var statisticsOpenedFromHome = false
     /// Reserverer plads til den faste bundmenu (`MainTabBar`). Måles ved layout — med ekstra luft,
     /// så sidste indhold kan scrolles fri af det hævede midterkort.
     @State private var mainTabBarOverlapHeight: CGFloat = 62
@@ -62,7 +64,18 @@ struct ContentView: View {
         Group {
             switch selectedTab {
             case .home:
-                HomeView(navigationPath: $homeNavigationPath)
+                HomeView(
+                    navigationPath: $homeNavigationPath,
+                    onGoToStilling: {
+                        statisticsShowCurrentDay = true
+                        selectedTab = .statistics
+                    },
+                    onGoToStatistik: {
+                        statisticsShowCurrentDay = false
+                        statisticsOpenedFromHome = true
+                        selectedTab = .statistics
+                    }
+                )
             case .recentGames:
                 NavigationStack {
                     SenesteSpilView {
@@ -74,7 +87,15 @@ struct ContentView: View {
             case .activeGames:
                 ActiveSpilTabView(openMeldingSheet: openMeldingSheet)
             case .statistics:
-                StatistikTabView(store: statisticsStore)
+                StatistikTabView(
+                    store: statisticsStore,
+                    gameDays: gameDays,
+                    showCurrentDay: $statisticsShowCurrentDay,
+                    dismissFromHome: statisticsOpenedFromHome ? {
+                        statisticsOpenedFromHome = false
+                        selectedTab = .home
+                    } : nil
+                )
             }
         }
         .padding(.bottom, mainTabBarOverlapHeight + mainTabBarExtraContentClearance)
@@ -105,6 +126,11 @@ struct ContentView: View {
         .onPreferenceChange(MainTabBarMeasuredHeightKey.self) { height in
             if height > 1 {
                 mainTabBarOverlapHeight = height
+            }
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab != .statistics {
+                statisticsOpenedFromHome = false
             }
         }
         .sheet(isPresented: $showAddHandSheet) {
