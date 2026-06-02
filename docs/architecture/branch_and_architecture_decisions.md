@@ -22,6 +22,7 @@ Sidst opdateret: 2026-05-31
 |---|---|---|
 | `main` / `origin/main` | Aktiv hovedlinje ved `0467cfa` | Indeholder design-snapshot, performance-snapshot, Dark Mode og branch-arkitekturlog. Dette er den aktuelle sandhed. |
 | `codex/live-statistics-integration` | Aktiv arbejdsbranch | Integrerer data fra live spil i hele statistik-modulet. Oprettet fra `main` ved `0467cfa`. |
+| `codex/web-live-overblik-plan` | Aktiv planbranch | Planlægger web/live-overblik, API-kontrakt, deployment og performancekrav oven på den aktuelle design/live-statistiklinje. |
 | `codex/dark-mode` | Merged til `main`, lokal reference | Kan slettes senere, men kan beholdes kort som reference til Dark Mode-arbejdet. |
 | `codex/performance-refactor-plan` | Parkeret snapshot ved `faf457a` | Reference for performance-refaktoren: statistik-preparer/store og reduceret autosave i meldingsflow. |
 | `codex/design-experiments` | Parkeret snapshot ved `987abe3` | Reference for plakatdesign, typografi og statistik/design-eksperimenter. |
@@ -122,6 +123,7 @@ Beslutning:
 | 2026-05-31 | Skin/1980-sporet holdes separat | Det er et produkt/designspor med egen skin-environment og mange lokale farver; kræver modernisering mod Dark Mode tokens. | Kodegennemgang af `WhistSkin`, `HomeSkin1980Views` og gammel `HomeView`. |
 | 2026-05-31 | Ingen ny integrationsbranch oprettes nu | Der er ingen moden ændring at integrere efter auditten. | `main` forblev rent. |
 | 2026-05-31 | `codex/live-statistics-integration` oprettes | Live spil-data skal integreres i hele statistik-modulet som et nyt samlet arkitekturspor oven på `main`. | Branch oprettet fra ren `main` ved `0467cfa`. |
+| 2026-06-02 | `codex/web-live-overblik-plan` oprettes | Web/live-overblik berører app-sync, API, web-UI, deployment, sikkerhed og performance og bør derfor planlægges separat før kodeændringer. | Branch oprettet fra opdateret `main` ved `e354915`, efter merge af `cursor/design-adjustments`; dokumentation tilføjet uden produktkodeændringer. |
 
 ## Aktivt arkitekturspor: live spil i statistik
 
@@ -171,5 +173,6 @@ Kandidater til senere oprydning, når projektet er trygt ved `main`:
 - `TECHNICAL_HANDOFF.md` - teknisk opstart og arkitekturkort
 - `docs/performance/statistik-arkitektur-og-live-integration.md` - performance- og statistikarkitektur
 - `docs/statistik/live_statistics_integration_architecture.md` - konkret inputkort og målarkitektur for live-statistik
+- `docs/statistik/web_live_overblik_og_statistik_plan.md` - plan for web/live-overblik, app-integration, API og performancekrav
 - `docs/statistik/historisk_data_reproducerbarhed_og_versionsstyring.md` - datareproducerbarhed
 - `docs/statistik/data_audit_2026-05-26.md` - v3 data-audit
