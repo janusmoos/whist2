@@ -291,6 +291,26 @@ main {
   line-height: 1.4;
 }
 
+/* ── Sektionsoverskrifter ── */
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin: 0 0 0.75rem;
+}
+
+.section--below {
+  margin-top: 2rem;
+}
+
+.section--below .section-heading {
+  color: var(--muted);
+}
+
 /* ── Ingen sessioner ── */
 
 .empty {
