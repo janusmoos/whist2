@@ -1,10 +1,37 @@
 "use client";
 
+import { DonutChart } from "@/components/stats/charts/StatsCharts";
 import { StatsPageShell } from "@/components/stats/StatsPageShell";
 import { useClubStats } from "@/hooks/useClubStats";
 
 export function DataQualityStatsView() {
   const { model, error, loading } = useClubStats();
+
+  const qualityDonut =
+    model != null
+      ? [
+          {
+            label: "Nul-sum spil",
+            value: model.dataQuality.zeroSumGameCount,
+            color: "var(--green)",
+          },
+          {
+            label: "Spil med flag",
+            value: model.dataQuality.gamesWithQualityFlags,
+            color: "var(--stale-text)",
+          },
+          {
+            label: "Øvrige spil",
+            value: Math.max(
+              0,
+              model.dataQuality.gameCount -
+                model.dataQuality.zeroSumGameCount -
+                model.dataQuality.gamesWithQualityFlags
+            ),
+            color: "var(--muted)",
+          },
+        ].filter((s) => s.value > 0)
+      : [];
 
   return (
     <StatsPageShell
@@ -19,6 +46,10 @@ export function DataQualityStatsView() {
       {loading && !model ? <p className="stats-loading">Indlæser…</p> : null}
       {model ? (
         <div className="stats-quality">
+          <section className="stats-panel">
+            <DonutChart title="Spilkvalitet" slices={qualityDonut} />
+          </section>
+
           <dl className="stats-quality-metrics">
             <div>
               <dt>Dataversion</dt>
@@ -50,7 +81,7 @@ export function DataQualityStatsView() {
             </div>
           </dl>
 
-          <section>
+          <section className="stats-panel">
             <h3 className="stats-section-title">Hyppigste kvalitets-flag</h3>
             {model.dataQuality.topQualityFlags.length === 0 ? (
               <p className="stats-empty">Ingen kvalitets-flag registreret.</p>

@@ -1,16 +1,28 @@
 "use client";
 
+import Link from "next/link";
+import { DonutChart } from "@/components/stats/charts/StatsCharts";
+import { GameTypeIconBarChart } from "@/components/stats/charts/GameTypeIconBarChart";
+import { GameTypeCell } from "@/components/stats/GameTypeCell";
+import { GameTypePlayerTable } from "@/components/stats/PlayerBreakdownTable";
 import { StatsPageShell } from "@/components/stats/StatsPageShell";
-import { formatAverage, scoreClass, scoreLabel } from "@/lib/stats/format";
+import { gameTypePath } from "@/lib/stats/paths";
+import { gameTypeIconKindFromLabel } from "@/lib/stats/gameTypeIcons";
 import { useClubStats } from "@/hooks/useClubStats";
 
 export function GameTypesStatsView() {
   const { model, error, loading } = useClubStats();
 
+  const overviewDonut =
+    model?.gameTypes.map((row) => ({
+      label: row.gameType,
+      value: row.games,
+    })) ?? [];
+
   return (
     <StatsPageShell
       title="Spiltyper"
-      lead="Fordeling og point pr. spiltype med tydelig sample size."
+      lead="Fordeling og point pr. spiltype — tryk for detaljer."
     >
       {error ? (
         <div className="banner" role="alert">
@@ -19,42 +31,52 @@ export function GameTypesStatsView() {
       ) : null}
       {loading && !model ? <p className="stats-loading">Indlæser…</p> : null}
       {model ? (
-        <div className="stats-list">
-          {model.gameTypes.map((row) => (
-            <article key={row.gameType} className="stats-gametype-card">
-              <header className="stats-gametype-head">
-                <h3 className="stats-gametype-title">{row.gameType}</h3>
-                <span className="stats-gametype-count">{row.games} spil i alt</span>
-              </header>
-              <div className="stats-gametype-table-wrap">
-                <table className="stats-gametype-table">
-                  <thead>
-                    <tr>
-                      <th>Spiller</th>
-                      <th>Spil</th>
-                      <th>Snit</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {row.playerTotals.map((p) => (
-                      <tr key={p.player.id}>
-                        <td>{p.player.name}</td>
-                        <td>{p.games}</td>
-                        <td className={scoreClass(Math.round(p.averageScore))}>
-                          {p.games > 0 ? formatAverage(p.averageScore) : "—"}
-                        </td>
-                        <td className={scoreClass(p.totalScore)}>
-                          {scoreLabel(p.totalScore)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          ))}
-        </div>
+        <>
+          <section className="stats-panel">
+            <DonutChart title="Antal spil pr. type" slices={overviewDonut} />
+          </section>
+
+          <section className="stats-panel">
+            <GameTypeIconBarChart
+              title="Spil pr. type"
+              slices={model.gameTypes.map((row) => ({
+                title: row.gameType,
+                count: row.games,
+                iconKind: gameTypeIconKindFromLabel(row.gameType),
+              }))}
+            />
+          </section>
+
+          <div className="stats-list">
+            {model.gameTypes.map((row) => (
+              <Link
+                key={row.gameType}
+                href={gameTypePath(row.gameType)}
+                className="stats-gametype-card stats-gametype-card--link"
+              >
+                <header className="stats-gametype-head">
+                  <h3 className="stats-gametype-title">
+                    <GameTypeCell
+                      label={row.gameType}
+                      iconKind={gameTypeIconKindFromLabel(row.gameType)}
+                      showLabel
+                    />
+                  </h3>
+                  <span className="stats-gametype-count">{row.games} spil →</span>
+                </header>
+                <GameTypePlayerTable
+                  rows={row.playerTotals.map((p) => ({
+                    playerId: p.player.id,
+                    name: p.player.name,
+                    games: p.games,
+                    averageScore: p.averageScore,
+                    totalScore: p.totalScore,
+                  }))}
+                />
+              </Link>
+            ))}
+          </div>
+        </>
       ) : null}
     </StatsPageShell>
   );

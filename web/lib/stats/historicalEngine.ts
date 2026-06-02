@@ -9,8 +9,20 @@ import type {
   PlayerScoreSummary,
   PlayerSessionScore,
   ScoreTimelinePoint,
+  ScopedTimeline,
   SessionOverview,
 } from "@/lib/stats/historicalTypes";
+import {
+  buildGameIndex,
+  buildHeatmap,
+  buildPlayerProfiles,
+  buildRankDistribution,
+  buildSessionDayOutcomes,
+  buildSessionDetails,
+  enrichPlayerSummaries,
+} from "@/lib/stats/historicalDetails";
+import { canonicalGameType } from "@/lib/stats/gameTypeClassifier";
+import { buildAllPlayerHeatmaps } from "@/lib/stats/playerGameTypeStats";
 
 function sortedPlayers(players: HistoricalPlayer[]): HistoricalPlayer[] {
   return [...players].sort((a, b) => {
@@ -138,6 +150,10 @@ export function playerScoreSummaries(data: HistoricalWhistData): PlayerScoreSumm
         averageScore: count > 0 ? total / count : 0,
         bestSingleGame: scores.length ? Math.max(...scores) : null,
         worstSingleGame: scores.length ? Math.min(...scores) : null,
+        bestSessionIndex: null,
+        bestSessionScore: null,
+        worstSessionIndex: null,
+        worstSessionScore: null,
       };
     })
     .sort((a, b) => {
@@ -192,7 +208,8 @@ export function gameTypeOverviews(data: HistoricalWhistData): GameTypeOverview[]
   >();
 
   for (const game of data.games) {
-    const type = game.gameTypeNormalized?.trim() || "Ukendt";
+    const type = canonicalGameType(game);
+    if (!type) continue;
     if (!buckets.has(type)) {
       buckets.set(type, { gameIds: new Set(), players: new Map() });
     }
@@ -202,7 +219,8 @@ export function gameTypeOverviews(data: HistoricalWhistData): GameTypeOverview[]
   for (const result of data.playerResults) {
     const game = gameById.get(result.gameId);
     if (!game) continue;
-    const type = game.gameTypeNormalized?.trim() || "Ukendt";
+    const type = canonicalGameType(game);
+    if (!type) continue;
     const bucket = buckets.get(type);
     if (!bucket) continue;
     const cur = bucket.players.get(result.playerId) ?? { games: 0, totalScore: 0 };
@@ -242,7 +260,10 @@ function filterRecentSessions(
 
 export function buildClubStatsModel(data: HistoricalWhistData): ClubStatsModel {
   const recentLimit = 10;
-  const summaries = playerScoreSummaries(data);
+  const sessionScoresByPlayer = playerSessionScores(data);
+  const baseSummaries = playerScoreSummaries(data);
+  const summaries = enrichPlayerSummaries(baseSummaries, sessionScoresByPlayer);
+  const sessionDetails = buildSessionDetails(data);
   const issueCount = gameDetailsIssueCount(data);
   const zeroSumGameCount =
     data.auditSummary?.fieldCounts?.scoreSumZero ??
@@ -266,14 +287,44 @@ export function buildClubStatsModel(data: HistoricalWhistData): ClubStatsModel {
     timelinePoints: scoreTimeline(data),
   };
 
+  const recentData = filterRecentSessions(data, recentLimit);
+  const scopedTimelines: ScopedTimeline[] = [
+    {
+      scope: "all",
+      recentLimit,
+      timelinePoints: scoreTimeline(data),
+      playerSummaries: summaries,
+    },
+    {
+      scope: "recent",
+      recentLimit,
+      timelinePoints: scoreTimeline(recentData),
+      playerSummaries: enrichPlayerSummaries(
+        playerScoreSummaries(recentData),
+        playerSessionScores(recentData)
+      ),
+    },
+  ];
+
   return {
     hub,
     sessions: sessionOverviews(data),
+    sessionDetails,
+    playerProfiles: buildPlayerProfiles(data, summaries, sessionScoresByPlayer),
+    games: buildGameIndex(data, sessionDetails),
+    heatmap: buildHeatmap(sessionDetails),
+    rankDistribution: buildRankDistribution(sessionDetails),
+    sessionDayOutcomes: buildSessionDayOutcomes(sessionDetails, sortedPlayers(data.players)),
     gameTypes: gameTypeOverviews(data),
+    playerHeatmaps: buildAllPlayerHeatmaps(data),
     trends: {
       recentSessionLimit: recentLimit,
       all: summaries,
-      recent: playerScoreSummaries(filterRecentSessions(data, recentLimit)),
+      recent: enrichPlayerSummaries(
+        playerScoreSummaries(recentData),
+        playerSessionScores(recentData)
+      ),
+      scopedTimelines,
     },
     dataQuality: {
       generatedAt: data.generatedAt,
@@ -283,6 +334,7 @@ export function buildClubStatsModel(data: HistoricalWhistData): ClubStatsModel {
       playerResultCount: data.playerResults.length,
       zeroSumGameCount,
       gamesWithQualityFlags: gamesWithIssues(data.games),
+      gamesWithIssues: issueCount,
       topQualityFlags: [...flagCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, 12)

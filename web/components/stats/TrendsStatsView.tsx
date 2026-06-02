@@ -1,12 +1,28 @@
 "use client";
 
+import { useState } from "react";
+import { PlayerBreakdownTable } from "@/components/stats/PlayerBreakdownTable";
+import { PlayerLinesChart } from "@/components/stats/PlayerLinesChart";
 import { StatsPageShell } from "@/components/stats/StatsPageShell";
-import { scoreClass, scoreLabel } from "@/lib/stats/format";
 import { useClubStats } from "@/hooks/useClubStats";
 
 export function TrendsStatsView() {
   const { model, error, loading } = useClubStats();
   const limit = model?.trends.recentSessionLimit ?? 10;
+  const [scope, setScope] = useState<"all" | "recent">("all");
+
+  const scoped = model?.trends.scopedTimelines.find((t) => t.scope === scope);
+  const tableRows = scope === "all" ? model?.trends.all : model?.trends.recent;
+
+  const series =
+    scoped?.playerSummaries.map((summary, i) => ({
+      id: summary.player.id,
+      name: summary.player.name,
+      colorIndex: i,
+      points: scoped.timelinePoints
+        .filter((p) => p.playerId === summary.player.id)
+        .map((p) => ({ x: p.sessionIndex, y: p.cumulativeScore })),
+    })) ?? [];
 
   return (
     <StatsPageShell
@@ -21,56 +37,54 @@ export function TrendsStatsView() {
       {loading && !model ? <p className="stats-loading">Indlæser…</p> : null}
       {model ? (
         <div className="stats-trends">
-          <section className="stats-trends-block">
-            <h3 className="stats-section-title">Alle spilledage</h3>
-            <TrendsTable rows={model.trends.all} />
+          <div className="stats-scope-picker" role="tablist" aria-label="Periode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scope === "all"}
+              className={scope === "all" ? "stats-scope-btn stats-scope-btn--active" : "stats-scope-btn"}
+              onClick={() => setScope("all")}
+            >
+              Alle spilledage
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scope === "recent"}
+              className={
+                scope === "recent" ? "stats-scope-btn stats-scope-btn--active" : "stats-scope-btn"
+              }
+              onClick={() => setScope("recent")}
+            >
+              Seneste {limit}
+            </button>
+          </div>
+
+          <section className="stats-panel">
+            <h3 className="stats-section-title">Udvikling</h3>
+            <PlayerLinesChart
+              series={series}
+              ariaLabel={`Kumulativ udvikling — ${scope === "all" ? "alle dage" : `seneste ${limit}`}`}
+              height={170}
+              xLabel="Spilledag"
+            />
           </section>
+
           <section className="stats-trends-block">
-            <h3 className="stats-section-title">Seneste {limit} spilledage</h3>
-            <TrendsTable rows={model.trends.recent} />
+            <h3 className="stats-section-title">
+              {scope === "all" ? "Alle spilledage" : `Seneste ${limit} spilledage`}
+            </h3>
+            <PlayerBreakdownTable
+              rows={(tableRows ?? []).map((row) => ({
+                name: row.player.name,
+                gamesPlayed: row.gamesPlayed,
+                averageScore: row.averageScore,
+                totalScore: row.totalScore,
+              }))}
+            />
           </section>
         </div>
       ) : null}
     </StatsPageShell>
-  );
-}
-
-function TrendsTable({
-  rows,
-}: {
-  rows: {
-    player: { name: string };
-    totalScore: number;
-    gamesPlayed: number;
-    averageScore: number;
-  }[];
-}) {
-  return (
-    <div className="stats-trends-table-wrap">
-      <table className="stats-trends-table">
-        <thead>
-          <tr>
-            <th>Spiller</th>
-            <th>Spil</th>
-            <th>Snit</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.player.name}>
-              <td>{row.player.name}</td>
-              <td>{row.gamesPlayed}</td>
-              <td className={scoreClass(Math.round(row.averageScore))}>
-                {row.gamesPlayed > 0
-                  ? scoreLabel(Math.round(row.averageScore * 10) / 10)
-                  : "—"}
-              </td>
-              <td className={scoreClass(row.totalScore)}>{scoreLabel(row.totalScore)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }

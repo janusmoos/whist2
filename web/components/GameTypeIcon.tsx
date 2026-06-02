@@ -1,16 +1,9 @@
 import type { ReactNode } from "react";
 import { NoTrumpIcon } from "@/components/NoTrumpIcon";
 import { SolGameIcon, solKindFromLabel } from "@/components/SolGameIcon";
+import type { GameTypeIconKind } from "@/lib/stats/gameTypeIcons";
 
-export type GameTypeIconKind =
-  | { type: "almindelige" }
-  | { type: "halve" }
-  | { type: "gode" }
-  | { type: "sans" }
-  | { type: "vip"; level: number }
-  | { type: "sol"; solKind: "normal" | "pure" | "halfDealer" | "dealer" }
-  | { type: "duty" }
-  | { type: "unknown" };
+export type { GameTypeIconKind } from "@/lib/stats/gameTypeIcons";
 
 export function gameTypeIconKindFromHand(
   kind: string,

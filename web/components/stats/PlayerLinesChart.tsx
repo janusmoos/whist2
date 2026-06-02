@@ -1,18 +1,14 @@
 "use client";
 
+import { ChartReveal, chartStagger } from "@/components/stats/charts/ChartReveal";
+import { PLAYER_LINE_COLORS } from "@/lib/stats/chartColors";
+
 export type ChartLineSeries = {
   id: string;
   name: string;
   colorIndex: number;
   points: { x: number; y: number }[];
 };
-
-export const PLAYER_LINE_COLORS = [
-  "var(--stats-line-1)",
-  "var(--stats-line-2)",
-  "var(--stats-line-3)",
-  "var(--stats-line-4)",
-];
 
 export function playerColorIndex(playerId: string, orderedIds: string[]): number {
   const idx = orderedIds.indexOf(playerId);
@@ -60,7 +56,7 @@ export function PlayerLinesChart({
   const zeroY = yAt(0);
 
   return (
-    <div className="player-lines-chart">
+    <ChartReveal className="player-lines-chart">
       {xLabel ? <p className="player-lines-chart-xlabel">{xLabel}</p> : null}
       <div className="player-lines-chart-row">
         <svg
@@ -83,8 +79,12 @@ export function PlayerLinesChart({
               <polyline
                 key={line.id}
                 points={points}
+                pathLength={100}
                 className="session-stats-chart-line"
-                style={{ stroke: PLAYER_LINE_COLORS[line.colorIndex % 4] }}
+                style={{
+                  stroke: PLAYER_LINE_COLORS[line.colorIndex % 4],
+                  ...chartStagger(line.colorIndex),
+                }}
               />
             );
           })}
@@ -95,7 +95,10 @@ export function PlayerLinesChart({
               <div
                 key={row.name}
                 className="player-lines-chart-label"
-                style={{ color: PLAYER_LINE_COLORS[row.colorIndex % 4] }}
+                style={{
+                  color: PLAYER_LINE_COLORS[row.colorIndex % 4],
+                  ...chartStagger(row.colorIndex),
+                }}
               >
                 {row.name} {row.score > 0 ? `+${row.score}` : row.score}
               </div>
@@ -106,7 +109,7 @@ export function PlayerLinesChart({
       {showLegend ? (
         <ul className="session-stats-chart-legend">
           {series.map((line) => (
-            <li key={line.id}>
+            <li key={line.id} style={chartStagger(line.colorIndex)}>
               <span
                 className="session-stats-chart-swatch"
                 style={{ background: PLAYER_LINE_COLORS[line.colorIndex % 4] }}
@@ -117,7 +120,7 @@ export function PlayerLinesChart({
           ))}
         </ul>
       ) : null}
-    </div>
+    </ChartReveal>
   );
 }
 
