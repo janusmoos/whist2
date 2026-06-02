@@ -105,6 +105,12 @@ enum ActiveGamePosterStyle {
         lightHighContrast: RGB(0.52, 0.52, 0.50),
         darkHighContrast: RGB(0.78, 0.78, 0.74)
     )
+    static let sectionHeaderColor = dynamicColor(
+        light: RGB(0.231, 0.290, 0.188),
+        dark: RGB(0.58, 0.70, 0.52),
+        lightHighContrast: RGB(0.18, 0.23, 0.14),
+        darkHighContrast: RGB(0.72, 0.85, 0.64)
+    )
     static let cornerRadius: CGFloat = 12
     static let fontName = "Anton-Regular"
     static let resumeFontName = "ArchivoRoman-Regular"

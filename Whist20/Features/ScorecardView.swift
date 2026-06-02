@@ -312,7 +312,7 @@ struct ScorecardView: View {
     private func posterSectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.custom(ActiveGamePosterStyle.fontName, size: 14))
-            .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.55))
+            .foregroundStyle(ActiveGamePosterStyle.sectionHeaderColor)
             .padding(.horizontal, 14)
             .padding(.top, 14)
             .padding(.bottom, 8)
