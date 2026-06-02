@@ -43,11 +43,27 @@ function secondsSince(iso: string | undefined, now: number): number {
 
 function relativeTimeLabel(secs: number): string {
   if (!isFinite(secs)) return "—";
-  if (secs < 5) return "nu";
-  if (secs < 60) return `${secs} sek. siden`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins} min. siden`;
-  return `${Math.floor(mins / 60)} t. siden`;
+  if (secs < 5) return "Opdateret nu";
+  if (secs < 30) return "Opdateret for et øjeblik siden";
+  if (secs < 60) return "Opdateret for under et minut siden";
+  const mins = Math.round(secs / 60);
+  if (mins === 1) return "Opdateret for cirka et minut siden";
+  if (mins < 60) return `Opdateret for cirka ${mins} minutter siden`;
+  const hours = Math.round(secs / 3600);
+  if (hours === 1) return "Opdateret for cirka en time siden";
+  return `Opdateret for cirka ${hours} timer siden`;
+}
+
+/** Dagligdags tekst når live-data er stale (≥ STALE_SECONDS). */
+function staleTimeLabel(secs: number): string {
+  if (secs < 45) return "Ingen nye opdateringer lige nu";
+  if (secs < 60) return "Sidste opdatering for under et minut siden";
+  const mins = Math.round(secs / 60);
+  if (mins === 1) return "Sidste opdatering for cirka et minut siden";
+  if (mins < 60) return `Sidste opdatering for cirka ${mins} minutter siden`;
+  const hours = Math.round(secs / 3600);
+  if (hours === 1) return "Sidste opdatering for cirka en time siden";
+  return `Sidste opdatering for cirka ${hours} timer siden`;
 }
 
 function scoreLabel(n: number): string {
@@ -178,7 +194,7 @@ function ActiveSessionView({
             className={`updated-time${isStale ? " updated-time--stale" : ""}`}
             title={serverIso ?? ""}
           >
-            {isStale ? `Ingen data i ${secs} sek.` : relativeTimeLabel(secs)}
+            {isStale ? staleTimeLabel(secs) : relativeTimeLabel(secs)}
           </span>
         </div>
       </div>

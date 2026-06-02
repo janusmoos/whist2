@@ -19,6 +19,7 @@ html[data-theme="light"] {
   --score-pos: #1a7a3b;
   --score-neg: #b80d1a;
   --orange: #ed8c0d;
+  --contract-marker: #524637;
   --stale-text: #a65c00;
   --menu-bg: #f7f7f5;
   --menu-shadow: rgba(26, 31, 41, 0.12);
@@ -39,6 +40,7 @@ html[data-theme="dark"] {
   --score-pos: #75db94;
   --score-neg: #ff757d;
   --orange: #ffa62e;
+  --contract-marker: #dbbe9e;
   --stale-text: #c97a2a;
   --menu-bg: #2e2b26;
   --menu-shadow: rgba(0, 0, 0, 0.35);
@@ -60,6 +62,7 @@ html[data-theme="dark"] {
     --score-pos: #1a7a3b;
     --score-neg: #b80d1a;
     --orange: #ed8c0d;
+    --contract-marker: #524637;
     --stale-text: #a65c00;
     --menu-bg: #f7f7f5;
     --menu-shadow: rgba(26, 31, 41, 0.12);
@@ -81,6 +84,7 @@ html[data-theme="dark"] {
     --score-pos: #75db94;
     --score-neg: #ff757d;
     --orange: #ffa62e;
+    --contract-marker: #dbbe9e;
     --stale-text: #c97a2a;
     --menu-bg: #2e2b26;
     --menu-shadow: rgba(0, 0, 0, 0.35);
@@ -554,7 +558,7 @@ main {
   padding: 0.55rem 0.35rem;
   min-height: 3.6rem;
   border-radius: 8px;
-  border: 1px solid var(--border-hi);
+  border: 1px solid var(--border);
   background: var(--panel);
 }
 
@@ -567,13 +571,13 @@ main {
 .poster-score-chip--bidder {
   border-width: 2px;
   border-style: solid;
-  border-color: var(--orange);
+  border-color: var(--contract-marker);
 }
 
 .poster-score-chip--partner {
   border-width: 2px;
   border-style: dashed;
-  border-color: var(--orange);
+  border-color: var(--contract-marker);
 }
 
 .poster-score-name {
