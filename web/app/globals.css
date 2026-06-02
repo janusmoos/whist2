@@ -456,6 +456,19 @@ main {
 .poster-delta--pos { background: var(--score-pos); }
 .poster-delta--neg { background: var(--score-neg); }
 
+/* Seneste afsluttede spil: større resultat-badge (+/−) */
+.poster-box:not(.poster-box--live) .poster-delta {
+  top: 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  padding: 0.22rem 0.5rem;
+  min-width: 2.15rem;
+  min-height: 1.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .poster-thermo {
   width: 0.85rem;
   align-self: stretch;
