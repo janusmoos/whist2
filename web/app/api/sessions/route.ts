@@ -9,8 +9,9 @@ export async function GET() {
     const rows = await sql`
       SELECT payload, updated_at
       FROM live_sessions
-      WHERE payload->>'status' = 'active'
-      ORDER BY updated_at DESC
+      ORDER BY
+        CASE WHEN payload->>'status' = 'active' THEN 0 ELSE 1 END,
+        updated_at DESC
       LIMIT 30
     `;
     const out = rows.map((r) => ({

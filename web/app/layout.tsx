@@ -20,13 +20,18 @@ export const metadata: Metadata = {
   description: "Igangværende spilledage",
 };
 
+const themeBootScript = `(function(){try{var t=localStorage.getItem('whist-live-theme');document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:'auto';}catch(e){document.documentElement.dataset.theme='auto';}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="da" className={`${anton.variable} ${archivo.variable}`}>
+    <html lang="da" className={`${anton.variable} ${archivo.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );
