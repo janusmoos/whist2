@@ -186,7 +186,11 @@ export default function HomePage() {
                     >
                       <span className="standing-rank">{p.rank}</span>
                       <span className="standing-name">{p.name}</span>
-                      <span className="standing-score">{scoreLabel(p.total)}</span>
+                      <span
+                        className={`standing-score${p.total > 0 ? " standing-score--pos" : p.total < 0 ? " standing-score--neg" : ""}`}
+                      >
+                        {scoreLabel(p.total)}
+                      </span>
                     </div>
                   ))}
                 </div>
