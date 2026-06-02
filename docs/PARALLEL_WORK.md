@@ -14,6 +14,7 @@ For overordnede branch- og arkitekturbeslutninger, se også `docs/architecture/b
 |------|----------------|----------------|
 | **Fælles linje** | `main` | Aktuel sandhed for app, statistik, performance og Dark Mode |
 | **Live statistik (Codex)** | `codex/live-statistics-integration` | Aktivt spor: integrere data fra live spil i hele statistik-modulet |
+| **Web/live-overblik (Codex/Cursor)** | `codex/web-live-overblik-plan` | Aktiv planbranch: rammer, performancekrav og næste udviklingsplan for web/live-overblik |
 | **Performance-reference** | `codex/performance-refactor-plan` | Parkeret snapshot, ikke aktiv udviklingsgren |
 | **Design-reference** | `codex/design-experiments` | Parkeret snapshot, ikke aktiv udviklingsgren |
 | **Dark Mode-reference** | `codex/dark-mode` | Merged til `main`; kan slettes senere |
@@ -66,11 +67,11 @@ _Udfyld og kryds af efter behov._
 
 | # | Opgave | Status |
 |---|--------|--------|
-| 1 | Kortlæg statistik-input fra historiske data og SwiftData live spil | ☐ ikke startet |
-| 2 | Beslut adapter/preparer-arkitektur for kombineret statistik | ☐ ikke startet |
-| 3 | Udvid tests før større UI-ændringer | ☐ ikke startet |
+| 1 | Læs `docs/statistik/web_live_overblik_og_statistik_plan.md` før web/live-arbejde | ☐ ikke startet |
+| 2 | Lav første web/live-commit: `schemaVersion`, `web/README.md`, `.env.example` | ☐ ikke startet |
+| 3 | Forbedr web-overblik med stabil scoreboard-UI og stale/error states | ☐ ikke startet |
 
-**Sidst opdateret:** 2026-05-31
+**Sidst opdateret:** 2026-06-02
 
 ---
 
@@ -80,11 +81,11 @@ _Udfyld og kryds af efter behov._
 
 | # | Opgave | Status |
 |---|--------|--------|
-| 1 | | ☐ ikke startet / ☐ i gang / ☐ færdig |
-| 2 | | |
-| 3 | | |
+| 1 | Opret planbranch for web/live-overblik | ☑ færdig |
+| 2 | Skriv grundigt arkitektur- og handoff-dokument | ☑ færdig |
+| 3 | Hold app/web-kode uændret indtil planen er læst i Cursor | ☑ færdig |
 
-**Sidst opdateret:** 2026-05-31
+**Sidst opdateret:** 2026-06-02
 
 ---
 

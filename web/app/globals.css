@@ -1,10 +1,14 @@
 :root {
   --bg: #0c0c0f;
   --card: #16161c;
+  --card-stale: #131318;
   --text: #f2f2f5;
   --muted: #9898a8;
   --accent: #5b8cff;
+  --leader: #7edbaa;
+  --warn: #e0a060;
   --border: #2a2a34;
+  --border-stale: #1e1e26;
   --radius: 14px;
 }
 
@@ -32,23 +36,33 @@ body {
 }
 
 main {
-  max-width: 1200px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 2.5rem;
+  padding: 1.5rem 1rem 3rem;
 }
 
-h1 {
+/* ── Header ── */
+
+.site-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.site-header h1 {
   font-size: clamp(1.35rem, 4vw, 1.75rem);
   font-weight: 700;
-  margin: 0 0 0.35rem;
+  margin: 0;
   letter-spacing: -0.02em;
 }
 
-.sub {
+.site-sub {
   color: var(--muted);
   font-size: 0.9rem;
-  margin: 0 0 1.25rem;
 }
+
+/* ── Banner (fejl) ── */
 
 .banner {
   background: #2a2210;
@@ -60,64 +74,55 @@ h1 {
   font-size: 0.88rem;
 }
 
+/* ── Grid ── */
+
 .grid {
   display: grid;
   gap: 1rem;
 }
 
-@media (min-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
+@media (min-width: 640px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
   }
 }
 
+/* ── Card ── */
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.1rem;
+  padding: 1rem 1.1rem 1.1rem;
+}
+
+.card--stale {
+  background: var(--card-stale);
+  border-color: var(--border-stale);
+  opacity: 0.75;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
 }
 
 .card h2 {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.2rem;
   font-size: 1.05rem;
   font-weight: 650;
 }
 
-.muted {
-  color: var(--muted);
+.hand-count {
+  margin: 0 0 0.75rem;
   font-size: 0.82rem;
+  color: var(--muted);
 }
 
-.row-scores {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem 0.75rem;
-  margin-top: 0.65rem;
-  font-size: 0.88rem;
-}
-
-@media (min-width: 480px) {
-  .row-scores {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-.score-pair {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.35rem 0.45rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-}
+/* ── Pill ── */
 
 .pill {
   display: inline-block;
@@ -125,15 +130,147 @@ h1 {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.2rem 0.5rem;
+  padding: 0.18rem 0.5rem;
   border-radius: 999px;
-  background: rgba(91, 140, 255, 0.2);
+  background: rgba(91, 140, 255, 0.18);
   color: #b8ceff;
-  margin-bottom: 0.5rem;
 }
+
+.pill--done {
+  background: rgba(152, 152, 168, 0.15);
+  color: var(--muted);
+}
+
+/* ── Opdaterings-tidsstempel ── */
+
+.updated-time {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.updated-time--stale {
+  color: var(--warn);
+}
+
+/* ── Standings (scoretavle) ── */
+
+.standings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.standing-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.32rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.standing-row--leader {
+  background: rgba(126, 219, 170, 0.1);
+  color: var(--leader);
+}
+
+.standing-rank {
+  width: 1.1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.standing-row--leader .standing-rank {
+  color: var(--leader);
+}
+
+.standing-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standing-score {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── Seneste kamp ── */
+
+.caption-line {
+  margin: 0 0 0.55rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+/* ── Pending (igangværende melding) ── */
+
+.pending-block {
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: rgba(91, 140, 255, 0.07);
+}
+
+.pending-step {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+
+.pending-line {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.pending-result {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* ── Noter ── */
+
+.notes-line {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Ingen sessioner ── */
 
 .empty {
   color: var(--muted);
-  padding: 2rem 0;
+  padding: 3rem 0;
   text-align: center;
+  font-size: 0.95rem;
+}
+
+/* ── Sidefod ── */
+
+.footer-note {
+  margin: 2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── Hjælpeklasse ── */
+
+.muted {
+  color: var(--muted);
 }
