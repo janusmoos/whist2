@@ -565,7 +565,15 @@ main {
 }
 
 .poster-score-chip--bidder {
-  border-color: color-mix(in srgb, var(--orange) 50%, var(--border));
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--orange);
+}
+
+.poster-score-chip--partner {
+  border-width: 2px;
+  border-style: dashed;
+  border-color: var(--orange);
 }
 
 .poster-score-name {
