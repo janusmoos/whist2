@@ -1,6 +1,6 @@
 # Issues (auto-opdateret)
 
-_Genereret: 2026-06-02 20:27:22_
+_Genereret: 2026-06-02 20:59:09_
 
 Repo: https://github.com/janusmoos/whist2
 

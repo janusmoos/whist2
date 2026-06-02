@@ -67,9 +67,13 @@ _Udfyld og kryds af efter behov._
 
 | # | Opgave | Status |
 |---|--------|--------|
-| 1 | Læs `docs/statistik/web_live_overblik_og_statistik_plan.md` før web/live-arbejde | ☐ ikke startet |
-| 2 | Lav første web/live-commit: `schemaVersion`, `web/README.md`, `.env.example` | ☐ ikke startet |
-| 3 | Forbedr web-overblik med stabil scoreboard-UI og stale/error states | ☐ ikke startet |
+| 1 | Læs `docs/statistik/web_live_overblik_og_statistik_plan.md` før web/live-arbejde | ☑ færdig |
+| 2 | Lav første web/live-commit: `schemaVersion`, `web/README.md`, `.env.example` | ☑ færdig |
+| 3 | Forbedr web-overblik med stabil scoreboard-UI og stale/error states | ☑ færdig |
+| 4 | Performance-sikring: fingerprint + SyncPriority i LiveSessionSync | ☑ færdig |
+| 5 | Deploy til Vercel + smoke-test (Fase D) | ☑ færdig |
+| 6 | **Manuel:** sæt `LiveSessionAPISecret` i plist lokalt og test fra simulator | ☐ ikke startet |
+| 7 | Fase E: tilføj `completedHands` i payload v2 og session-detalje-route | ☐ ikke startet |
 
 **Sidst opdateret:** 2026-06-02
 
