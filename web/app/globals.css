@@ -965,6 +965,59 @@ main {
 
 .totals-row .col-score { font-size: 1.05rem; }
 
+/* Kompakt kamptabel: resumé foldes ud (som i appen) */
+.hands-table--compact {
+  min-width: 280px;
+}
+
+.col-expand {
+  width: 1.75rem;
+  padding-left: 0.2rem !important;
+  padding-right: 0.45rem !important;
+  text-align: center;
+}
+
+.hands-table-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.hands-table-expand:hover {
+  color: var(--text);
+}
+
+.hands-table-expand-icon {
+  font-size: 0.62rem;
+}
+
+.hands-table-row--compact:hover {
+  background: color-mix(in srgb, var(--panel-hi) 40%, transparent);
+}
+
+.hands-table-resume-row td {
+  padding: 0 0.65rem 0.55rem;
+  border-bottom: 1px solid var(--border-hi);
+}
+
+.hands-table-resume-box {
+  padding: 0.55rem 0.65rem;
+  border-radius: calc(var(--radius) - 4px);
+  background: color-mix(in srgb, var(--panel-hi) 70%, var(--panel));
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text) 82%, var(--muted));
+}
+
 .table-empty,
 .table-legacy-note {
   color: var(--muted);

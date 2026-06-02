@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { HandsTable, type HandSummary } from "@/components/HandsTable";
 import { PosterBox } from "@/components/PosterBox";
 import { ThemeMenu } from "@/components/ThemeMenu";
-import { GameTypeIcon, gameTypeIconKindFromHand } from "@/components/GameTypeIcon";
-import { SuitColoredText } from "@/components/SuitColoredText";
 import { posterFromCaption } from "@/lib/parsePosterFallback";
 import type { PosterSnapshot } from "@/lib/posterTypes";
 
 // ── Typer ────────────────────────────────────────────────────────────────────
-
-type HandSummary = {
-  handNumber: number;
-  kind: string;
-  caption: string;
-  scoresBySeat: number[];
-};
 
 type LiveSession = {
   schemaVersion?: number;
@@ -67,12 +59,6 @@ function scoreClass(n: number): string {
   if (v < 0) return " score--neg";
   return " score--zero";
 }
-
-function kindSymbol(_kind: string): string {
-  return "";
-}
-
-// kindSymbol fjernet — spiltype vises via GameTypeIcon-kolonne
 
 function buildStandings(names: string[], totals: number[]) {
   if (names.length !== 4 || totals.length !== 4) return [];
@@ -153,125 +139,6 @@ function resolveLastHandPoster(
     return posterFromCaption(s.lastCompletedHandCaption, "MELDTE");
   }
   return null;
-}
-
-// ── Komponent: hændstabel ────────────────────────────────────────────────────
-
-function HandsTable({
-  hands,
-  names,
-  totals,
-  handCount,
-  lastCaption,
-}: {
-  hands: HandSummary[];
-  names: string[];
-  totals: number[];
-  handCount?: number;
-  lastCaption?: string | null;
-}) {
-  if (hands.length === 0) {
-    if ((handCount ?? 0) > 0 && lastCaption) {
-      return (
-        <div className="table-wrap">
-          <table className="hands-table">
-            <thead>
-              <tr>
-                <th className="col-num">#</th>
-                <th className="col-type" aria-label="Spiltype" />
-                <th className="col-caption"></th>
-                {names.map((n, i) => (
-                  <th key={i} className="col-score">
-                    {n}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="col-num">{handCount}</td>
-                <td className="col-type" />
-                <td className="col-caption">
-                  <SuitColoredText text={lastCaption.replace(/\|\|[^|]*/g, "")} />
-                </td>
-                {totals.map((_, i) => (
-                  <td key={i} className="col-score score--zero">—</td>
-                ))}
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr className="totals-row">
-                <td colSpan={3} className="col-totals-label">
-                  Samlet stilling i dag
-                </td>
-                {totals.map((t, i) => (
-                  <td key={i} className={`col-score${scoreClass(t)}`}>
-                    {scoreLabel(t)}
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
-          <p className="table-legacy-note">
-            Fuld kamptabel vises når appen sender opdateret data (genopbyg i simulator).
-          </p>
-        </div>
-      );
-    }
-    return <p className="table-empty">Ingen kampe spillet endnu.</p>;
-  }
-
-  // Vis nyeste øverst
-  const reversed = [...hands].reverse();
-
-  return (
-    <div className="table-wrap">
-      <table className="hands-table">
-        <thead>
-          <tr>
-            <th className="col-num">#</th>
-            <th className="col-type" aria-label="Spiltype" />
-            <th className="col-caption"></th>
-            {names.map((n, i) => (
-              <th key={i} className="col-score">
-                {n}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {reversed.map((h) => (
-            <tr key={h.handNumber}>
-              <td className="col-num">#{h.handNumber}</td>
-              <td className="col-type">
-                <GameTypeIcon kind={gameTypeIconKindFromHand(h.kind, h.caption)} />
-              </td>
-              <td className="col-caption">
-                <SuitColoredText text={h.caption.replace(/\|\|[^|]*/g, "")} />
-              </td>
-              {h.scoresBySeat.map((s, i) => (
-                <td key={i} className={`col-score${scoreClass(s)}`}>
-                  {scoreLabel(s)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="totals-row">
-            <td colSpan={3} className="col-totals-label">
-              Samlet stilling i dag
-            </td>
-            {totals.map((t, i) => (
-              <td key={i} className={`col-score${scoreClass(t)}`}>
-                {scoreLabel(t)}
-              </td>
-            ))}
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  );
 }
 
 // ── Komponent: fuld aktiv spilledag ─────────────────────────────────────────
