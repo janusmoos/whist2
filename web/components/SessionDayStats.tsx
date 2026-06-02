@@ -1,7 +1,6 @@
 "use client";
 
 import type { HandSummary } from "@/components/HandsTable";
-import { PosterBox } from "@/components/PosterBox";
 import {
   computeSessionDayStats,
   gameTypeSummaryLabel,
@@ -138,7 +137,7 @@ function PlayerStatCard({ player }: { player: PlayerDayStats }) {
   );
 }
 
-export function SessionDayStats({
+export function SessionDayStatsPanel({
   hands,
   names,
 }: {
@@ -151,8 +150,7 @@ export function SessionDayStats({
   const leader = stats.players.find((p) => p.rank === 1);
 
   return (
-    <PosterBox className="session-stats-box" title="Spilledags-statistik">
-      <div className="session-stats">
+    <div className="session-stats">
         <p className="session-stats-lead">
           {stats.handCount} {stats.handCount === 1 ? "kamp" : "kampe"}
           {leader ? (
@@ -183,10 +181,9 @@ export function SessionDayStats({
           ))}
         </div>
 
-        {stats.handCount >= 2 ? (
-          <ScoreProgressChart players={stats.players} handCount={stats.handCount} />
-        ) : null}
-      </div>
-    </PosterBox>
+      {stats.handCount >= 2 ? (
+        <ScoreProgressChart players={stats.players} handCount={stats.handCount} />
+      ) : null}
+    </div>
   );
 }

@@ -1,15 +1,19 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ThemeMode } from "@/lib/posterTypes";
 import { THEME_STORAGE_KEY } from "@/lib/posterTypes";
+import { SITE_MENU_NAV } from "@/lib/stats/navigation";
 
 function applyTheme(mode: ThemeMode) {
   document.documentElement.dataset.theme = mode;
   localStorage.setItem(THEME_STORAGE_KEY, mode);
 }
 
-export function ThemeMenu() {
+export function SiteMenu() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("auto");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -23,6 +27,10 @@ export function ThemeMenu() {
   }, []);
 
   useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     if (!open) return;
     function onDocClick(e: MouseEvent) {
       if (!menuRef.current?.contains(e.target as Node)) setOpen(false);
@@ -31,22 +39,26 @@ export function ThemeMenu() {
     return () => document.removeEventListener("click", onDocClick);
   }, [open]);
 
-  function select(mode: ThemeMode) {
+  function selectTheme(mode: ThemeMode) {
     setTheme(mode);
     applyTheme(mode);
-    setOpen(false);
+  }
+
+  function isActive(href: string): boolean {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
 
   return (
-    <div className="theme-menu" ref={menuRef}>
+    <div className="site-menu" ref={menuRef}>
       <button
         type="button"
-        className="theme-menu-btn"
-        aria-label="Indstillinger"
+        className="site-menu-btn"
+        aria-label="Menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="theme-menu-icon" aria-hidden="true">
+        <span className="site-menu-icon" aria-hidden="true">
           <span />
           <span />
           <span />
@@ -54,8 +66,25 @@ export function ThemeMenu() {
       </button>
 
       {open ? (
-        <div className="theme-menu-panel" role="menu">
-          <p className="theme-menu-title">Tema</p>
+        <div className="site-menu-panel" role="menu">
+          <p className="site-menu-title">Navigation</p>
+          {SITE_MENU_NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              role="menuitem"
+              className={`site-menu-link${
+                "indent" in item && item.indent ? " site-menu-link--indent" : ""
+              }${isActive(item.href) ? " site-menu-link--active" : ""}`}
+              onClick={() => setOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          <div className="site-menu-divider" role="separator" />
+
+          <p className="site-menu-title">Tema</p>
           {(
             [
               ["auto", "Auto"],
@@ -68,8 +97,8 @@ export function ThemeMenu() {
               type="button"
               role="menuitemradio"
               aria-checked={theme === mode}
-              className={`theme-menu-option${theme === mode ? " theme-menu-option--active" : ""}`}
-              onClick={() => select(mode)}
+              className={`site-menu-option${theme === mode ? " site-menu-option--active" : ""}`}
+              onClick={() => selectTheme(mode)}
             >
               {label}
             </button>

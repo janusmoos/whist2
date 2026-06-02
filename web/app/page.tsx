@@ -1,35 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { HandsTable, type HandSummary } from "@/components/HandsTable";
 import { PosterBox } from "@/components/PosterBox";
-import { SessionDayStats } from "@/components/SessionDayStats";
-import { ThemeMenu } from "@/components/ThemeMenu";
+import { SiteHeader } from "@/components/SiteHeader";
+import { useLiveSessions } from "@/hooks/useLiveSessions";
+import type { LiveSession } from "@/lib/liveSessionTypes";
 import { posterFromCaption } from "@/lib/parsePosterFallback";
 import type { PosterSnapshot } from "@/lib/posterTypes";
-
-// ── Typer ────────────────────────────────────────────────────────────────────
-
-type LiveSession = {
-  schemaVersion?: number;
-  sessionId?: string;
-  sessionNumber?: number;
-  title?: string;
-  status?: string;
-  handCount?: number;
-  playerNamesBySeat?: string[];
-  totalsBySeat?: number[];
-  lastCompletedHandCaption?: string | null;
-  hands?: HandSummary[];
-  pendingPoster?: PosterSnapshot | null;
-  lastHandPoster?: PosterSnapshot | null;
-  pendingMeldingSummary?: string | null;
-  pendingResultSummary?: string | null;
-  pendingStep?: "melding" | "halve_trumf" | "resultat" | null;
-  notesPublic?: string;
-  updatedAt?: string;
-  serverUpdatedAt?: string;
-};
 
 // ── Hjælpefunktioner ─────────────────────────────────────────────────────────
 
@@ -255,10 +233,6 @@ function ActiveSessionView({
         />
       </div>
 
-      {names.length === 4 && hands.length > 0 ? (
-        <SessionDayStats hands={hands} names={names} />
-      ) : null}
-
       {names.length === 4 && hands.length === 0 && (handCount ?? 0) > 0 ? (
         <StandingsStrip names={names} totals={totals} />
       ) : null}
@@ -313,41 +287,8 @@ function FinishedSessionCard({ s }: { s: LiveSession }) {
 // ── Hoved-side ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const [sessions, setSessions] = useState<LiveSession[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { sessions, error } = useLiveSessions();
   const [now, setNow] = useState(() => Date.now());
-  const cancelledRef = useRef(false);
-
-  useEffect(() => {
-    cancelledRef.current = false;
-
-    async function fetchSessions() {
-      try {
-        const res = await fetch("/api/sessions", { cache: "no-store" });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(
-            typeof data.error === "string" ? data.error : "Serverfejl"
-          );
-        }
-        if (!cancelledRef.current) {
-          setSessions(Array.isArray(data) ? data : []);
-          setError(null);
-        }
-      } catch (e) {
-        if (!cancelledRef.current) {
-          setError(e instanceof Error ? e.message : "Netværksfejl");
-        }
-      }
-    }
-
-    fetchSessions();
-    const id = setInterval(fetchSessions, 2000);
-    return () => {
-      cancelledRef.current = true;
-      clearInterval(id);
-    };
-  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -360,13 +301,7 @@ export default function HomePage() {
 
   return (
     <main>
-      <div className="site-header">
-        <div className="site-header-brand">
-          <h1>Whistklubben</h1>
-          <span className="site-sub">live</span>
-        </div>
-        <ThemeMenu />
-      </div>
+      <SiteHeader />
 
       {error ? (
         <div className="banner" role="alert">
