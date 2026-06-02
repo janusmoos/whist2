@@ -25,9 +25,21 @@ enum LiveSessionSyncSettings {
 
 // MARK: - Payload (spejler web-API)
 
+/// Opsummering af én afsluttet kamp til brug i web-oversigten.
+struct HandSummary: Encodable, Sendable {
+    /// Kampnummer inden for spilledagen (#1, #2, …).
+    var handNumber: Int
+    /// `normal`, `sol` eller `duty`.
+    var kind: String
+    /// Kort resumétekst, fx «Peter meldte 9 alm. +1 → +4».
+    var caption: String
+    /// Point pr. plads, indekseret 0…3 (samme rækkefølge som `playerNamesBySeat`).
+    var scoresBySeat: [Int]
+}
+
 struct LiveSessionPushPayload: Encodable, Sendable {
     /// Payload-schemaversion. Øges når der tilføjes felter, som breakende ændrer fortolkningen.
-    var schemaVersion: Int = 1
+    var schemaVersion: Int = 2
     var sessionId: UUID
     var updatedAt: Date
     var title: String
@@ -38,6 +50,8 @@ struct LiveSessionPushPayload: Encodable, Sendable {
     var playerNamesBySeat: [String]
     var totalsBySeat: [Int]
     var lastCompletedHandCaption: String?
+    /// Alle afsluttede kampe i kronologisk rækkefølge (ældste først).
+    var hands: [HandSummary]
     /// Nutids-beskrivelse af meldingen (kladde), fx «Christian melder 9 almindelige …».
     var pendingMeldingSummary: String?
     /// Kort status når resultattrinnet redigeres (stikfordeling).
@@ -72,6 +86,25 @@ enum LiveSessionSnapshotBuilder {
         let notes = gameDay.notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let notesPublic = notes.count > notesMaxLen ? String(notes.prefix(notesMaxLen)) : notes
 
+        let sortedHands = gameDay.hands.sorted {
+            if $0.handNumber >= 1 && $1.handNumber >= 1 && $0.handNumber != $1.handNumber {
+                return $0.handNumber < $1.handNumber
+            }
+            return $0.playedAt < $1.playedAt
+        }
+        let seatsOrdered = Seat.all.sorted { $0.rawValue < $1.rawValue }
+        let handSummaries: [HandSummary] = sortedHands.map { h in
+            let scoresDict = HandScorePersistence.decodeScores(h.scoresBySeatJSON)
+            let scores = seatsOrdered.map { scoresDict[$0] ?? 0 }
+            let cap = h.resumeCaption.trimmingCharacters(in: .whitespacesAndNewlines)
+            return HandSummary(
+                handNumber: h.handNumber,
+                kind: h.kindRaw,
+                caption: cap.isEmpty ? h.summaryLine : cap,
+                scoresBySeat: scores
+            )
+        }
+
         return LiveSessionPushPayload(
             sessionId: gameDay.id,
             updatedAt: Date(),
@@ -81,6 +114,7 @@ enum LiveSessionSnapshotBuilder {
             playerNamesBySeat: names,
             totalsBySeat: totals,
             lastCompletedHandCaption: lastHand?.displayResumeNarrative,
+            hands: handSummaries,
             pendingMeldingSummary: pendingInfo?.meldingLine,
             pendingResultSummary: pendingInfo?.resultLine,
             pendingStep: pendingInfo?.step,

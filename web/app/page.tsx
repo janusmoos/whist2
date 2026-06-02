@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// ── Typer ────────────────────────────────────────────────────────────────────
+
+type HandSummary = {
+  handNumber: number;
+  kind: string;
+  caption: string;
+  scoresBySeat: number[];
+};
+
 type LiveSession = {
   schemaVersion?: number;
   sessionId?: string;
@@ -11,6 +20,7 @@ type LiveSession = {
   playerNamesBySeat?: string[];
   totalsBySeat?: number[];
   lastCompletedHandCaption?: string | null;
+  hands?: HandSummary[];
   pendingMeldingSummary?: string | null;
   pendingResultSummary?: string | null;
   pendingStep?: "melding" | "halve_trumf" | "resultat" | null;
@@ -19,12 +29,7 @@ type LiveSession = {
   serverUpdatedAt?: string;
 };
 
-type PlayerStanding = {
-  name: string;
-  total: number;
-  seat: number;
-  rank: number;
-};
+// ── Hjælpefunktioner ─────────────────────────────────────────────────────────
 
 const STALE_SECONDS = 20;
 
@@ -46,118 +51,235 @@ function relativeTimeLabel(secs: number): string {
 
 function stepLabel(step: LiveSession["pendingStep"]): string | null {
   switch (step) {
-    case "melding":
-      return "Melding";
-    case "halve_trumf":
-      return "Trumf (halve)";
-    case "resultat":
-      return "Resultat";
-    default:
-      return null;
+    case "melding":     return "Melding";
+    case "halve_trumf": return "Trumf (halve)";
+    case "resultat":    return "Resultat";
+    default:            return null;
   }
 }
 
-function buildStandings(
-  names: string[],
-  totals: number[]
-): PlayerStanding[] {
-  if (names.length !== 4 || totals.length !== 4) return [];
-  const players: PlayerStanding[] = names.map((name, i) => ({
-    name,
-    total: totals[i] ?? 0,
-    seat: i,
-    rank: 0,
-  }));
-  players.sort((a, b) => b.total - a.total);
-  let rank = 1;
-  for (let i = 0; i < players.length; i++) {
-    if (i > 0 && players[i].total < players[i - 1].total) rank = i + 1;
-    players[i].rank = rank;
-  }
-  return players;
+function scoreLabel(n: number): string {
+  return n > 0 ? `+${n}` : String(n);
 }
 
-function scoreLabel(total: number): string {
-  if (total > 0) return `+${total}`;
-  return String(total);
+function scoreClass(n: number): string {
+  if (n > 0) return " score--pos";
+  if (n < 0) return " score--neg";
+  return " score--zero";
 }
 
-function SessionCard({
-  s,
-  index,
-  now,
+function kindSymbol(kind: string): string {
+  if (kind === "sol")   return "☀";
+  if (kind === "duty")  return "D";
+  return "";
+}
+
+// ── Komponent: hændstabel ────────────────────────────────────────────────────
+
+function HandsTable({
+  hands,
+  names,
+  totals,
 }: {
-  s: LiveSession;
-  index: number;
-  now: number;
+  hands: HandSummary[];
+  names: string[];
+  totals: number[];
 }) {
+  if (hands.length === 0) {
+    return <p className="table-empty">Ingen kampe spillet endnu.</p>;
+  }
+
+  // Vis nyeste øverst
+  const reversed = [...hands].reverse();
+
+  return (
+    <div className="table-wrap">
+      <table className="hands-table">
+        <thead>
+          <tr>
+            <th className="col-num">#</th>
+            <th className="col-caption"></th>
+            {names.map((n, i) => (
+              <th key={i} className="col-score">
+                {n}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {reversed.map((h) => {
+            const sym = kindSymbol(h.kind);
+            return (
+              <tr key={h.handNumber}>
+                <td className="col-num">{h.handNumber}</td>
+                <td className="col-caption">
+                  {sym ? <span className="kind-sym">{sym}</span> : null}
+                  {h.caption}
+                </td>
+                {h.scoresBySeat.map((s, i) => (
+                  <td key={i} className={`col-score${scoreClass(s)}`}>
+                    {scoreLabel(s)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr className="totals-row">
+            <td className="col-num">∑</td>
+            <td className="col-caption"></td>
+            {totals.map((t, i) => (
+              <td key={i} className={`col-score${scoreClass(t)}`}>
+                {scoreLabel(t)}
+              </td>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+// ── Komponent: "Aktivt spil"-boks ────────────────────────────────────────────
+
+function ActiveBox({ s }: { s: LiveSession }) {
+  const step = stepLabel(s.pendingStep);
+
+  if (!s.pendingMeldingSummary) {
+    return (
+      <div className="info-box">
+        <span className="box-label">Aktivt spil</span>
+        <p className="box-empty">Afventer næste kamp…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="info-box info-box--active">
+      <span className="box-label">Aktivt spil</span>
+      {step ? <span className="box-step">{step}</span> : null}
+      <p className="box-main">{s.pendingMeldingSummary}</p>
+      {s.pendingResultSummary ? (
+        <p className="box-sub">{s.pendingResultSummary}</p>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Komponent: "Seneste afsluttede spil"-boks ────────────────────────────────
+
+function LastHandBox({
+  hands,
+  names,
+}: {
+  hands: HandSummary[];
+  names: string[];
+}) {
+  const last = hands.length > 0 ? hands[hands.length - 1] : null;
+
+  if (!last) {
+    return (
+      <div className="info-box">
+        <span className="box-label">Seneste afsluttede spil</span>
+        <p className="box-empty">Ingen afsluttede kampe endnu.</p>
+      </div>
+    );
+  }
+
+  const sym = kindSymbol(last.kind);
+
+  return (
+    <div className="info-box">
+      <span className="box-label">Seneste afsluttede spil</span>
+      <p className="box-main">
+        {sym ? <span className="kind-sym">{sym} </span> : null}
+        {last.caption}
+      </p>
+      <div className="last-hand-scores">
+        {last.scoresBySeat.map((s, i) => (
+          <div key={i} className="last-hand-cell">
+            <span className="last-hand-name">{names[i]}</span>
+            <span className={`last-hand-score${scoreClass(s)}`}>
+              {scoreLabel(s)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Komponent: fuld aktiv spilledag ─────────────────────────────────────────
+
+function ActiveSessionView({ s, now }: { s: LiveSession; now: number }) {
   const names = s.playerNamesBySeat ?? [];
   const totals = s.totalsBySeat ?? [];
-  const standings = buildStandings(names, totals);
-  const step = stepLabel(s.pendingStep);
+  const hands = s.hands ?? [];
   const serverIso = s.serverUpdatedAt ?? s.updatedAt;
   const secs = secondsSince(serverIso, now);
   const isStale = secs >= STALE_SECONDS;
-  const isFinished = s.status === "finished";
-  const key = s.sessionId ?? `row-${index}`;
   const handCount = s.handCount ?? 0;
 
   return (
-    <article key={key} className={`card${isStale ? " card--stale" : ""}`}>
-      <div className="card-top">
-        <span className={`pill${isFinished ? " pill--done" : ""}`}>
-          {isFinished ? "Afsluttet" : "Aktiv"}
-        </span>
-        <span
-          className={`updated-time${isStale ? " updated-time--stale" : ""}`}
-          title={serverIso ?? ""}
-        >
-          {isStale ? `Ingen data i ${secs} sek.` : relativeTimeLabel(secs)}
-        </span>
+    <div className={isStale ? "session-stale" : undefined}>
+      <div className="session-header">
+        <h2 className="session-title">{s.title ?? "Uden titel"}</h2>
+        <div className="session-meta-row">
+          <span className="session-meta">
+            {handCount} {handCount === 1 ? "kamp" : "kampe"} spillet
+          </span>
+          <span
+            className={`updated-time${isStale ? " updated-time--stale" : ""}`}
+            title={serverIso ?? ""}
+          >
+            {isStale ? `Ingen data i ${secs} sek.` : relativeTimeLabel(secs)}
+          </span>
+        </div>
       </div>
 
-      <h2>{s.title ?? "Uden titel"}</h2>
-      <p className="muted hand-count">
-        {handCount} {handCount === 1 ? "kamp" : "kampe"} spillet
-      </p>
+      <div className="two-box-row">
+        <ActiveBox s={s} />
+        <LastHandBox hands={hands} names={names} />
+      </div>
 
-      {standings.length === 4 ? (
-        <div className="standings">
-          {standings.map((p) => (
-            <div
-              key={p.seat}
-              className={`standing-row${p.rank === 1 ? " standing-row--leader" : ""}`}
-            >
-              <span className="standing-rank">{p.rank}</span>
-              <span className="standing-name">{p.name}</span>
-              <span
-                className={`standing-score${p.total > 0 ? " standing-score--pos" : p.total < 0 ? " standing-score--neg" : ""}`}
-              >
-                {scoreLabel(p.total)}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {s.lastCompletedHandCaption ? (
-        <p className="caption-line">Seneste: {s.lastCompletedHandCaption}</p>
-      ) : null}
-
-      {s.pendingMeldingSummary ? (
-        <div className="pending-block">
-          {step ? <span className="pending-step">{step}</span> : null}
-          <p className="pending-line">{s.pendingMeldingSummary}</p>
-          {s.pendingResultSummary ? (
-            <p className="pending-result">{s.pendingResultSummary}</p>
-          ) : null}
-        </div>
+      {names.length === 4 ? (
+        <section className="hands-section">
+          <h3 className="section-label">Alle spilledagens kampe</h3>
+          <HandsTable hands={hands} names={names} totals={totals} />
+        </section>
       ) : null}
 
       {s.notesPublic ? <p className="notes-line">{s.notesPublic}</p> : null}
+    </div>
+  );
+}
+
+// ── Komponent: kompakt afsluttet spilledag ───────────────────────────────────
+
+function FinishedSessionCard({ s }: { s: LiveSession }) {
+  const names = s.playerNamesBySeat ?? [];
+  const totals = s.totalsBySeat ?? [];
+  const hands = s.hands ?? [];
+  const handCount = s.handCount ?? 0;
+
+  return (
+    <article className="card">
+      <div className="card-top">
+        <span className="pill pill--done">Afsluttet</span>
+      </div>
+      <h2>{s.title ?? "Uden titel"}</h2>
+      <p className="hand-count muted">
+        {handCount} {handCount === 1 ? "kamp" : "kampe"} spillet
+      </p>
+      {names.length === 4 ? (
+        <HandsTable hands={hands} names={names} totals={totals} />
+      ) : null}
     </article>
   );
 }
+
+// ── Hoved-side ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const [sessions, setSessions] = useState<LiveSession[]>([]);
@@ -203,7 +325,7 @@ export default function HomePage() {
 
   const activeSessions = sessions.filter((s) => s.status !== "finished");
   const finishedSessions = sessions.filter((s) => s.status === "finished");
-  const isEmpty = sessions.length === 0 && !error;
+  const activeSession = activeSessions[0] ?? null;
 
   return (
     <main>
@@ -218,27 +340,20 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      {isEmpty ? (
+      {sessions.length === 0 && !error ? (
         <p className="empty">Ingen aktive spilledage lige nu.</p>
       ) : null}
 
-      {activeSessions.length > 0 ? (
-        <section>
-          <h3 className="section-heading">Aktivt spil</h3>
-          <div className="grid">
-            {activeSessions.map((s, i) => (
-              <SessionCard key={s.sessionId ?? `a-${i}`} s={s} index={i} now={now} />
-            ))}
-          </div>
-        </section>
+      {activeSession ? (
+        <ActiveSessionView s={activeSession} now={now} />
       ) : null}
 
       {finishedSessions.length > 0 ? (
-        <section className={activeSessions.length > 0 ? "section--below" : ""}>
+        <section className={activeSession ? "section--below" : ""}>
           <h3 className="section-heading">Seneste spil</h3>
           <div className="grid">
             {finishedSessions.map((s, i) => (
-              <SessionCard key={s.sessionId ?? `f-${i}`} s={s} index={i} now={now} />
+              <FinishedSessionCard key={s.sessionId ?? `f-${i}`} s={s} />
             ))}
           </div>
         </section>

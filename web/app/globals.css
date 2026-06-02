@@ -291,6 +291,267 @@ main {
   line-height: 1.4;
 }
 
+/* ── Aktiv spilledag: overskrift ── */
+
+.session-header {
+  margin-bottom: 1.25rem;
+}
+
+.session-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0 0 0.2rem;
+  color: var(--text);
+  line-height: 1.05;
+}
+
+.session-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.session-meta {
+  font-size: 0.83rem;
+  color: var(--muted);
+}
+
+.session-stale {
+  opacity: 0.55;
+}
+
+/* ── To-boks-række ── */
+
+.two-box-row {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 600px) {
+  .two-box-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.info-box {
+  background: var(--panel);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.info-box--active {
+  border-color: var(--orange);
+  background: color-mix(in srgb, var(--panel) 92%, var(--orange));
+}
+
+.box-label {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.13em;
+  color: var(--green);
+  text-transform: uppercase;
+  margin-bottom: 0.1rem;
+}
+
+.info-box--active .box-label {
+  color: var(--orange);
+}
+
+.box-step {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--orange);
+  text-transform: uppercase;
+}
+
+.box-main {
+  margin: 0;
+  font-size: 0.93rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.box-sub {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.box-empty {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Seneste afsluttede spil: scoreoversigt ── */
+
+.last-hand-scores {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+
+.last-hand-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 2.5rem;
+}
+
+.last-hand-name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.last-hand-score {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.last-hand-score.score--pos { color: var(--score-pos); }
+.last-hand-score.score--neg { color: var(--score-neg); }
+
+/* ── Hændstabel ── */
+
+.hands-section {
+  margin-top: 0.25rem;
+}
+
+.section-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius);
+}
+
+.hands-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 360px;
+}
+
+.hands-table thead tr {
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-hi);
+}
+
+.hands-table thead th {
+  padding: 0.5rem 0.65rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: left;
+  letter-spacing: 0.02em;
+}
+
+.hands-table thead th.col-score {
+  text-align: right;
+}
+
+.hands-table tbody tr {
+  border-bottom: 1px solid var(--border-hi);
+}
+
+.hands-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.hands-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hands-table td {
+  padding: 0.45rem 0.65rem;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.col-num {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  color: var(--muted);
+  width: 2rem;
+  white-space: nowrap;
+}
+
+.col-caption {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.col-score {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 3.5rem;
+  padding-right: 1rem;
+}
+
+.score--pos { color: var(--score-pos); }
+.score--neg { color: var(--score-neg); }
+.score--zero { color: var(--muted); }
+
+.kind-sym {
+  margin-right: 0.3rem;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.totals-row {
+  border-top: 1px solid var(--border) !important;
+  background: var(--panel-hi);
+}
+
+.totals-row .col-num {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.totals-row .col-score {
+  font-size: 1.05rem;
+}
+
+.table-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
 /* ── Sektionsoverskrifter ── */
 
 .section-heading {
