@@ -357,6 +357,7 @@ main {
 }
 
 .two-box-row .poster-box-title {
+  font-size: clamp(1.2rem, 3.6vw, 1.5rem);
   letter-spacing: 0.04em;
   text-align: center;
 }
@@ -387,6 +388,7 @@ main {
   display: flex;
   align-items: stretch;
   min-height: 8rem;
+  padding-right: 0.85rem;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -487,10 +489,14 @@ main {
 }
 
 .poster-thermo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 0.85rem;
-  align-self: stretch;
   flex-shrink: 0;
-  margin-right: 0.15rem;
+  margin: 0;
+  z-index: 1;
 }
 
 .poster-thermo-track {
