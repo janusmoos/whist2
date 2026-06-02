@@ -35,6 +35,8 @@ struct HandSummary: Encodable, Sendable {
     var caption: String
     /// Point pr. plads, indekseret 0…3 (samme rækkefølge som `playerNamesBySeat`).
     var scoresBySeat: [Int]
+    /// Tidspunkt hvor kampen blev gemt (ISO 8601). Spejler `RecordedHand.playedAt`.
+    var savedAt: Date
 }
 
 struct LiveSessionPushPayload: Encodable, Sendable {
@@ -107,7 +109,8 @@ enum LiveSessionSnapshotBuilder {
                 handNumber: h.handNumber,
                 kind: h.kindRaw,
                 caption: cap.isEmpty ? h.summaryLine : cap,
-                scoresBySeat: scores
+                scoresBySeat: scores,
+                savedAt: h.playedAt
             )
         }
 
@@ -307,10 +310,14 @@ final class LiveSessionSyncCoordinator {
     /// `updatedAt` er bevidst udeladt — den ændrer sig altid og er ikke web-relevant state.
     private func makeFingerprint(_ p: LiveSessionPushPayload) -> String {
         let totals = p.totalsBySeat.map(String.init).joined(separator: ",")
+        let handsSig = p.hands
+            .map { "\($0.handNumber):\(Int($0.savedAt.timeIntervalSince1970))" }
+            .joined(separator: ",")
         return [
             p.status,
             String(p.handCount),
             totals,
+            handsSig,
             p.pendingStep ?? "",
             p.pendingMeldingSummary ?? "",
             p.pendingResultSummary ?? "",

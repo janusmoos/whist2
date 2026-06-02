@@ -305,10 +305,15 @@ main {
 .updated-time {
   font-size: 0.75rem;
   color: var(--muted);
-  text-align: right;
+  text-align: center;
+  margin: 0;
 }
 
 .updated-time--stale { color: var(--stale-text); }
+
+.two-box-updated {
+  margin: -0.35rem 0 0;
+}
 
 /* ── Plakat-bokse (Aktivt spil / Seneste) ── */
 
@@ -825,12 +830,31 @@ main {
 
 .two-box-row .poster-box {
   border-width: 3px;
+  min-height: 0;
 }
 
 @media (min-width: 700px) {
   .two-box-row {
     grid-template-columns: 1fr 1fr;
-    align-items: stretch;
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+
+  .two-box-active {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .two-box-updated {
+    grid-column: 1;
+    grid-row: 2;
+    margin: -0.45rem 0 0;
+  }
+
+  .two-box-last {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
   }
 }
 
@@ -1013,13 +1037,33 @@ main {
 
 /* Kompakt kamptabel: resumé foldes ud (som i appen) */
 .hands-table--compact {
+  table-layout: fixed;
   min-width: 0;
   width: 100%;
 }
 
+.hands-table--compact .col-num {
+  width: 2.1rem;
+  padding-left: 0.45rem !important;
+  padding-right: 0.15rem !important;
+}
+
+.hands-table--compact .col-type {
+  width: 1.65rem;
+  padding-left: 0.15rem !important;
+  padding-right: 0.15rem !important;
+}
+
+.hands-table--compact thead th.col-score {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .hands-table--compact .col-score {
-  min-width: 2.85rem;
-  padding-right: 0.55rem;
+  min-width: 0;
+  padding-right: 0.45rem;
+  padding-left: 0.25rem;
 }
 
 .col-expand {

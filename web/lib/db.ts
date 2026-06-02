@@ -5,7 +5,7 @@ import { neon } from "@neondatabase/serverless";
  *
  * CREATE TABLE IF NOT EXISTS live_sessions (
  *   session_id UUID PRIMARY KEY,
- *   payload JSONB NOT NULL,
+ *   payload JSONB NOT NULL,  -- hands[].savedAt (ISO 8601) = gemt-tidspunkt pr. kamp
  *   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
  * );
  * CREATE INDEX IF NOT EXISTS idx_live_sessions_updated ON live_sessions (updated_at DESC);

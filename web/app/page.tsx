@@ -227,24 +227,26 @@ function ActiveSessionView({
           <span className="session-meta">
             {handCount} {handCount === 1 ? "kamp" : "kampe"} spillet
           </span>
-          <span
-            className={`updated-time${isStale ? " updated-time--stale" : ""}`}
-            title={serverIso ?? ""}
-          >
-            {isStale ? staleTimeLabel(secs) : relativeTimeLabel(secs)}
-          </span>
         </div>
       </div>
 
       <div className="two-box-row">
         <PosterBox
+          className="two-box-active"
           title="Aktivt spil"
           live
           handNumber={activeHandNumber}
           poster={pendingPoster}
           emptyText="Afventer næste kamp…"
         />
+        <p
+          className={`updated-time two-box-updated${isStale ? " updated-time--stale" : ""}`}
+          title={serverIso ?? ""}
+        >
+          {isStale ? staleTimeLabel(secs) : relativeTimeLabel(secs)}
+        </p>
         <PosterBox
+          className="two-box-last"
           title="Seneste afsluttede spil"
           handNumber={lastHandNumber}
           poster={lastHandPoster}

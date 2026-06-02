@@ -9,6 +9,8 @@ export type HandSummary = {
   kind: string;
   caption: string;
   scoresBySeat: number[];
+  /** ISO 8601 — hvornår kampen blev gemt i appen. Valgfrit for ældre payloads. */
+  savedAt?: string;
 };
 
 function scoreLabel(n: number): string {
@@ -155,6 +157,39 @@ function HandRow({
   );
 }
 
+function TotalsFooterRow({
+  compact,
+  metaColSpan,
+  totals,
+}: {
+  compact: boolean;
+  metaColSpan: number;
+  totals: number[];
+}) {
+  return (
+    <tr className="totals-row">
+      {compact ? (
+        <>
+          <td className="col-num col-totals-label" title="Samlet stilling i dag">
+            I alt
+          </td>
+          <td className="col-type" aria-hidden="true" />
+        </>
+      ) : (
+        <td colSpan={metaColSpan} className="col-totals-label">
+          Samlet stilling i dag
+        </td>
+      )}
+      {totals.map((t, i) => (
+        <td key={i} className={`col-score${scoreClass(t)}`}>
+          {scoreLabel(t)}
+        </td>
+      ))}
+      {compact ? <td className="col-expand" aria-hidden="true" /> : null}
+    </tr>
+  );
+}
+
 export function HandsTable({
   hands,
   names,
@@ -215,17 +250,7 @@ export function HandsTable({
               </tr>
             </tbody>
             <tfoot>
-              <tr className="totals-row">
-                <td colSpan={metaColSpan} className="col-totals-label">
-                  Samlet stilling i dag
-                </td>
-                {totals.map((t, i) => (
-                  <td key={i} className={`col-score${scoreClass(t)}`}>
-                    {scoreLabel(t)}
-                  </td>
-                ))}
-                {compact ? <td className="col-expand" /> : null}
-              </tr>
+              <TotalsFooterRow compact={compact} metaColSpan={metaColSpan} totals={totals} />
             </tfoot>
           </table>
           <p className="table-legacy-note">
@@ -269,17 +294,7 @@ export function HandsTable({
           ))}
         </tbody>
         <tfoot>
-          <tr className="totals-row">
-            <td colSpan={metaColSpan} className="col-totals-label">
-              Samlet stilling i dag
-            </td>
-            {totals.map((t, i) => (
-              <td key={i} className={`col-score${scoreClass(t)}`}>
-                {scoreLabel(t)}
-              </td>
-            ))}
-            {compact ? <td className="col-expand" /> : null}
-          </tr>
+          <TotalsFooterRow compact={compact} metaColSpan={metaColSpan} totals={totals} />
         </tfoot>
       </table>
     </div>

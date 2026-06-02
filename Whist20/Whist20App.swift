@@ -8,7 +8,22 @@ struct Whist20App: App {
 
     init() {
         Self.configureNavigationTypography()
+        #if DEBUG
+        Self.logLiveSyncConfig()
+        #endif
     }
+
+    #if DEBUG
+    private static func logLiveSyncConfig() {
+        let url = LiveSessionSyncSettings.baseURL?.absoluteString ?? "nil"
+        let secretOK = LiveSessionSyncSettings.bearerSecret != nil
+        print("""
+        [LiveSync] baseURL   : \(url)
+        [LiveSync] secret sat: \(secretOK)
+        [LiveSync] konfigureret: \(LiveSessionSyncSettings.isConfigured)
+        """)
+    }
+    #endif
 
     /// Egen store-sti (ikke Apples default), så skemaændringer ikke kolliderer med ældre testfiler.
     private static func persistenceStoreURL() -> URL {
