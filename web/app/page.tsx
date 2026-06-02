@@ -177,6 +177,22 @@ function resolveLastHandNumber(
   return null;
 }
 
+function resolveActiveHandNumber(
+  s: LiveSession,
+  hands: HandSummary[]
+): number | null {
+  const hasPending =
+    s.pendingPoster ||
+    s.pendingMeldingSummary ||
+    s.pendingStep ||
+    s.pendingResultSummary;
+  if (!hasPending) return null;
+
+  const maxNum = hands.reduce((m, h) => Math.max(m, h.handNumber ?? 0), 0);
+  const next = maxNum > 0 ? maxNum + 1 : (s.handCount ?? 0) + 1;
+  return next > 0 ? next : 1;
+}
+
 // ── Komponent: fuld aktiv spilledag ─────────────────────────────────────────
 
 function ActiveSessionView({
@@ -198,6 +214,7 @@ function ActiveSessionView({
   const pendingPoster = resolvePendingPoster(s);
   const lastHandPoster = resolveLastHandPoster(s, hands, names);
   const lastHandNumber = resolveLastHandNumber(s, hands, lastHandPoster);
+  const activeHandNumber = resolveActiveHandNumber(s, hands);
 
   return (
     <div>
@@ -223,6 +240,7 @@ function ActiveSessionView({
         <PosterBox
           title="Aktivt spil"
           live
+          handNumber={activeHandNumber}
           poster={pendingPoster}
           emptyText="Afventer næste kamp…"
         />
