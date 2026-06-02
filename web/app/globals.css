@@ -909,6 +909,18 @@ main {
   vertical-align: middle;
 }
 
+.hands-table td.col-score.score--pos {
+  color: var(--score-pos);
+}
+
+.hands-table td.col-score.score--neg {
+  color: var(--score-neg);
+}
+
+.hands-table td.col-score.score--zero {
+  color: var(--muted);
+}
+
 .col-num {
   font-family: var(--font-display);
   font-size: 0.78rem;

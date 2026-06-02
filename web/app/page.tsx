@@ -62,8 +62,9 @@ function scoreLabel(n: number): string {
 }
 
 function scoreClass(n: number): string {
-  if (n > 0) return " score--pos";
-  if (n < 0) return " score--neg";
+  const v = Number(n);
+  if (v > 0) return " score--pos";
+  if (v < 0) return " score--neg";
   return " score--zero";
 }
 
