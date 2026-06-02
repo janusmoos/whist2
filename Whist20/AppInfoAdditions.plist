@@ -3,7 +3,10 @@
 <plist version="1.0">
 <dict>
 	<key>LiveSessionAPIBaseURL</key>
-	<string></string>
+	<string>https://whist-live.vercel.app</string>
+	<!-- LiveSessionAPISecret sættes IKKE her i repoet.
+	     Tilføj din secret lokalt via Xcode scheme env, xcconfig eller direkte i
+	     en lokal (ikke-committed) kopi af denne plist under test. -->
 	<key>LiveSessionAPISecret</key>
 	<string></string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
