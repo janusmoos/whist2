@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAverage, scoreClass, scoreLabel } from "@/lib/stats/format";
+import { averageScoreClass, formatAverage, scoreClass, scoreLabel } from "@/lib/stats/format";
 import { shouldShowPerPlayerGameCounts } from "@/lib/stats/displayHelpers";
 
 export function PlayerBreakdownTable({
@@ -24,7 +24,7 @@ export function PlayerBreakdownTable({
           <tr>
             <th>Spiller</th>
             {showGames ? <th>Spil</th> : null}
-            <th>Snit</th>
+            <th className="stats-table-col-snit">Snit</th>
             <th>Total</th>
           </tr>
         </thead>
@@ -33,10 +33,8 @@ export function PlayerBreakdownTable({
             <tr key={row.name}>
               <td>{row.name}</td>
               {showGames ? <td>{row.gamesPlayed}</td> : null}
-              <td className={scoreClass(Math.round(row.averageScore))}>
-                {row.gamesPlayed > 0
-                  ? scoreLabel(Math.round(row.averageScore * 10) / 10)
-                  : "—"}
+              <td className={`stats-table-col-snit${averageScoreClass(row.averageScore)}`}>
+                {row.gamesPlayed > 0 ? formatAverage(row.averageScore) : "—"}
               </td>
               <td className={scoreClass(row.totalScore)}>{scoreLabel(row.totalScore)}</td>
             </tr>
@@ -67,7 +65,7 @@ export function GameTypePlayerTable({
           <tr>
             <th>Spiller</th>
             {showGames ? <th>Spil</th> : null}
-            <th>Snit</th>
+            <th className="stats-table-col-snit">Snit</th>
             <th>Total</th>
           </tr>
         </thead>
@@ -76,7 +74,7 @@ export function GameTypePlayerTable({
             <tr key={row.playerId}>
               <td>{row.name}</td>
               {showGames ? <td>{row.games}</td> : null}
-              <td className={scoreClass(Math.round(row.averageScore))}>
+              <td className={`stats-table-col-snit${averageScoreClass(row.averageScore)}`}>
                 {row.games > 0 ? formatAverage(row.averageScore) : "—"}
               </td>
               <td className={scoreClass(row.totalScore)}>{scoreLabel(row.totalScore)}</td>

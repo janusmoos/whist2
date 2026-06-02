@@ -8,7 +8,7 @@ export function GameTypeIconBarChart({
   slices,
   title = "Spiltyper efter antal",
 }: {
-  slices: { title: string; count: number; iconKind: GameTypeIconKind }[];
+  slices: { title: string; count: number; iconKind: GameTypeIconKind; color?: string }[];
   title?: string;
 }) {
   if (slices.length === 0) {
@@ -29,7 +29,10 @@ export function GameTypeIconBarChart({
             <div className="stats-gametype-icon-bar-track">
               <div
                 className="stats-gametype-icon-bar-fill"
-                style={{ width: `${(slice.count / maxCount) * 100}%` }}
+                style={{
+                  width: `${(slice.count / maxCount) * 100}%`,
+                  background: slice.color,
+                }}
               />
             </div>
             <span className="stats-gametype-icon-bar-count">{slice.count}</span>

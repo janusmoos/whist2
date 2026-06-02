@@ -108,6 +108,17 @@ export function HeatmapChart({
   );
 }
 
+const PIE_VIEW_BOX = "-16 -16 132 132";
+const PIE_CX = 50;
+const PIE_CY = 50;
+const PIE_R = 24;
+const PIE_LABEL_MIN_Y = 12;
+const PIE_LABEL_MAX_Y = 88;
+const PIE_RAIL_LEFT = 22;
+const PIE_RAIL_RIGHT = 78;
+const PIE_TEXT_LEFT = 9;
+const PIE_TEXT_RIGHT = 91;
+
 export function DonutChart({
   slices,
   title,
@@ -116,58 +127,207 @@ export function DonutChart({
   title?: string;
 }) {
   const total = slices.reduce((s, x) => s + x.value, 0) || 1;
-  let offset = 0;
-  const r = 42;
-  const c = 2 * Math.PI * r;
+  const labelFontSize = Math.max(2.65, 3.25 - Math.max(0, slices.length - 5) * 0.12);
+
+  const enriched = slices.map((slice, i) => ({
+    ...slice,
+    color: slice.color ?? chartSeriesColor(i),
+  }));
+
+  let angle = -Math.PI / 2;
+  const pieSlices = enriched.map((slice) => {
+    const sweep = (slice.value / total) * Math.PI * 2;
+    const start = angle;
+    const end = angle + sweep;
+    angle = end;
+    return { ...slice, start, end, mid: (start + end) / 2 };
+  });
+
+  const callouts = layoutPieCallouts(pieSlices);
 
   return (
-    <ChartReveal className="stats-donut-wrap">
-      {title ? <h4 className="stats-chart-subtitle">{title}</h4> : null}
-      <div className="stats-donut-row">
-        <svg viewBox="0 0 100 100" className="stats-donut" role="img" aria-label={title ?? "Fordeling"}>
-          <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border-hi)" strokeWidth="14" />
-          {slices.map((slice, i) => {
-            const len = (slice.value / total) * c;
-            const dash = `${len} ${c - len}`;
-            const el = (
-              <circle
-                key={slice.label}
-                className="stats-donut-slice"
-                cx="50"
-                cy="50"
-                r={r}
-                fill="none"
-                stroke={slice.color ?? chartSeriesColor(i)}
-                strokeWidth="14"
-                strokeDasharray={dash}
-                strokeDashoffset={-offset}
-                transform="rotate(-90 50 50)"
-                style={
-                  {
-                    ...chartStagger(i),
-                    "--donut-c": c,
-                  } as CSSProperties
-                }
-              />
-            );
-            offset += len;
-            return el;
-          })}
-        </svg>
-        <ul className="stats-donut-legend">
-          {slices.map((slice, i) => (
-            <li key={slice.label} style={chartStagger(i)}>
-              <span
-                className="session-stats-chart-swatch"
-                style={{ background: slice.color ?? chartSeriesColor(i) }}
-              />
-              {slice.label} ({slice.value})
-            </li>
+    <ChartReveal className="stats-donut-wrap stats-pie-wrap">
+      {title ? <h4 className="stats-chart-subtitle stats-pie-subtitle">{title}</h4> : null}
+      <div className="stats-pie-layout">
+        <svg
+          viewBox={PIE_VIEW_BOX}
+          className="stats-pie"
+          role="img"
+          aria-label={title ?? "Fordeling"}
+          style={{ "--pie-label-size": `${labelFontSize}px` } as CSSProperties}
+        >
+          {pieSlices.map((slice, i) => (
+            <path
+              key={slice.label}
+              className="stats-pie-slice"
+              d={pieSlicePath(PIE_CX, PIE_CY, PIE_R, slice.start, slice.end)}
+              fill={slice.color}
+              stroke="var(--stats-surface)"
+              strokeWidth={0.6}
+              style={chartStagger(i)}
+            >
+              <title>
+                {slice.label}: {slice.value}
+              </title>
+            </path>
           ))}
-        </ul>
+          {callouts.map((callout, i) => (
+            <g
+              key={`callout-${callout.label}`}
+              className="stats-pie-callout"
+              style={chartStagger(i)}
+            >
+              <polyline
+                className="stats-pie-callout-line"
+                points={callout.linePoints}
+                stroke={callout.color}
+              />
+              <circle
+                className="stats-pie-callout-dot"
+                cx={callout.xEdge}
+                cy={callout.yEdge}
+                r={0.7}
+                fill={callout.color}
+              />
+              <text
+                x={callout.xText}
+                y={callout.y}
+                textAnchor={callout.isRight ? "start" : "end"}
+                dominantBaseline="middle"
+                className="stats-pie-callout-label"
+              >
+                {callout.label} ({callout.value})
+              </text>
+            </g>
+          ))}
+        </svg>
       </div>
     </ChartReveal>
   );
+}
+
+type PieSliceWithAngles = {
+  label: string;
+  value: number;
+  color: string;
+  start: number;
+  end: number;
+  mid: number;
+};
+
+type PieCallout = PieSliceWithAngles & {
+  isRight: boolean;
+  xEdge: number;
+  yEdge: number;
+  xRail: number;
+  y: number;
+  xLineEnd: number;
+  xText: number;
+  linePoints: string;
+};
+
+function layoutPieCallouts(pieSlices: PieSliceWithAngles[]): PieCallout[] {
+  const callouts: PieCallout[] = pieSlices.map((slice) => {
+    const cos = Math.cos(slice.mid);
+    const sin = Math.sin(slice.mid);
+    const isRight = cos >= 0;
+    const xEdge = PIE_CX + PIE_R * cos;
+    const yEdge = PIE_CY + PIE_R * sin;
+    const xRail = isRight ? PIE_RAIL_RIGHT : PIE_RAIL_LEFT;
+    const xText = isRight ? PIE_TEXT_RIGHT : PIE_TEXT_LEFT;
+    const xLineEnd = isRight ? xText - 1.5 : xText + 1.5;
+
+    return {
+      ...slice,
+      isRight,
+      xEdge,
+      yEdge,
+      xRail,
+      y: yEdge,
+      xLineEnd,
+      xText,
+      linePoints: "",
+    };
+  });
+
+  distributeCalloutYs(
+    callouts.filter((c) => c.isRight),
+    PIE_LABEL_MIN_Y,
+    PIE_LABEL_MAX_Y
+  );
+  distributeCalloutYs(
+    callouts.filter((c) => !c.isRight),
+    PIE_LABEL_MIN_Y,
+    PIE_LABEL_MAX_Y
+  );
+
+  for (const callout of callouts) {
+    callout.linePoints = `${callout.xEdge},${callout.yEdge} ${callout.xRail},${callout.yEdge} ${callout.xRail},${callout.y} ${callout.xLineEnd},${callout.y}`;
+  }
+
+  return callouts;
+}
+
+function distributeCalloutYs(group: PieCallout[], minY: number, maxY: number) {
+  if (group.length === 0) return;
+
+  const sorted = [...group].sort((a, b) => a.yEdge - b.yEdge);
+  const minGap = Math.min(5.75, (maxY - minY) / Math.max(sorted.length, 1));
+  const ys = sorted.map((c) => clamp(c.yEdge, minY, maxY));
+
+  for (let i = 1; i < sorted.length; i++) {
+    ys[i] = Math.max(ys[i], ys[i - 1] + minGap);
+  }
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    ys[i] = Math.min(ys[i], ys[i + 1] - minGap);
+  }
+
+  if (ys[sorted.length - 1] > maxY) {
+    const shift = ys[sorted.length - 1] - maxY;
+    for (let i = 0; i < ys.length; i++) ys[i] -= shift;
+  }
+  if (ys[0] < minY) {
+    const shift = minY - ys[0];
+    for (let i = 0; i < ys.length; i++) ys[i] += shift;
+  }
+
+  sorted.forEach((callout, i) => {
+    callout.y = ys[i];
+  });
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function polarToCartesian(cx: number, cy: number, r: number, angleRad: number) {
+  return {
+    x: cx + r * Math.cos(angleRad),
+    y: cy + r * Math.sin(angleRad),
+  };
+}
+
+function pieSlicePath(
+  cx: number,
+  cy: number,
+  r: number,
+  startAngle: number,
+  endAngle: number
+): string {
+  const sweep = endAngle - startAngle;
+  if (sweep >= Math.PI * 2 - 1e-6) {
+    return [
+      `M ${cx - r} ${cy}`,
+      `A ${r} ${r} 0 1 1 ${cx + r} ${cy}`,
+      `A ${r} ${r} 0 1 1 ${cx - r} ${cy}`,
+      "Z",
+    ].join(" ");
+  }
+
+  const start = polarToCartesian(cx, cy, r, startAngle);
+  const end = polarToCartesian(cx, cy, r, endAngle);
+  const largeArc = sweep > Math.PI ? 1 : 0;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
 }
 
 export const RANK_PLACE_COLORS = [

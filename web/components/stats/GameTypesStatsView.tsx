@@ -8,6 +8,7 @@ import { GameTypePlayerTable } from "@/components/stats/PlayerBreakdownTable";
 import { StatsPageShell } from "@/components/stats/StatsPageShell";
 import { gameTypePath } from "@/lib/stats/paths";
 import { gameTypeIconKindFromLabel } from "@/lib/stats/gameTypeIcons";
+import { gameTypeChartColor } from "@/lib/stats/chartColors";
 import { useClubStats } from "@/hooks/useClubStats";
 
 export function GameTypesStatsView() {
@@ -17,6 +18,7 @@ export function GameTypesStatsView() {
     model?.gameTypes.map((row) => ({
       label: row.gameType,
       value: row.games,
+      color: gameTypeChartColor(row.gameType),
     })) ?? [];
 
   return (
@@ -43,6 +45,7 @@ export function GameTypesStatsView() {
                 title: row.gameType,
                 count: row.games,
                 iconKind: gameTypeIconKindFromLabel(row.gameType),
+                color: gameTypeChartColor(row.gameType),
               }))}
             />
           </section>

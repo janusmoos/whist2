@@ -89,6 +89,12 @@ html[data-theme="light"] {
   --chart-4: #53467a;
   --chart-5: #b89414;
   --chart-6: #9a9830;
+  --chart-7: #c4281a;
+  --chart-8: #156575;
+  --chart-9: #f2b90f;
+  --chart-10: #8fb259;
+  --chart-11: #7a4a8f;
+  --chart-12: #5c5348;
   --stats-line-1: var(--chart-1);
   --stats-line-2: var(--chart-2);
   --stats-line-3: var(--chart-3);
@@ -124,6 +130,12 @@ html[data-theme="dark"] {
   --chart-4: #b89ae8;
   --chart-5: #f0d050;
   --chart-6: #c4c860;
+  --chart-7: #ff6b5a;
+  --chart-8: #4ecdd4;
+  --chart-9: #ffd933;
+  --chart-10: #8fd654;
+  --chart-11: #d4a0e8;
+  --chart-12: #b8a898;
   --stats-line-1: var(--chart-1);
   --stats-line-2: var(--chart-2);
   --stats-line-3: var(--chart-3);
@@ -160,6 +172,12 @@ html[data-theme="dark"] {
     --chart-4: #53467a;
     --chart-5: #b89414;
     --chart-6: #9a9830;
+    --chart-7: #c4281a;
+    --chart-8: #156575;
+    --chart-9: #f2b90f;
+    --chart-10: #8fb259;
+    --chart-11: #7a4a8f;
+    --chart-12: #5c5348;
     --stats-line-1: var(--chart-1);
     --stats-line-2: var(--chart-2);
     --stats-line-3: var(--chart-3);
@@ -196,6 +214,12 @@ html[data-theme="dark"] {
     --chart-4: #b89ae8;
     --chart-5: #f0d050;
     --chart-6: #c4c860;
+    --chart-7: #ff6b5a;
+    --chart-8: #4ecdd4;
+    --chart-9: #ffd933;
+    --chart-10: #8fd654;
+    --chart-11: #d4a0e8;
+    --chart-12: #b8a898;
     --stats-line-1: var(--chart-1);
     --stats-line-2: var(--chart-2);
     --stats-line-3: var(--chart-3);
@@ -1317,9 +1341,9 @@ main {
 }
 
 .stats-page-title {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: clamp(1.6rem, 5vw, 2.2rem);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: 0 0 0.35rem;
@@ -1964,8 +1988,11 @@ main {
 .stats-gametype-table td:last-child,
 .stats-gametype-table th:last-child,
 .stats-trends-table td:last-child,
-.stats-trends-table th:last-child {
+.stats-trends-table th:last-child,
+.stats-gametype-table .stats-table-col-snit,
+.stats-trends-table .stats-table-col-snit {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .stats-trends {
@@ -2300,6 +2327,63 @@ main {
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
+}
+
+/* Lagkagediagram — callouts med streg til hver skive */
+.stats-pie-wrap {
+  overflow: visible;
+}
+
+.stats-pie-wrap .stats-pie-subtitle {
+  text-align: center;
+}
+
+.stats-pie-layout {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-inline: auto;
+  padding: 0.35rem 0.65rem;
+  overflow: visible;
+}
+
+.stats-pie {
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  aspect-ratio: 1;
+  overflow: visible;
+  display: block;
+}
+
+.stats-pie-callout-line {
+  fill: none;
+  stroke-width: 0.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+}
+
+.stats-pie-callout-dot {
+  stroke: var(--stats-surface);
+  stroke-width: 0.35;
+}
+
+.stats-pie-callout-label {
+  font-family: var(--font-body);
+  font-size: var(--pie-label-size, 3px);
+  font-weight: 600;
+  fill: var(--text);
+}
+
+@media (max-width: 520px) {
+  .stats-pie-layout {
+    padding-inline: 0.25rem;
+  }
+
+  .stats-pie {
+    max-width: 100%;
+  }
 }
 
 .stats-donut {
@@ -3010,24 +3094,23 @@ main {
   transform: none;
 }
 
-.stats-chart-reveal .stats-donut-slice {
+.stats-chart-reveal .stats-pie-slice {
   opacity: 0;
+  transform-origin: 50% 50%;
+  transform: scale(0.88);
   transition:
-    stroke-dasharray var(--chart-dur-donut) var(--chart-ease),
-    stroke-dashoffset var(--chart-dur-donut) var(--chart-ease),
-    opacity var(--chart-dur-cell) var(--chart-ease);
+    opacity var(--chart-dur-donut) var(--chart-ease),
+    transform var(--chart-dur-donut) var(--chart-ease);
   transition-delay: calc(var(--stagger, 0) * var(--chart-stagger-slice) + 200ms);
 }
 
-.stats-chart-reveal:not(.stats-chart-reveal--visible) .stats-donut-slice {
-  stroke-dasharray: 0 var(--donut-c, 264) !important;
-  stroke-dashoffset: 0 !important;
-}
-
-.stats-chart-reveal--visible .stats-donut-slice {
+.stats-chart-reveal--visible .stats-pie-slice {
   opacity: 1;
+  transform: scale(1);
 }
 
+.stats-chart-reveal .stats-pie-callout,
+.stats-chart-reveal .stats-pie-legend li,
 .stats-chart-reveal .stats-donut-legend li,
 .stats-chart-reveal .session-stats-chart-legend li,
 .stats-chart-reveal .stats-rank-bars-legend li {
@@ -3039,6 +3122,8 @@ main {
   transition-delay: calc(var(--stagger, 0) * var(--chart-stagger-legend) + 520ms);
 }
 
+.stats-chart-reveal--visible .stats-pie-callout,
+.stats-chart-reveal--visible .stats-pie-legend li,
 .stats-chart-reveal--visible .stats-donut-legend li,
 .stats-chart-reveal--visible .session-stats-chart-legend li,
 .stats-chart-reveal--visible .stats-rank-bars-legend li {
@@ -3100,6 +3185,10 @@ main {
     z-index: 1;
     position: relative;
   }
+
+  .stats-chart-reveal--visible .stats-pie-slice:hover {
+    filter: brightness(1.08);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3117,6 +3206,9 @@ main {
   .stats-chart-reveal .stats-gametype-icon-bar-row,
   .stats-chart-reveal .stats-heatmap tbody td,
   .stats-chart-reveal .stats-player-bid-heatmap-cell--filled,
+  .stats-chart-reveal .stats-pie-slice,
+  .stats-chart-reveal .stats-pie-callout,
+  .stats-chart-reveal .stats-pie-legend li,
   .stats-chart-reveal .stats-donut-slice,
   .stats-chart-reveal .stats-donut-legend li,
   .stats-chart-reveal .session-stats-chart-legend li,

@@ -10,5 +10,15 @@ export function scoreClass(n: number): string {
 
 export function formatAverage(n: number): string {
   const rounded = Math.round(n * 10) / 10;
-  return scoreLabel(rounded);
+  const formatted = Math.abs(rounded).toLocaleString("da-DK", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  if (rounded > 0) return `+${formatted}`;
+  if (rounded < 0) return `-${formatted}`;
+  return formatted;
+}
+
+export function averageScoreClass(n: number): string {
+  return scoreClass(Math.round(n * 10) / 10);
 }
