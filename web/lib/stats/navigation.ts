@@ -6,8 +6,6 @@ export type StatsNavItem = {
   icon: StatsNavIcon;
   /** Kun link når der er en aktiv spilledag (live). */
   requiresActiveSession?: boolean;
-  /** Kræver klub-historik (fase 2). */
-  phase2?: boolean;
 };
 
 export type StatsNavIcon =
@@ -34,7 +32,6 @@ export const STATS_HUB_NAV: StatsNavItem[] = [
     subtitle: "Dato, sted, resultater og spil-detaljer",
     metric: "—",
     icon: "sessions",
-    phase2: true,
   },
   {
     href: "/statistik/spillere",
@@ -42,7 +39,6 @@ export const STATS_HUB_NAV: StatsNavItem[] = [
     subtitle: "Profiler, bedste/værste spil og meldinger",
     metric: "4",
     icon: "players",
-    phase2: true,
   },
   {
     href: "/statistik/spiltyper",
@@ -50,7 +46,6 @@ export const STATS_HUB_NAV: StatsNavItem[] = [
     subtitle: "Succes pr. type med tydelig sample size",
     metric: "—",
     icon: "game-types",
-    phase2: true,
   },
   {
     href: "/statistik/tendenser",
@@ -58,7 +53,6 @@ export const STATS_HUB_NAV: StatsNavItem[] = [
     subtitle: "Udvikling over tid og seneste perioder",
     metric: "5–50",
     icon: "trends",
-    phase2: true,
   },
   {
     href: "/statistik/datagrundlag",
@@ -66,7 +60,6 @@ export const STATS_HUB_NAV: StatsNavItem[] = [
     subtitle: "Importkvalitet, feltdækning og planlagte forbedringer",
     metric: "—",
     icon: "data",
-    phase2: true,
   },
 ];
 

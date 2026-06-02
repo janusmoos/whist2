@@ -1,6 +1,7 @@
 "use client";
 
 import type { HandSummary } from "@/components/HandsTable";
+import { PlayerLinesChart } from "@/components/stats/PlayerLinesChart";
 import {
   computeSessionDayStats,
   gameTypeSummaryLabel,
@@ -17,86 +18,28 @@ function scoreClass(n: number): string {
   return " score--zero";
 }
 
-const PLAYER_LINE_COLORS = [
-  "var(--stats-line-1)",
-  "var(--stats-line-2)",
-  "var(--stats-line-3)",
-  "var(--stats-line-4)",
-];
-
-function ScoreProgressChart({
+function DayProgressChart({
   players,
   handCount,
 }: {
   players: PlayerDayStats[];
   handCount: number;
 }) {
-  if (handCount === 0) return null;
-
-  const allValues = players.flatMap((p) => p.cumulative);
-  const minY = Math.min(0, ...allValues);
-  const maxY = Math.max(0, ...allValues);
-  const range = maxY - minY || 1;
-
-  const width = 320;
-  const height = 120;
-  const padX = 8;
-  const padY = 10;
-  const innerW = width - padX * 2;
-  const innerH = height - padY * 2;
-
-  const xAt = (handIndex: number) =>
-    handCount === 1
-      ? padX + innerW / 2
-      : padX + (handIndex / (handCount - 1)) * innerW;
-
-  const yAt = (value: number) =>
-    padY + innerH - ((value - minY) / range) * innerH;
-
-  const zeroY = yAt(0);
+  if (handCount < 2) return null;
 
   return (
     <div className="session-stats-chart-wrap">
-      <svg
-        className="session-stats-chart"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label="Kumulativ stilling pr. spiller gennem spilledagen"
-      >
-        <line
-          x1={padX}
-          y1={zeroY}
-          x2={width - padX}
-          y2={zeroY}
-          className="session-stats-chart-zero"
-        />
-        {players.map((player) => {
-          if (player.cumulative.length === 0) return null;
-          const points = player.cumulative
-            .map((value, i) => `${xAt(i)},${yAt(value)}`)
-            .join(" ");
-          return (
-            <polyline
-              key={player.seat}
-              points={points}
-              className="session-stats-chart-line"
-              style={{ stroke: PLAYER_LINE_COLORS[player.seat] }}
-            />
-          );
-        })}
-      </svg>
-      <ul className="session-stats-chart-legend">
-        {players.map((player) => (
-          <li key={player.seat}>
-            <span
-              className="session-stats-chart-swatch"
-              style={{ background: PLAYER_LINE_COLORS[player.seat] }}
-              aria-hidden="true"
-            />
-            {player.name}
-          </li>
-        ))}
-      </ul>
+      <PlayerLinesChart
+        series={players.map((p) => ({
+          id: String(p.seat),
+          name: p.name,
+          colorIndex: p.seat,
+          points: p.cumulative.map((y, i) => ({ x: i, y })),
+        }))}
+        xLabel="Kumulativ stilling gennem spilledagen"
+        ariaLabel="Kumulativ stilling pr. spiller gennem spilledagen"
+        height={120}
+      />
     </div>
   );
 }
@@ -182,7 +125,7 @@ export function SessionDayStatsPanel({
         </div>
 
       {stats.handCount >= 2 ? (
-        <ScoreProgressChart players={stats.players} handCount={stats.handCount} />
+        <DayProgressChart players={stats.players} handCount={stats.handCount} />
       ) : null}
     </div>
   );

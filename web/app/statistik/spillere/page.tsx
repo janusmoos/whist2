@@ -1,17 +1,9 @@
-import { StatsComingSoon } from "@/components/stats/StatsComingSoon";
-import { StatsPageShell } from "@/components/stats/StatsPageShell";
+import { PlayersStatsView } from "@/components/stats/PlayersStatsView";
 
 export const metadata = {
   title: "Spillere — Whistklubben",
 };
 
 export default function SpillerePage() {
-  return (
-    <StatsPageShell
-      title="Spillere"
-      lead="Profiler, bedste/værste spil og meldinger."
-    >
-      <StatsComingSoon />
-    </StatsPageShell>
-  );
+  return <PlayersStatsView />;
 }
