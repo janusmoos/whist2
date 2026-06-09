@@ -1,3 +1,4 @@
+import CoreImage.CIFilterBuiltins
 import SwiftData
 import SwiftUI
 
@@ -338,6 +339,7 @@ private struct AppSettingsView: View {
         ScrollView {
             VStack(spacing: 20) {
                 appearancePanel
+                participantAccessPanel
                 backupPanel
             }
             .padding(.horizontal, 16)
@@ -377,6 +379,22 @@ private struct AppSettingsView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
+        }
+        .posterCard
+    }
+
+    // MARK: - Deltageradgang
+
+    private var participantAccessPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            settingsHeader("Deltageradgang")
+            settingsDivider
+            NavigationLink {
+                ParticipantAccessQRCodeView()
+            } label: {
+                settingsActionLabel("Vis QR-kode til Vercel", systemImage: "qrcode")
+            }
+            .buttonStyle(.plain)
         }
         .posterCard
     }
@@ -487,6 +505,119 @@ private struct AppSettingsView: View {
             shareFileURLs = []
             backupMessage = "Kun gemt i appen. Lokal backup kunne ikke skrives."
         }
+    }
+}
+
+private struct ParticipantAccessQRCodeView: View {
+    private let siteURL = LiveSessionSyncSettings.baseURL
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                if let siteURL {
+                    qrPanel(siteURL: siteURL)
+                    siteInfoPanel(siteURL: siteURL)
+                } else {
+                    ContentUnavailableView(
+                        "Vercel-site mangler",
+                        systemImage: "qrcode",
+                        description: Text("Tilføj LiveSessionAPIBaseURL i appens konfiguration.")
+                    )
+                    .padding(.top, 48)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 28)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Deltageradgang")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func qrPanel(siteURL: URL) -> some View {
+        VStack(spacing: 16) {
+            if let image = Self.qrCodeImage(for: siteURL.absoluteString) {
+                Image(uiImage: image)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(18)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.65), lineWidth: 1)
+                    }
+                    .frame(maxWidth: 340)
+                    .accessibilityLabel("QR-kode til \(siteURL.absoluteString)")
+            } else {
+                ContentUnavailableView("QR-kode kunne ikke vises", systemImage: "qrcode")
+            }
+
+            Text("Scan koden for at åbne Whist 2.0 på Vercel.")
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.68))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(18)
+        .posterCard
+    }
+
+    private func siteInfoPanel(siteURL: URL) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("VERCEL-SITE")
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 13))
+                .foregroundStyle(ActiveGamePosterStyle.sectionHeaderColor)
+                .padding(.horizontal, 14)
+                .padding(.top, 14)
+                .padding(.bottom, 8)
+
+            Rectangle()
+                .fill(ActiveGamePosterStyle.borderColor)
+                .frame(height: 0.5)
+                .padding(.horizontal, 8)
+
+            Text(siteURL.absoluteString)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .textSelection(.enabled)
+                .lineLimit(3)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+
+            Rectangle()
+                .fill(ActiveGamePosterStyle.borderColor)
+                .frame(height: 0.5)
+                .padding(.horizontal, 8)
+
+            ShareLink(item: siteURL) {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Del link")
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14).weight(.semibold))
+                    Spacer()
+                }
+                .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+            }
+        }
+        .posterCard
+    }
+
+    private static func qrCodeImage(for text: String) -> UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.correctionLevel = "M"
+
+        guard let outputImage = filter.outputImage else { return nil }
+        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 12, y: 12))
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 }
 
