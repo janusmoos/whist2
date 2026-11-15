@@ -15,7 +15,7 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
 
         XCTAssertEqual(primary.version, "whist_historical_data_v3")
         XCTAssertEqual(primary.auditSummary?.version, "v3")
-        XCTAssertEqual(primary.games.count, 930)
+        XCTAssertEqual(primary.games.count, 1002)
         XCTAssertEqual(primary.playerResults.count, primary.games.count * 4)
         XCTAssertEqual(primary.players.map(\.name), ["Christian", "Janus", "Peter", "Thomas"])
         XCTAssertEqual(
