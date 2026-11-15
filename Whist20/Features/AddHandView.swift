@@ -8,23 +8,18 @@ private enum HandRoute: Hashable {
     /// Kun normale spil med undertype halve: trumf før resultat.
     case halveTrumf
     case resultat
+    case note
 }
 
 private enum AddHandLocalBackupNotice {
-    static func message(afterWritingBackupFor gameDay: GameDay) -> String {
-        #if DEBUG
-        let start = AddHandPerfTrace.now()
-        defer { AddHandPerfTrace.log("LocalBackup.writeBackup", startedAt: start) }
-        #endif
-        do {
-            _ = try LocalGameBackupService.writeBackup(for: gameDay)
-            return "Lokal backup gemt"
-        } catch {
-            #if DEBUG
-            print("[LocalGameBackup] Fejl: \(error.localizedDescription)")
-            #endif
-            return "Kun gemt i appen. Lokal backup kunne ikke skrives."
-        }
+    static let scheduledMessage = "Spillet er gemt. Backup kører i baggrunden."
+
+    @MainActor
+    static func schedule(for gameDay: GameDay, modelContext: ModelContext) {
+        GameBackupCoordinator.scheduleAfterSavedGame(
+            gameDay: gameDay,
+            modelContext: modelContext
+        )
     }
 }
 
@@ -94,6 +89,15 @@ final class HandInputDraft {
     var dutySeat: Seat?
 
     var solTricks: [Seat: Int] = Dictionary(uniqueKeysWithValues: Seat.all.map { ($0, 0) })
+
+    var noteTitle: String = ""
+    var noteText: String = ""
+    var noteCreatedAt: Date?
+
+    var hasNoteDraft: Bool {
+        !noteTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     /// Resultat for sol: kun melder + «går med» tastes ind; resten udledes.
     var solTrickInputSeats: [Seat] {
@@ -539,11 +543,11 @@ private struct BidStepView: View {
         #if DEBUG
         AddHandPerfTrace.log("saveDuty.modelContext.save", startedAt: saveStart)
         #endif
-        let backupMessage = AddHandLocalBackupNotice.message(afterWritingBackupFor: gameDay)
+        AddHandLocalBackupNotice.schedule(for: gameDay, modelContext: modelContext)
         #if DEBUG
         print("[AddHand] saveDutyFromBidStep: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
         #endif
-        onSaved?(gameDay.id, backupMessage)
+        onSaved?(gameDay.id, AddHandLocalBackupNotice.scheduledMessage)
         dismissSheet()
     }
 
@@ -741,6 +745,8 @@ private struct ResultStepView: View {
             } else {
                 normalResultSections
             }
+
+            noteSection
         }
         .contentMargins(.top, 0, for: .scrollContent)
         .listSectionSpacing(.custom(10))
@@ -779,6 +785,8 @@ private struct ResultStepView: View {
         .onChange(of: draft.partner) { _, _ in handleResultInputChanged() }
         .onChange(of: draft.dutySeat) { _, _ in handleResultInputChanged() }
         .onChange(of: draft.solTricks) { _, _ in handleResultInputChanged() }
+        .onChange(of: draft.noteTitle) { _, _ in scheduleResultAutosave() }
+        .onChange(of: draft.noteText) { _, _ in scheduleResultAutosave() }
         .onDisappear {
             pendingScorePreviewTask?.cancel()
             pendingScorePreviewTask = nil
@@ -787,6 +795,35 @@ private struct ResultStepView: View {
             refreshScorePreview()
             persistResultDraftIfNeeded(scheduleSync: true)
         }
+    }
+
+    private var noteSection: some View {
+        Section {
+            NavigationLink(value: HandRoute.note) {
+                HStack(spacing: 10) {
+                    Image(systemName: draft.hasNoteDraft ? "note.text" : "note.text.badge.plus")
+                        .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(draft.hasNoteDraft ? "Rediger note" : "Tilføj note")
+                            .font(.body.weight(.semibold))
+                        if draft.hasNoteDraft {
+                            Text(notePreviewText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var notePreviewText: String {
+        let title = draft.noteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = draft.noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !title.isEmpty { return title }
+        if !text.isEmpty { return text }
+        return "Note til spillet"
     }
 
     private func handleResultInputChanged() {
@@ -1085,6 +1122,11 @@ private struct ResultStepView: View {
         let partnerSeat = persistPartnerSeatRaw(draft: draft, kind: kind)
         let partnerAceSuitRaw = kind == "normal" ? draft.partnerAceSuit?.rawValue : nil
         let solAlliesJSON = persistSolAlliesJSON(draft: draft, kind: kind)
+        let trimmedNoteTitle = draft.noteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNoteText = draft.noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let noteDate = (!trimmedNoteTitle.isEmpty || !trimmedNoteText.isEmpty)
+            ? (draft.noteCreatedAt ?? Date())
+            : nil
         #if DEBUG
         let migrateStart = AddHandPerfTrace.now()
         #endif
@@ -1107,6 +1149,9 @@ private struct ResultStepView: View {
             partnerAceSuitRaw: partnerAceSuitRaw,
             solAlliesSeatsJSON: solAlliesJSON,
             handNumber: nextHandNumber,
+            noteTitle: trimmedNoteTitle,
+            noteText: trimmedNoteText,
+            noteCreatedAt: noteDate,
             gameDay: gameDay
         )
         hand.summaryLine = hand.displayResumeNarrative
@@ -1123,11 +1168,11 @@ private struct ResultStepView: View {
         #if DEBUG
         AddHandPerfTrace.log("save.modelContext.save", startedAt: saveStart)
         #endif
-        let backupMessage = AddHandLocalBackupNotice.message(afterWritingBackupFor: gameDay)
+        AddHandLocalBackupNotice.schedule(for: gameDay, modelContext: modelContext)
         #if DEBUG
         print("[AddHand] save: pending efter delete = \(gameDay.pendingHand == nil ? "nil ✅" : "STADIG SAT ❌")")
         #endif
-        onSaved?(gameDay.id, backupMessage)
+        onSaved?(gameDay.id, AddHandLocalBackupNotice.scheduledMessage)
         dismissSheet()
     }
 }
@@ -1181,6 +1226,13 @@ struct AddHandView: View {
                             dismissSheet: dismissSheet,
                             session: session,
                             onSaved: onSaved
+                        )
+                    case .note:
+                        HandNoteEditView(
+                            draft: draft,
+                            gameDay: gameDay,
+                            path: $path,
+                            session: session
                         )
                     }
                 }
@@ -1252,6 +1304,7 @@ struct AddHandView: View {
             && draft.trumpAfterPlay == nil
             && draft.partnerAceSuit == nil
             && draft.goingWith.isEmpty
+            && !draft.hasNoteDraft
     }
 
     private func buildDismissUserMessage() -> String {
@@ -1272,6 +1325,74 @@ struct AddHandView: View {
             }
         }
         /// `stepMelding`: genskab kun udkastet; brugeren forbliver på meldingstrinnet.
+    }
+}
+
+// MARK: - Note til kamp
+
+private struct HandNoteEditView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    @Bindable var draft: HandInputDraft
+    let gameDay: GameDay
+    @Binding var path: NavigationPath
+    let session: AddHandSession
+
+    private var noteDate: Date {
+        draft.noteCreatedAt ?? Date()
+    }
+
+    var body: some View {
+        Form {
+            Section("Note") {
+                TextField("Titel", text: $draft.noteTitle)
+                    .textInputAutocapitalization(.sentences)
+
+                TextField("Tekst", text: $draft.noteText, axis: .vertical)
+                    .lineLimit(6...14)
+                    .textInputAutocapitalization(.sentences)
+            }
+
+            Section {
+                LabeledContent("Oprettet") {
+                    Text(noteDate.formatted(date: .abbreviated, time: .shortened))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle("Tilføj note")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Færdig") {
+                    persistNoteDraft()
+                    if !path.isEmpty {
+                        path.removeLast()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+            }
+        }
+        .onAppear {
+            if draft.noteCreatedAt == nil {
+                draft.noteCreatedAt = Date()
+            }
+        }
+        .onDisappear {
+            persistNoteDraft()
+        }
+    }
+
+    private func persistNoteDraft() {
+        guard !session.shouldSuppressAutosave else { return }
+        HandDraftPersistence.upsertPending(
+            context: modelContext,
+            gameDay: gameDay,
+            draft: draft,
+            navigationStep: HandDraftPersistence.stepResultat,
+            scheduleSync: false
+        )
     }
 }
 

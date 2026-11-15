@@ -1,3 +1,4 @@
+import CoreImage.CIFilterBuiltins
 import SwiftData
 import SwiftUI
 
@@ -28,7 +29,7 @@ struct HomeView: View {
                 .padding(.bottom, 28)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Whist 2.0")
+            .navigationTitle("Whistklubben")
             .navigationBarTitleDisplayMode(.large)
             .environment(\.homeNavigationPath, $navigationPath)
             .navigationDestination(for: HomeRoute.self) { route in
@@ -327,6 +328,7 @@ private struct AppSettingsView: View {
     @Query(sort: \GameDay.createdAt, order: .reverse) private var gameDays: [GameDay]
     @AppStorage("appAppearanceMode") private var appAppearanceModeRaw = AppAppearanceMode.auto.rawValue
     @State private var backupInfo: LocalBackupInfo?
+    @State private var backupSyncStatus = BackupSyncStatus.empty
     @State private var shareFileURLs: [URL] = []
     @State private var backupMessage: String?
 
@@ -338,6 +340,7 @@ private struct AppSettingsView: View {
         ScrollView {
             VStack(spacing: 20) {
                 appearancePanel
+                participantAccessPanel
                 backupPanel
             }
             .padding(.horizontal, 16)
@@ -357,9 +360,14 @@ private struct AppSettingsView: View {
         }
         .onAppear {
             if let day = backupGameDay {
-                refreshBackupInfo(for: day)
-                if backupInfo != nil { prepareShareFiles(for: day, showSuccess: false) }
+                refreshBackupStatus(for: day)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: BackupStatusStore.didChange)) { notification in
+            guard let day = backupGameDay,
+                  let changedId = notification.object as? UUID,
+                  changedId == day.id else { return }
+            refreshBackupStatus(for: day)
         }
     }
 
@@ -381,6 +389,22 @@ private struct AppSettingsView: View {
         .posterCard
     }
 
+    // MARK: - Deltageradgang
+
+    private var participantAccessPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            settingsHeader("Deltageradgang")
+            settingsDivider
+            NavigationLink {
+                ParticipantAccessQRCodeView()
+            } label: {
+                settingsActionLabel("Vis QR-kode til Whist-site", systemImage: "qrcode")
+            }
+            .buttonStyle(.plain)
+        }
+        .posterCard
+    }
+
     // MARK: - Backup
 
     private var backupPanel: some View {
@@ -390,9 +414,19 @@ private struct AppSettingsView: View {
                 settingsDivider
                 settingsRow(label: "Session", value: day.title)
                 settingsDivider
-                settingsRow(label: "Lokal kopi", value: backupStatusText)
+                settingsRow(label: "På telefonen", value: localBackupStatusText)
                 settingsDivider
-                Text("Gemmes automatisk efter hvert spil. Filerne ligger i Filer > På min iPhone > Whist 2.0 > \(LocalGameBackupService.directoryName).")
+                settingsRow(label: "På serveren", value: serverBackupStatusText)
+                if let serverError = backupSyncStatus.serverError {
+                    settingsDivider
+                    Text("Serverbackup fejlede: \(serverError)")
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
+                        .foregroundStyle(ActiveGamePosterStyle.negativeScoreColor)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                }
+                settingsDivider
+                Text("Gemmes automatisk efter hvert spil. Filerne ligger i Filer > På min iPhone > Whistklubben > \(LocalGameBackupService.directoryName).")
                     .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 12))
                     .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.5))
                     .padding(.horizontal, 14)
@@ -469,24 +503,162 @@ private struct AppSettingsView: View {
             .padding(.horizontal, 8)
     }
 
-    private var backupStatusText: String {
-        guard let backupInfo else { return "Ingen fil endnu" }
+    private var localBackupStatusText: String {
+        if let status = backupSyncStatus.local {
+            return backupStatusText(status)
+        }
+        guard let backupInfo else { return "Ingen backup endnu" }
         return backupInfo.modifiedAt.formatted(date: .abbreviated, time: .shortened)
     }
 
-    private func refreshBackupInfo(for day: GameDay) {
+    private var serverBackupStatusText: String {
+        if backupSyncStatus.serverUploadPending {
+            return "Gemmer i baggrunden…"
+        }
+        guard let status = backupSyncStatus.server else {
+            return LiveSessionSyncSettings.isConfigured ? "Ingen backup endnu" : "Ikke konfigureret"
+        }
+        return backupStatusText(status)
+    }
+
+    private func backupStatusText(_ status: BackupDestinationStatus) -> String {
+        let date = status.savedAt.formatted(date: .abbreviated, time: .shortened)
+        return status.handNumber > 0 ? "Spil #\(status.handNumber) · \(date)" : date
+    }
+
+    private func refreshBackupStatus(for day: GameDay) {
         backupInfo = LocalGameBackupService.latestBackupInfo(for: day)
+        backupSyncStatus = BackupStatusStore.status(for: day.id)
     }
 
     private func prepareShareFiles(for day: GameDay, showSuccess: Bool) {
         do {
             shareFileURLs = try LocalGameBackupService.shareFiles(for: day)
-            refreshBackupInfo(for: day)
+            let latestHandNumber = day.hands.map(\.handNumber).max() ?? day.hands.count
+            BackupStatusStore.markLocalSaved(
+                gameDayId: day.id,
+                handNumber: latestHandNumber,
+                savedAt: Date()
+            )
+            refreshBackupStatus(for: day)
             if showSuccess { backupMessage = "Backup er klar til eksport." }
         } catch {
             shareFileURLs = []
             backupMessage = "Kun gemt i appen. Lokal backup kunne ikke skrives."
         }
+    }
+}
+
+private struct ParticipantAccessQRCodeView: View {
+    private let siteURL = LiveSessionSyncSettings.baseURL
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                if let siteURL {
+                    qrPanel(siteURL: siteURL)
+                    siteInfoPanel(siteURL: siteURL)
+                } else {
+                    ContentUnavailableView(
+                        "Whist-site mangler",
+                        systemImage: "qrcode",
+                        description: Text("Tilføj LiveSessionAPIBaseURL i appens konfiguration.")
+                    )
+                    .padding(.top, 48)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 28)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Deltageradgang")
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private func qrPanel(siteURL: URL) -> some View {
+        VStack(spacing: 16) {
+            if let image = Self.qrCodeImage(for: siteURL.absoluteString) {
+                Image(uiImage: image)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(18)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(ActiveGamePosterStyle.borderColor.opacity(0.65), lineWidth: 1)
+                    }
+                    .frame(maxWidth: 340)
+                    .accessibilityLabel("QR-kode til \(siteURL.absoluteString)")
+            } else {
+                ContentUnavailableView("QR-kode kunne ikke vises", systemImage: "qrcode")
+            }
+
+            Text("Scan koden for at åbne Whistklubben på Whist-site.")
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 15))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.68))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(18)
+        .posterCard
+    }
+
+    private func siteInfoPanel(siteURL: URL) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("WHIST-SITE")
+                .font(.custom(ActiveGamePosterStyle.fontName, size: 13))
+                .foregroundStyle(ActiveGamePosterStyle.sectionHeaderColor)
+                .padding(.horizontal, 14)
+                .padding(.top, 14)
+                .padding(.bottom, 8)
+
+            Rectangle()
+                .fill(ActiveGamePosterStyle.borderColor)
+                .frame(height: 0.5)
+                .padding(.horizontal, 8)
+
+            Text(siteURL.absoluteString)
+                .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
+                .foregroundStyle(ActiveGamePosterStyle.darkInkColor)
+                .textSelection(.enabled)
+                .lineLimit(3)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+
+            Rectangle()
+                .fill(ActiveGamePosterStyle.borderColor)
+                .frame(height: 0.5)
+                .padding(.horizontal, 8)
+
+            ShareLink(item: siteURL) {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Del link")
+                        .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14).weight(.semibold))
+                    Spacer()
+                }
+                .foregroundStyle(ActiveGamePosterStyle.selectedGreenColor)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+            }
+        }
+        .posterCard
+    }
+
+    private static func qrCodeImage(for text: String) -> UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.correctionLevel = "M"
+
+        guard let outputImage = filter.outputImage else { return nil }
+        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 12, y: 12))
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 }
 

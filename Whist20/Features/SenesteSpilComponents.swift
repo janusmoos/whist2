@@ -167,6 +167,13 @@ struct CompactHandDayRow: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(expandedAccessibilityLabel)
+                    if hand.hasNote {
+                        Text(noteLine)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     HStack {
                         Spacer(minLength: 0)
                         Text(hand.playedAt.formatted(date: .abbreviated, time: .shortened))
@@ -188,7 +195,15 @@ struct CompactHandDayRow: View {
 
     private var expandedAccessibilityLabel: String {
         let dateStr = hand.playedAt.formatted(date: .abbreviated, time: .shortened)
-        return "\(captionParts.narrative). Spillet gemt \(dateStr)"
+        return "\(captionParts.narrative). \(hand.hasNote ? noteLine + ". " : "")Spillet gemt \(dateStr)"
+    }
+
+    private var noteLine: String {
+        let title = hand.trimmedNoteTitle
+        let text = hand.trimmedNoteText
+        if title.isEmpty { return "Note: \(text)" }
+        if text.isEmpty { return "Note: \(title)" }
+        return "Note: \(title) - \(text)"
     }
 }
 
@@ -215,6 +230,8 @@ struct SenesteSpilLatestHeroCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             ActiveGameResumePanel(resumeLine: ActiveGamePosterText.resultResumeLine(for: hand), colorScheme: colorScheme)
+
+            HandNotePanel(hand: hand)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

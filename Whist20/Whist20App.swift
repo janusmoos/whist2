@@ -8,6 +8,20 @@ struct Whist20App: App {
 
     init() {
         Self.configureNavigationTypography()
+        let container = modelContainer
+        Task { @MainActor in
+            BundledServerGameDayMigration.runIfNeeded(
+                modelContext: container.mainContext
+            )
+            let descriptor = FetchDescriptor<GameDay>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            let gameDays = (try? container.mainContext.fetch(descriptor)) ?? []
+            GameBackupCoordinator.resumeLatestBackupIfNeeded(
+                gameDays: gameDays,
+                modelContext: container.mainContext
+            )
+        }
         #if DEBUG
         Self.logLiveSyncConfig()
         #endif

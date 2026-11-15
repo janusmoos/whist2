@@ -2,6 +2,34 @@ import XCTest
 @testable import Whist20
 
 final class LocalGameBackupServiceTests: XCTestCase {
+    func testBackupStatusTracksLocalPendingAndServerAcknowledgement() {
+        let gameDayId = UUID()
+        let localDate = Date(timeIntervalSince1970: 1_800_000_000)
+        let serverDate = Date(timeIntervalSince1970: 1_800_000_010)
+
+        BackupStatusStore.markLocalSaved(
+            gameDayId: gameDayId,
+            handNumber: 12,
+            savedAt: localDate
+        )
+        BackupStatusStore.markServerPending(gameDayId: gameDayId)
+
+        var status = BackupStatusStore.status(for: gameDayId)
+        XCTAssertEqual(status.local, BackupDestinationStatus(savedAt: localDate, handNumber: 12))
+        XCTAssertTrue(status.serverUploadPending)
+
+        BackupStatusStore.markServerSaved(
+            gameDayId: gameDayId,
+            handNumber: 12,
+            savedAt: serverDate
+        )
+
+        status = BackupStatusStore.status(for: gameDayId)
+        XCTAssertEqual(status.server, BackupDestinationStatus(savedAt: serverDate, handNumber: 12))
+        XCTAssertFalse(status.serverUploadPending)
+        XCTAssertNil(status.serverError)
+    }
+
     private let exportedAt = Date(timeIntervalSince1970: 1_800_000_000)
 
     func testEmptyGameDayProducesValidPayloadAndText() {
@@ -15,10 +43,25 @@ final class LocalGameBackupServiceTests: XCTestCase {
         let text = LocalGameBackupService.renderTextBackup(payload)
 
         XCTAssertEqual(payload.handCount, 0)
+        XCTAssertEqual(payload.schemaVersion, 2)
+        XCTAssertEqual(payload.firstDealer.playerName, "Christian")
         XCTAssertTrue(payload.hands.isEmpty)
         XCTAssertTrue(text.contains("Fredagswhist"))
         XCTAssertTrue(text.contains("Ingen gemte kampe endnu."))
         XCTAssertFalse(text.contains("{"))
+    }
+
+    func testBackupIncludesConfiguredFirstDealer() {
+        let day = GameDay(
+            title: "Dealer-backup",
+            firstDealerSeatRaw: Seat.east.rawValue
+        )
+
+        let payload = LocalGameBackupService.makePayload(for: day, exportedAt: exportedAt)
+        let text = LocalGameBackupService.renderTextBackup(payload)
+
+        XCTAssertEqual(payload.firstDealer.playerName, "Peter")
+        XCTAssertTrue(text.contains("Dealer i spil 1: Peter"))
     }
 
     func testMultipleHandsProduceCorrectStandingsAndHandNumberOrder() {
@@ -78,6 +121,33 @@ final class LocalGameBackupServiceTests: XCTestCase {
         XCTAssertNotNil(payload.pendingHandSummary)
         XCTAssertTrue(text.contains("Ikke afsluttet spil"))
         XCTAssertTrue(text.contains("Trin: Melding"))
+    }
+
+    func testHandNotesAreIncludedInBackupPayloadAndText() {
+        let day = GameDay(title: "Noteaften")
+        let noteDate = Date(timeIntervalSince1970: 1_700_010_000)
+        let hand = RecordedHand(
+            playedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            kindRaw: "normal",
+            summaryLine: "Gemt spil",
+            scoresBySeatJSON: HandScorePersistence.encodeScores([.north: 2, .east: 2, .south: -2, .west: -2]),
+            handNumber: 1,
+            noteTitle: "Regeltjek",
+            noteText: "Vi blev enige om at tælle stikket om.",
+            noteCreatedAt: noteDate,
+            gameDay: day
+        )
+        day.hands = [hand]
+
+        let payload = LocalGameBackupService.makePayload(for: day, exportedAt: exportedAt)
+        let text = LocalGameBackupService.renderTextBackup(payload)
+
+        XCTAssertEqual(payload.hands.first?.noteTitle, "Regeltjek")
+        XCTAssertEqual(payload.hands.first?.noteText, "Vi blev enige om at tælle stikket om.")
+        XCTAssertEqual(payload.hands.first?.noteCreatedAt, noteDate)
+        XCTAssertTrue(text.contains("Note"))
+        XCTAssertTrue(text.contains("Regeltjek"))
+        XCTAssertTrue(text.contains("Vi blev enige om at tælle stikket om."))
     }
 
     func testTextRenderingContainsPlayersTotalsHandNumbersAndExportDate() {

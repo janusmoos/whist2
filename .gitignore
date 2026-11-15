@@ -18,3 +18,8 @@ web/.env.local
 # Lokale Python caches
 __pycache__/
 *.pyc
+.vercel
+.env*
+
+# Lokale git worktrees
+.worktrees/

@@ -38,6 +38,25 @@ struct HandDetailView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if hand.hasNote {
+                Section("Note") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(hand.trimmedNoteTitle.isEmpty ? "Note" : hand.trimmedNoteTitle)
+                            .font(.headline)
+                        if !hand.trimmedNoteText.isEmpty {
+                            Text(hand.trimmedNoteText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let createdAt = hand.noteCreatedAt {
+                            Text(createdAt.formatted(date: .abbreviated, time: .shortened))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+
             Section("Point") {
                 ForEach(orderedSeats, id: \.self) { seat in
                     HStack {

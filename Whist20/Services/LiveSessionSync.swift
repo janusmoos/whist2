@@ -37,6 +37,9 @@ struct HandSummary: Encodable, Sendable {
     var scoresBySeat: [Int]
     /// Tidspunkt hvor kampen blev gemt (ISO 8601). Spejler `RecordedHand.playedAt`.
     var savedAt: Date
+    var noteTitle: String?
+    var noteText: String?
+    var noteCreatedAt: Date?
 }
 
 struct LiveSessionPushPayload: Encodable, Sendable {
@@ -110,7 +113,10 @@ enum LiveSessionSnapshotBuilder {
                 kind: h.kindRaw,
                 caption: cap.isEmpty ? h.summaryLine : cap,
                 scoresBySeat: scores,
-                savedAt: h.playedAt
+                savedAt: h.playedAt,
+                noteTitle: h.hasNote && !h.trimmedNoteTitle.isEmpty ? h.trimmedNoteTitle : nil,
+                noteText: h.hasNote && !h.trimmedNoteText.isEmpty ? h.trimmedNoteText : nil,
+                noteCreatedAt: h.hasNote ? h.noteCreatedAt : nil
             )
         }
 
@@ -211,12 +217,41 @@ enum LiveSessionSnapshotBuilder {
 
 // MARK: - Netværk
 
+private struct LiveSessionSendResult: Sendable {
+    var serverSavedAt: Date
+}
+
+private enum LiveSessionAPIError: LocalizedError {
+    case httpStatus(Int)
+    case invalidResponse
+    case paused(retryAfter: TimeInterval)
+
+    var errorDescription: String? {
+        switch self {
+        case .httpStatus(let status):
+            return "Serveren svarede med HTTP \(status)."
+        case .invalidResponse:
+            return "Serveren sendte et ugyldigt svar."
+        case .paused:
+            return "Live-synkronisering er sat på pause."
+        }
+    }
+}
+
 private actor LiveSessionAPIClient {
     static let shared = LiveSessionAPIClient()
+    private var pauseUntil: Date?
 
-    func send(_ payload: LiveSessionPushPayload) async {
+    var maySend: Bool {
+        guard let pauseUntil else { return true }
+        return pauseUntil <= Date()
+    }
+
+    func send(_ payload: LiveSessionPushPayload) async throws -> LiveSessionSendResult {
         guard let base = LiveSessionSyncSettings.baseURL,
-              let secret = LiveSessionSyncSettings.bearerSecret else { return }
+              let secret = LiveSessionSyncSettings.bearerSecret else {
+            throw LiveSessionAPIError.invalidResponse
+        }
 
         let idLower = payload.sessionId.uuidString.lowercased()
         let url = base.appendingPathComponent("api/sessions/\(idLower)")
@@ -230,19 +265,38 @@ private actor LiveSessionAPIClient {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.withoutEscapingSlashes]
 
-        do {
-            request.httpBody = try encoder.encode(payload)
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                #if DEBUG
-                print("[LiveSessionSync] HTTP \(http.statusCode) for \(url.absoluteString)")
-                #endif
-            }
-        } catch {
-            #if DEBUG
-            print("[LiveSessionSync] Fejl: \(error.localizedDescription)")
-            #endif
+        request.httpBody = try encoder.encode(payload)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw LiveSessionAPIError.invalidResponse
         }
+        if http.statusCode == 423 {
+            let retryAfter = TimeInterval(http.value(forHTTPHeaderField: "Retry-After") ?? "")
+                ?? 300
+            pauseUntil = Date().addingTimeInterval(retryAfter)
+            throw LiveSessionAPIError.paused(retryAfter: retryAfter)
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw LiveSessionAPIError.httpStatus(http.statusCode)
+        }
+        pauseUntil = nil
+
+        struct Response: Decodable {
+            var serverSavedAt: String?
+        }
+        let decoded = try JSONDecoder().decode(Response.self, from: data)
+        guard let serverSavedAt = decoded.serverSavedAt else {
+            // Bagudkompatibilitet med allerede deployede API-versioner, der kun svarer `{ ok: true }`.
+            return LiveSessionSendResult(serverSavedAt: Date())
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let fallbackFormatter = ISO8601DateFormatter()
+        guard let savedAt = formatter.date(from: serverSavedAt)
+                ?? fallbackFormatter.date(from: serverSavedAt) else {
+            throw LiveSessionAPIError.invalidResponse
+        }
+        return LiveSessionSendResult(serverSavedAt: savedAt)
     }
 }
 
@@ -286,24 +340,81 @@ final class LiveSessionSyncCoordinator {
         tasks[gameDayId] = Task {
             try? await Task.sleep(nanoseconds: priority.debounceNanoseconds)
             guard !Task.isCancelled else { return }
-            await pushNow(gameDayId: gameDayId, modelContext: modelContext)
+            await pushNow(
+                gameDayId: gameDayId,
+                modelContext: modelContext,
+                priority: priority
+            )
             tasks[gameDayId] = nil
         }
     }
 
-    private func pushNow(gameDayId: UUID, modelContext: ModelContext) async {
+    private func pushNow(
+        gameDayId: UUID,
+        modelContext: ModelContext,
+        priority: SyncPriority
+    ) async {
         var descriptor = FetchDescriptor<GameDay>(predicate: #Predicate { $0.id == gameDayId })
         descriptor.fetchLimit = 1
         guard let day = try? modelContext.fetch(descriptor).first else { return }
         let allDescriptor = FetchDescriptor<GameDay>(sortBy: [SortDescriptor(\.createdAt)])
         let allDays = (try? modelContext.fetch(allDescriptor)) ?? []
         guard let payload = LiveSessionSnapshotBuilder.makePayload(from: day, allGameDays: allDays) else { return }
+        guard await LiveSessionAPIClient.shared.maySend else { return }
 
         let fp = makeFingerprint(payload)
-        guard lastFingerprints[gameDayId] != fp else { return }
-        lastFingerprints[gameDayId] = fp
+        let latestHandNumber = payload.hands.map(\.handNumber).max() ?? payload.handCount
+        let serverStatus = BackupStatusStore.status(for: gameDayId).server
+        let needsCommittedAcknowledgement = priority == .committed
+            && latestHandNumber > 0
+            && (serverStatus?.handNumber ?? 0) < latestHandNumber
+        guard lastFingerprints[gameDayId] != fp || needsCommittedAcknowledgement else { return }
 
-        await LiveSessionAPIClient.shared.send(payload)
+        do {
+            let result = try await sendWithRetry(payload)
+            lastFingerprints[gameDayId] = fp
+            if priority == .committed, latestHandNumber > 0 {
+                BackupStatusStore.markServerSaved(
+                    gameDayId: gameDayId,
+                    handNumber: latestHandNumber,
+                    savedAt: result.serverSavedAt
+                )
+            }
+        } catch {
+            let isPaused: Bool
+            if case LiveSessionAPIError.paused = error {
+                isPaused = true
+            } else {
+                isPaused = false
+            }
+            if priority == .committed, latestHandNumber > 0, !isPaused {
+                BackupStatusStore.markServerFailed(
+                    gameDayId: gameDayId,
+                    message: error.localizedDescription
+                )
+            }
+            #if DEBUG
+            print("[LiveSessionSync] Fejl: \(error.localizedDescription)")
+            #endif
+        }
+    }
+
+    private func sendWithRetry(_ payload: LiveSessionPushPayload) async throws -> LiveSessionSendResult {
+        var lastError: Error?
+        for attempt in 0..<3 {
+            do {
+                return try await LiveSessionAPIClient.shared.send(payload)
+            } catch {
+                lastError = error
+                if case LiveSessionAPIError.paused = error {
+                    throw error
+                }
+                guard attempt < 2 else { break }
+                try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_000_000_000)
+                guard !Task.isCancelled else { throw CancellationError() }
+            }
+        }
+        throw lastError ?? LiveSessionAPIError.invalidResponse
     }
 
     /// Sammenligner felter der er synlige på weboverblikktet.
