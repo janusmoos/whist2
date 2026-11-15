@@ -47,6 +47,10 @@ enum HandDraftPersistence {
         var isDuty: Bool
         var dutySeatRaw: Int?
         var solTricksRaw: [String: Int]
+
+        var noteTitle: String?
+        var noteText: String?
+        var noteCreatedAt: Date?
     }
 
     static func makeSnapshot(from draft: HandInputDraft, navigationStep: String) -> Snapshot {
@@ -71,7 +75,10 @@ enum HandDraftPersistence {
             vip3IsClubs: draft.vipTripleClubsDoubleActive,
             isDuty: draft.isDuty,
             dutySeatRaw: draft.dutySeat?.rawValue,
-            solTricksRaw: solTricks
+            solTricksRaw: solTricks,
+            noteTitle: draft.noteTitle,
+            noteText: draft.noteText,
+            noteCreatedAt: draft.noteCreatedAt
         )
     }
 
@@ -103,6 +110,10 @@ enum HandDraftPersistence {
             tricks[seat] = snapshot.solTricksRaw[key] ?? 0
         }
         draft.solTricks = tricks
+
+        draft.noteTitle = snapshot.noteTitle ?? ""
+        draft.noteText = snapshot.noteText ?? ""
+        draft.noteCreatedAt = snapshot.noteCreatedAt
     }
 
     static func encode(_ draft: HandInputDraft, navigationStep: String) throws -> String {

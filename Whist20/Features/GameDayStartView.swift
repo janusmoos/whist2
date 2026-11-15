@@ -125,6 +125,7 @@ struct GameDayStartView: View {
                             resumeLine: ActiveGamePosterText.resultResumeLine(for: hand),
                             colorScheme: colorScheme
                         )
+                        HandNotePanel(hand: hand)
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                     .listRowBackground(Color.clear)
@@ -399,6 +400,12 @@ private struct GameDaySettingsAndHandsView: View {
                             Text(handListTitleLine(hand))
                                 .font(.subheadline)
                                 .lineLimit(4)
+                            if hand.hasNote {
+                                Text(noteLine(for: hand))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(4)
+                            }
                             Text(hand.playedAt.formatted(date: .abbreviated, time: .shortened))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
@@ -427,6 +434,14 @@ private struct GameDaySettingsAndHandsView: View {
             return "#\(hand.handNumber) \(narrative)"
         }
         return narrative
+    }
+
+    private func noteLine(for hand: RecordedHand) -> String {
+        let title = hand.trimmedNoteTitle
+        let text = hand.trimmedNoteText
+        if title.isEmpty { return "Note: \(text)" }
+        if text.isEmpty { return "Note: \(title)" }
+        return "Note: \(title) - \(text)"
     }
 
     /// Omvendt kronologisk: seneste kamp øverst (#n, #n−1, …).

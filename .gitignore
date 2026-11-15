@@ -20,3 +20,6 @@ __pycache__/
 *.pyc
 .vercel
 .env*
+
+# Lokale git worktrees
+.worktrees/

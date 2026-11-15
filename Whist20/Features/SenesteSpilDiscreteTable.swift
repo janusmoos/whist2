@@ -117,6 +117,14 @@ struct SenesteSpilDiscreteTable: View {
                 .opacity(0.82)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            if hand.hasNote {
+                Text(noteLine(for: hand))
+                    .font(.custom(ActiveGamePosterStyle.resumeFontName, size: 14))
+                    .fontWidth(.compressed)
+                    .foregroundStyle(ActiveGamePosterStyle.darkInkColor.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             HStack {
                 Spacer(minLength: 0)
                 Text(dateStr)
@@ -131,7 +139,15 @@ struct SenesteSpilDiscreteTable: View {
         .padding(.horizontal, 4)
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(captionParts.narrative). Spillet gemt \(dateStr)")
+        .accessibilityLabel("\(captionParts.narrative). \(hand.hasNote ? noteLine(for: hand) + ". " : "")Spillet gemt \(dateStr)")
+    }
+
+    private func noteLine(for hand: RecordedHand) -> String {
+        let title = hand.trimmedNoteTitle
+        let text = hand.trimmedNoteText
+        if title.isEmpty { return "Note: \(text)" }
+        if text.isEmpty { return "Note: \(title)" }
+        return "Note: \(title) - \(text)"
     }
 
     /// Fælles skrift for kampnr., point og header-forbogstaver.

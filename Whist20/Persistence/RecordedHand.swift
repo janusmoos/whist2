@@ -30,6 +30,11 @@ final class RecordedHand {
     /// Løbenummer pr. spilledag (#1, #2, …). Sættes ved gem; ældre data får tal via `GameDay.migrateLegacyHandNumbersIfNeeded()`.
     var handNumber: Int = 0
 
+    /// Valgfri note knyttet til den enkelte kamp.
+    var noteTitle: String = ""
+    var noteText: String = ""
+    var noteCreatedAt: Date?
+
     var gameDay: GameDay?
 
     init(
@@ -44,6 +49,9 @@ final class RecordedHand {
         partnerAceSuitRaw: String? = nil,
         solAlliesSeatsJSON: String = "[]",
         handNumber: Int = 0,
+        noteTitle: String = "",
+        noteText: String = "",
+        noteCreatedAt: Date? = nil,
         gameDay: GameDay? = nil
     ) {
         self.id = id
@@ -57,6 +65,9 @@ final class RecordedHand {
         self.partnerAceSuitRaw = partnerAceSuitRaw
         self.solAlliesSeatsJSON = solAlliesSeatsJSON
         self.handNumber = handNumber
+        self.noteTitle = noteTitle
+        self.noteText = noteText
+        self.noteCreatedAt = noteCreatedAt
         self.gameDay = gameDay
     }
 }
@@ -75,6 +86,18 @@ extension RecordedHand {
         }
         let actualTricks = max(0, min(13, bidTricks + delta))
         return actualTricks == 13 || actualTricks == 0
+    }
+
+    var trimmedNoteTitle: String {
+        noteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var trimmedNoteText: String {
+        noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var hasNote: Bool {
+        !trimmedNoteTitle.isEmpty || !trimmedNoteText.isEmpty
     }
 
     /// Til summering af point pr. spilledag eller på tværs af dage.

@@ -209,6 +209,7 @@ struct GameDayEditView: View {
     @State private var titleText: String
     @State private var notesText: String
     @State private var seatOrder: [Seat]
+    @State private var firstDealerSeat: Seat
     @State private var showEndGameDayConfirm = false
 
     init(gameDay: GameDay) {
@@ -216,6 +217,7 @@ struct GameDayEditView: View {
         _titleText = State(initialValue: gameDay.title)
         _notesText = State(initialValue: gameDay.notes)
         _seatOrder = State(initialValue: gameDay.seatOrder)
+        _firstDealerSeat = State(initialValue: gameDay.firstDealerSeat)
     }
 
     private var trimmedTitle: String {
@@ -258,6 +260,21 @@ struct GameDayEditView: View {
                     }
 
                     SeatOrderEditor(seatOrder: $seatOrder, isEditable: canEditSeatOrder)
+                }
+
+                GameDayFieldPanel(title: "Dealer i spil 1") {
+                    Picker("Dealer i spil 1", selection: $firstDealerSeat) {
+                        ForEach(seatOrder, id: \.self) { seat in
+                            Text(seat.playerDisplayName).tag(seat)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .disabled(!gameDay.isActive)
+
+                    Text("Dealer roterer herefter i bordrækkefølgen. Valget kan ændres, mens spilledagen er aktiv.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Button {
@@ -303,6 +320,9 @@ struct GameDayEditView: View {
         guard !trimmedTitle.isEmpty else { return }
         gameDay.title = trimmedTitle
         gameDay.notes = trimmedNotes
+        if gameDay.isActive {
+            gameDay.firstDealerSeatRaw = firstDealerSeat.rawValue
+        }
 
         if canEditSeatOrder {
             gameDay.seatOrderJSON = (try? String(
@@ -383,4 +403,3 @@ private struct SeatOrderEditor: View {
         }
     }
 }
-

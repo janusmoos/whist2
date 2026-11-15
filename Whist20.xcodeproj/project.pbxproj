@@ -22,6 +22,7 @@
 		B2A100472CF0000000120047 /* RecordedHand.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100462CF0000000120046 /* RecordedHand.swift */; };
 		B2A100492CF0000000120049 /* AddHandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100482CF0000000120048 /* AddHandView.swift */; };
 		B2A1004B2CF000000012004B /* HandDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1004A2CF000000012004A /* HandDetailView.swift */; };
+		B2A1012E2CF000000012012E /* HandNotePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A1012D2CF000000012012D /* HandNotePanel.swift */; };
 		B2A100522CF0000000120052 /* PendingHand.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100502CF0000000120050 /* PendingHand.swift */; };
 		B2A100532CF0000000120053 /* HandDraftPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100512CF0000000120051 /* HandDraftPersistence.swift */; };
 		B2A100562CF0000000120056 /* GameDayStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A100552CF0000000120055 /* GameDayStartView.swift */; };
@@ -89,6 +90,7 @@
 		B2A100462CF0000000120046 /* RecordedHand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordedHand.swift; sourceTree = "<group>"; };
 		B2A100482CF0000000120048 /* AddHandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddHandView.swift; sourceTree = "<group>"; };
 		B2A1004A2CF000000012004A /* HandDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandDetailView.swift; sourceTree = "<group>"; };
+		B2A1012D2CF000000012012D /* HandNotePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandNotePanel.swift; sourceTree = "<group>"; };
 		B2A100502CF0000000120050 /* PendingHand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingHand.swift; sourceTree = "<group>"; };
 		B2A100512CF0000000120051 /* HandDraftPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandDraftPersistence.swift; sourceTree = "<group>"; };
 		B2A100552CF0000000120055 /* GameDayStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDayStartView.swift; sourceTree = "<group>"; };
@@ -240,6 +242,7 @@
 				B2A100582CF0000000120058 /* ActiveGameView.swift */,
 				B2A100482CF0000000120048 /* AddHandView.swift */,
 				B2A1004A2CF000000012004A /* HandDetailView.swift */,
+				B2A1012D2CF000000012012D /* HandNotePanel.swift */,
 				B2A100612CF0000000120061 /* PointStandingView.swift */,
 				B2A100712CF0000000120071 /* StandingsView.swift */,
 			);
@@ -408,6 +411,7 @@
 				B2A100532CF0000000120053 /* HandDraftPersistence.swift in Sources */,
 				B2A100492CF0000000120049 /* AddHandView.swift in Sources */,
 				B2A1004B2CF000000012004B /* HandDetailView.swift in Sources */,
+				B2A1012E2CF000000012012E /* HandNotePanel.swift in Sources */,
 				B2A100562CF0000000120056 /* GameDayStartView.swift in Sources */,
 				B2A100592CF0000000120059 /* MeldingPresentation.swift in Sources */,
 				B2A1005A2CF000000012005A /* ActiveGameView.swift in Sources */,
@@ -590,7 +594,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Whist20/AppInfoAdditions.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Whist 2.0";
+				INFOPLIST_KEY_CFBundleDisplayName = Whistklubben;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -620,7 +624,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Whist20/AppInfoAdditions.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Whist 2.0";
+				INFOPLIST_KEY_CFBundleDisplayName = Whistklubben;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
