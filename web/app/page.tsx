@@ -1,34 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { HandsTable, type HandSummary } from "@/components/HandsTable";
 import { PosterBox } from "@/components/PosterBox";
-import { ThemeMenu } from "@/components/ThemeMenu";
+import { SiteHeader } from "@/components/SiteHeader";
+import { useLiveSessions } from "@/hooks/useLiveSessions";
+import type { LiveSession } from "@/lib/liveSessionTypes";
 import { posterFromCaption } from "@/lib/parsePosterFallback";
 import type { PosterSnapshot } from "@/lib/posterTypes";
-
-// ── Typer ────────────────────────────────────────────────────────────────────
-
-type LiveSession = {
-  schemaVersion?: number;
-  sessionId?: string;
-  sessionNumber?: number;
-  title?: string;
-  status?: string;
-  handCount?: number;
-  playerNamesBySeat?: string[];
-  totalsBySeat?: number[];
-  lastCompletedHandCaption?: string | null;
-  hands?: HandSummary[];
-  pendingPoster?: PosterSnapshot | null;
-  lastHandPoster?: PosterSnapshot | null;
-  pendingMeldingSummary?: string | null;
-  pendingResultSummary?: string | null;
-  pendingStep?: "melding" | "halve_trumf" | "resultat" | null;
-  notesPublic?: string;
-  updatedAt?: string;
-  serverUpdatedAt?: string;
-};
 
 // ── Hjælpefunktioner ─────────────────────────────────────────────────────────
 
@@ -220,7 +199,7 @@ function ActiveSessionView({
     <div>
       <div className="session-header">
         {sessionNumber != null ? (
-          <p className="session-index">Spilledage #{sessionNumber}</p>
+          <p className="session-index">Spilledag #{sessionNumber}</p>
         ) : null}
         <h2 className="session-title">{s.title ?? "Uden titel"}</h2>
         <div className="session-meta-row">
@@ -288,6 +267,9 @@ function FinishedSessionCard({ s }: { s: LiveSession }) {
       <div className="card-top">
         <span className="pill pill--done">Afsluttet</span>
       </div>
+      {s.sessionNumber != null ? (
+        <p className="session-index">Spilledag #{s.sessionNumber}</p>
+      ) : null}
       <h2>{s.title ?? "Uden titel"}</h2>
       <p className="hand-count muted">
         {handCount} {handCount === 1 ? "kamp" : "kampe"} spillet
@@ -308,41 +290,8 @@ function FinishedSessionCard({ s }: { s: LiveSession }) {
 // ── Hoved-side ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const [sessions, setSessions] = useState<LiveSession[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { sessions, error, liveEnabled } = useLiveSessions();
   const [now, setNow] = useState(() => Date.now());
-  const cancelledRef = useRef(false);
-
-  useEffect(() => {
-    cancelledRef.current = false;
-
-    async function fetchSessions() {
-      try {
-        const res = await fetch("/api/sessions", { cache: "no-store" });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(
-            typeof data.error === "string" ? data.error : "Serverfejl"
-          );
-        }
-        if (!cancelledRef.current) {
-          setSessions(Array.isArray(data) ? data : []);
-          setError(null);
-        }
-      } catch (e) {
-        if (!cancelledRef.current) {
-          setError(e instanceof Error ? e.message : "Netværksfejl");
-        }
-      }
-    }
-
-    fetchSessions();
-    const id = setInterval(fetchSessions, 2000);
-    return () => {
-      cancelledRef.current = true;
-      clearInterval(id);
-    };
-  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -355,13 +304,7 @@ export default function HomePage() {
 
   return (
     <main>
-      <div className="site-header">
-        <div className="site-header-brand">
-          <h1>Whistklubben</h1>
-          <span className="site-sub">live</span>
-        </div>
-        <ThemeMenu />
-      </div>
+      <SiteHeader />
 
       {error ? (
         <div className="banner" role="alert">
@@ -392,7 +335,11 @@ export default function HomePage() {
         </section>
       ) : null}
 
-      <p className="footer-note">Opdateres automatisk hvert 2. sekund.</p>
+      <p className="footer-note">
+        {liveEnabled
+          ? "Opdateres automatisk hvert 2. sekund."
+          : "Live-opdatering er sat på pause. Statistikken er stadig tilgængelig."}
+      </p>
     </main>
   );
 }

@@ -2,6 +2,7 @@
   "name": "whist20-live-overview",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/ensure-historical-data.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

@@ -2886,7 +2886,11 @@ struct StatistikTabView: View {
     }
 
     private func gameQualityWarning(_ detail: HistoricalGameScoreDetail) -> some View {
-        CollapsibleDataWarning(messages: detail.qualityFlags.map(qualityFlagText))
+        CollapsibleDataWarning(messages: qualityMessages(for: detail))
+    }
+
+    private func qualityMessages(for detail: HistoricalGameScoreDetail) -> [String] {
+        detail.qualityFlags.map(qualityFlagText) + [detail.game.correctionNote].compactMap { $0 }
     }
 
     private func gameScoreStrip(_ detail: HistoricalGameScoreDetail, highlightedPlayerId: String?) -> some View {
@@ -2917,6 +2921,9 @@ struct StatistikTabView: View {
         }
         if flag == HistoricalDataQualityFlag.correctedFromSourceNote.rawValue {
             return "Rettet fra kilde-note: regnearket indeholder en konkret note, og rettelsen får spillet til at summere til nul."
+        }
+        if flag == HistoricalDataQualityFlag.manualResultCorrection.rawValue {
+            return "Manuelt rettet resultat."
         }
         if flag == "score_sum_not_zero" {
             return "Resultatet summerer ikke til nul i den historiske kilde. Spillet vises, men bør læses som usikker historik."
@@ -2997,7 +3004,9 @@ struct StatistikTabView: View {
                     Text("Spillere")
                         .font(.headline)
 
-                    ForEach(overview.playerTotals.sorted { lhs, rhs in lhs.score > rhs.score }) { score in
+                    ForEach(overview.playerTotals.sorted { lhs, rhs in
+                        lhs.player.displayOrder < rhs.player.displayOrder
+                    }) { score in
                         HStack {
                             Text(score.player.name)
                                 .font(.subheadline.weight(.semibold))
@@ -4219,7 +4228,7 @@ private struct HistoricalGameDetailView: View {
                 historicalGamePoster
 
                 if detail.hasQualityIssues {
-                    CollapsibleDataWarning(messages: detail.qualityFlags.map(qualityFlagText))
+                    CollapsibleDataWarning(messages: qualityMessages)
                 }
             }
             .padding(.horizontal, 20)
@@ -4689,7 +4698,14 @@ private struct HistoricalGameDetailView: View {
         if flag == HistoricalDataQualityFlag.correctedFromSourceNote.rawValue {
             return "Rettet fra kilde-note: spillet er korrigeret manuelt ud fra en note i originalmaterialet."
         }
+        if flag == HistoricalDataQualityFlag.manualResultCorrection.rawValue {
+            return "Manuelt rettet resultat."
+        }
         return flag.replacingOccurrences(of: "_", with: " ")
+    }
+
+    private var qualityMessages: [String] {
+        detail.qualityFlags.map(qualityFlagText) + [detail.game.correctionNote].compactMap { $0 }
     }
 
     private func scoreText(_ value: Int) -> String {

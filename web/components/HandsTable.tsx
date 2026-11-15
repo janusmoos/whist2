@@ -11,6 +11,9 @@ export type HandSummary = {
   scoresBySeat: number[];
   /** ISO 8601 — hvornår kampen blev gemt i appen. Valgfrit for ældre payloads. */
   savedAt?: string;
+  noteTitle?: string | null;
+  noteText?: string | null;
+  noteCreatedAt?: string | null;
 };
 
 function scoreLabel(n: number): string {
@@ -27,6 +30,15 @@ function scoreClass(n: number): string {
 
 function captionText(caption: string): string {
   return caption.replace(/\|\|[^|]*/g, "");
+}
+
+function noteText(hand: Pick<HandSummary, "noteTitle" | "noteText">): string | null {
+  const title = hand.noteTitle?.trim() ?? "";
+  const text = hand.noteText?.trim() ?? "";
+  if (!title && !text) return null;
+  if (!title) return `Note: ${text}`;
+  if (!text) return `Note: ${title}`;
+  return `Note: ${title} - ${text}`;
 }
 
 /** Under denne bredde skjules resumé-kolonnen til fordel for fold-ud. */
@@ -79,10 +91,12 @@ function ExpandToggle({
   );
 }
 
-function ResumeCell({ caption }: { caption: string }) {
+function ResumeCell({ hand }: { hand: HandSummary }) {
+  const note = noteText(hand);
   return (
     <div className="hands-table-resume-box">
-      <SuitColoredText text={captionText(caption)} />
+      <SuitColoredText text={captionText(hand.caption)} />
+      {note ? <p className="hands-table-resume-note">{note}</p> : null}
     </div>
   );
 }
@@ -126,6 +140,7 @@ function HandRow({
         {!compact ? (
           <td className="col-caption">
             <SuitColoredText text={captionText(hand.caption)} />
+            {noteText(hand) ? <p className="hands-table-resume-note">{noteText(hand)}</p> : null}
           </td>
         ) : null}
         {hand.scoresBySeat.map((s, i) => (
@@ -149,7 +164,7 @@ function HandRow({
       {compact && expanded ? (
         <tr className="hands-table-resume-row">
           <td colSpan={2 + hand.scoresBySeat.length + 1}>
-            <ResumeCell caption={hand.caption} />
+            <ResumeCell hand={hand} />
           </td>
         </tr>
       ) : null}

@@ -79,6 +79,7 @@ struct HistoricalStatisticsSnapshot: Equatable {
 enum HistoricalDataQualityFlag: String {
     case teamScoreMismatch = "team_score_mismatch"
     case correctedFromSourceNote = "corrected_from_source_note"
+    case manualResultCorrection = "manual_result_correction"
 
     var title: String {
         switch self {
@@ -86,6 +87,8 @@ enum HistoricalDataQualityFlag: String {
             return "Holdscore stemmer ikke"
         case .correctedFromSourceNote:
             return "Rettet fra kilde-note"
+        case .manualResultCorrection:
+            return "Manuelt rettet resultat"
         }
     }
 }
@@ -297,12 +300,6 @@ enum HistoricalStatisticsEngine {
                         return lhs.sessionIndex > rhs.sessionIndex
                     }
                 )
-            }
-            .sorted { lhs, rhs in
-                if lhs.totalScore != rhs.totalScore {
-                    return lhs.totalScore > rhs.totalScore
-                }
-                return lhs.player.displayOrder < rhs.player.displayOrder
             }
     }
 
@@ -551,12 +548,6 @@ enum HistoricalStatisticsEngine {
                         return lhs.sessionIndex > rhs.sessionIndex
                     }
                 )
-            }
-            .sorted { lhs, rhs in
-                if lhs.periodScore != rhs.periodScore {
-                    return lhs.periodScore > rhs.periodScore
-                }
-                return lhs.player.displayOrder < rhs.player.displayOrder
             }
     }
 

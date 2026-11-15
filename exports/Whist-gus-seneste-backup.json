@@ -1,0 +1,401 @@
+{
+  "serverSavedAt": "2026-06-14T10:29:30.772Z",
+  "sessionId": "96cc63a7-e5b4-48d9-acac-318296d1bb72",
+  "backup": {
+    "hands": [
+      {
+        "kind": "normal",
+        "caption": "Peter meldte 10 almindelige med ♠ som trumf og ♥ som makker-es||-3",
+        "savedAt": "2026-06-13T14:58:11Z",
+        "handNumber": 1,
+        "scoresBySeat": [
+          12,
+          -12,
+          12,
+          -12
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Thomas meldte 9 VIP i anden til ♥ med ♥ som trumf||0",
+        "savedAt": "2026-06-13T15:07:34Z",
+        "handNumber": 2,
+        "scoresBySeat": [
+          -16,
+          16,
+          16,
+          -16
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Peter meldte ren sol – han gik hjem",
+        "savedAt": "2026-06-13T15:16:29Z",
+        "handNumber": 3,
+        "scoresBySeat": [
+          -8,
+          24,
+          -8,
+          -8
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Thomas meldte 9 ♣ (gode)||+2",
+        "savedAt": "2026-06-13T15:26:30Z",
+        "handNumber": 4,
+        "scoresBySeat": [
+          -16,
+          -16,
+          16,
+          16
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Christian meldte 10 almindelige med ♥ som trumf og ♣ som makker-es – STORSLEM||+3",
+        "savedAt": "2026-06-13T15:38:22Z",
+        "handNumber": 5,
+        "scoresBySeat": [
+          40,
+          40,
+          -40,
+          -40
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Christian meldte 8 ♣ (gode) som selvmakker||-1",
+        "savedAt": "2026-06-13T15:57:06Z",
+        "handNumber": 6,
+        "scoresBySeat": [
+          -6,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Christian meldte 10 almindelige med ♠ som trumf og ♦ som makker-es||0",
+        "savedAt": "2026-06-13T16:07:41Z",
+        "handNumber": 7,
+        "scoresBySeat": [
+          8,
+          -8,
+          -8,
+          8
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Peter meldte ren sol – han gik hjem",
+        "savedAt": "2026-06-13T16:18:14Z",
+        "handNumber": 8,
+        "scoresBySeat": [
+          -8,
+          24,
+          -8,
+          -8
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Thomas meldte 9 VIP i tredje til ♠ med ♣ som trumf||+3",
+        "savedAt": "2026-06-13T16:28:45Z",
+        "handNumber": 9,
+        "scoresBySeat": [
+          -160,
+          160,
+          160,
+          -160
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Janus meldte ren sol og Peter gik med – de gik alle ned",
+        "savedAt": "2026-06-13T16:44:03Z",
+        "handNumber": 10,
+        "scoresBySeat": [
+          16,
+          -16,
+          16,
+          -16
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Janus meldte 9 ♣ (gode)||-1",
+        "savedAt": "2026-06-13T16:54:54Z",
+        "handNumber": 11,
+        "scoresBySeat": [
+          4,
+          4,
+          -4,
+          -4
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Christian meldte ren sol – han gik hjem",
+        "savedAt": "2026-06-13T17:06:15Z",
+        "handNumber": 12,
+        "scoresBySeat": [
+          24,
+          -8,
+          -8,
+          -8
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Thomas meldte 11 almindelige med ♥ som trumf og ♣ som makker-es som selvmakker||-4",
+        "savedAt": "2026-06-13T17:52:46Z",
+        "handNumber": 13,
+        "scoresBySeat": [
+          22,
+          22,
+          -66,
+          22
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Peter meldte 10 halve til ♠ med ♥ som trumf||-4",
+        "savedAt": "2026-06-13T18:29:00Z",
+        "handNumber": 14,
+        "scoresBySeat": [
+          -32,
+          -32,
+          32,
+          32
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Peter meldte 10 halve til ♦ med ♠ som trumf||-1",
+        "savedAt": "2026-06-13T19:59:33Z",
+        "handNumber": 15,
+        "scoresBySeat": [
+          8,
+          -8,
+          8,
+          -8
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Peter meldte sol – han gik hjem",
+        "savedAt": "2026-06-13T20:07:07Z",
+        "handNumber": 16,
+        "scoresBySeat": [
+          -4,
+          12,
+          -4,
+          -4
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Thomas meldte 10 ♣ (gode)||-4",
+        "savedAt": "2026-06-13T20:13:10Z",
+        "handNumber": 17,
+        "scoresBySeat": [
+          -32,
+          32,
+          -32,
+          32
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Thomas meldte ren sol – han gik hjem",
+        "savedAt": "2026-06-13T20:21:20Z",
+        "handNumber": 18,
+        "scoresBySeat": [
+          -8,
+          -8,
+          24,
+          -8
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Peter meldte 10 almindelige med ♠ som trumf og ♦ som makker-es som selvmakker||-4",
+        "savedAt": "2026-06-13T20:30:02Z",
+        "handNumber": 19,
+        "scoresBySeat": [
+          11,
+          -33,
+          11,
+          11
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Christian meldte sol – han gik hjem",
+        "savedAt": "2026-06-13T20:56:15Z",
+        "handNumber": 20,
+        "scoresBySeat": [
+          12,
+          -4,
+          -4,
+          -4
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Peter meldte 9 almindelige med ♣ som trumf og ♥ som makker-es||-1",
+        "savedAt": "2026-06-13T21:12:59Z",
+        "handNumber": 21,
+        "scoresBySeat": [
+          -2,
+          -2,
+          2,
+          2
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Christian meldte 9 ♣ (gode)||0",
+        "savedAt": "2026-06-13T21:25:52Z",
+        "handNumber": 22,
+        "scoresBySeat": [
+          8,
+          8,
+          -8,
+          -8
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Christian meldte ren sol – han gik ned",
+        "savedAt": "2026-06-13T21:34:38Z",
+        "handNumber": 23,
+        "scoresBySeat": [
+          -24,
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Peter meldte 10 ♣ (gode)||-1",
+        "savedAt": "2026-06-13T21:48:09Z",
+        "handNumber": 24,
+        "scoresBySeat": [
+          -8,
+          -8,
+          8,
+          8
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Peter meldte sol – han gik hjem",
+        "savedAt": "2026-06-13T22:27:15Z",
+        "handNumber": 25,
+        "scoresBySeat": [
+          -4,
+          12,
+          -4,
+          -4
+        ]
+      },
+      {
+        "kind": "normal",
+        "caption": "Thomas meldte 9 VIP i første til ♥ med ♥ som trumf||+1",
+        "savedAt": "2026-06-13T22:41:06Z",
+        "handNumber": 26,
+        "scoresBySeat": [
+          -12,
+          -12,
+          12,
+          12
+        ]
+      },
+      {
+        "kind": "sol",
+        "caption": "Peter meldte ren sol – han gik ned",
+        "savedAt": "2026-06-13T22:57:21Z",
+        "handNumber": 27,
+        "scoresBySeat": [
+          8,
+          -24,
+          8,
+          8
+        ]
+      }
+    ],
+    "title": "Whist-gus",
+    "status": "finished",
+    "handCount": 27,
+    "sessionId": "96CC63A7-E5B4-48D9-ACAC-318296D1BB72",
+    "updatedAt": "2026-06-14T10:29:30Z",
+    "notesPublic": "Whist og saunagus hos Peter",
+    "pendingStep": "melding",
+    "totalsBySeat": [
+      -167,
+      173,
+      141,
+      -147
+    ],
+    "pendingPoster": {
+      "gameType": "Halve",
+      "allyNames": [],
+      "bidTricks": 9,
+      "actionText": "MELDER",
+      "bidderName": "Peter",
+      "borderTone": "neutral",
+      "posterKind": "trump",
+      "resumeLine": "Peter melder 9 halve til ♥ (4 kr/stik)",
+      "scoreItems": [],
+      "actualTricks": 8,
+      "isTrumpPending": true,
+      "partnerAceSuit": "Hjerter"
+    },
+    "schemaVersion": 2,
+    "sessionNumber": 1,
+    "lastHandPoster": {
+      "solType": "Ren sol",
+      "allyNames": [],
+      "actionText": "MELDTE",
+      "bidderName": "Peter",
+      "borderTone": "negative",
+      "posterKind": "sol",
+      "resumeLine": "Spil #27: Peter meldte ren sol – han gik ned",
+      "scoreItems": [
+        {
+          "name": "Peter",
+          "role": "bidder",
+          "score": -24
+        },
+        {
+          "name": "Thomas",
+          "role": "none",
+          "score": 8
+        },
+        {
+          "name": "Janus",
+          "role": "none",
+          "score": 8
+        },
+        {
+          "name": "Christian",
+          "role": "none",
+          "score": 8
+        }
+      ],
+      "isTrumpPending": false
+    },
+    "playerNamesBySeat": [
+      "Christian",
+      "Peter",
+      "Thomas",
+      "Janus"
+    ],
+    "pendingMeldingSummary": "Peter melder 9 halve til ♥",
+    "lastCompletedHandCaption": "Peter meldte ren sol – han gik ned"
+  }
+}

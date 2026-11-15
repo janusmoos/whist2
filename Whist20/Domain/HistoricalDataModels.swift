@@ -74,6 +74,7 @@ struct HistoricalGame: Codable, Equatable, Identifiable {
     var sourceSheetName: String
     var sourceRow: Int
     var qualityFlags: [String]
+    var correctionNote: String? = nil
 }
 
 struct HistoricalPlayerResult: Codable, Equatable, Identifiable {

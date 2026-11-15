@@ -1,28 +1,28 @@
 {
   "version": "whist_historical_data_v3",
-  "generatedAt": "2026-05-26T21:26:27.608817+00:00",
+  "generatedAt": "2026-06-14T11:43:34.468Z",
   "players": [
     {
-      "id": "Thomas",
-      "name": "Thomas",
+      "id": "Christian",
+      "name": "Christian",
       "displayOrder": 1,
-      "isActive": true
-    },
-    {
-      "id": "Peter",
-      "name": "Peter",
-      "displayOrder": 2,
       "isActive": true
     },
     {
       "id": "Janus",
       "name": "Janus",
+      "displayOrder": 2,
+      "isActive": true
+    },
+    {
+      "id": "Peter",
+      "name": "Peter",
       "displayOrder": 3,
       "isActive": true
     },
     {
-      "id": "Christian",
-      "name": "Christian",
+      "id": "Thomas",
+      "name": "Thomas",
       "displayOrder": 4,
       "isActive": true
     }
@@ -692,6 +692,22 @@
         "dealer_col": 10,
         "partner_col": 9
       }
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "date": "2026-06-13",
+      "location": "Peter · Whist og saunagus",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "expectedGameCount": 27,
+      "importedGameCount": 27,
+      "missingScoreRows": 0,
+      "qualityStatus": "server_backup",
+      "cumulativeBlockStartColumn": null,
+      "deltaBlockStartColumn": null,
+      "preferredScoreBlockNumericRows": null,
+      "headerRow": null,
+      "columnMapping": null
     }
   ],
   "games": [
@@ -25994,18 +26010,800 @@
       ],
       "winnerId": null,
       "winnerIds": [
+        "Thomas",
+        "Peter"
+      ],
+      "partnerId": "Peter",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "manual_result_correction",
+      "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
+      "sourceRow": 755,
+      "qualityFlags": [
+        "manual_result_correction"
+      ],
+      "correctionNote": "Dette spil er tilsyneladende noteret forkert i det oprindelige regneark. Vinderholdet er manuelt rettet til Thomas og Peter."
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 1,
+      "sourceGameMarker": 1,
+      "gameTypeRaw": "Almindelige",
+      "gameTypeNormalized": "Almindelige",
+      "resumeCaption": "Peter meldte 10 almindelige med ♠ som trumf og ♥ som makker-es||-3",
+      "playedAt": "2026-06-13T14:58:11Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 7,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Thomas"
+      ],
+      "partnerId": "Janus",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 1,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 2,
+      "sourceGameMarker": 2,
+      "gameTypeRaw": "VIP",
+      "gameTypeNormalized": "VIP",
+      "resumeCaption": "Thomas meldte 9 VIP i anden til ♥ med ♥ som trumf||0",
+      "playedAt": "2026-06-13T15:07:34Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 9,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Peter",
+        "Thomas"
+      ],
+      "partnerId": "Peter",
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 2,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 3,
+      "sourceGameMarker": 3,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Peter meldte ren sol – han gik hjem",
+      "playedAt": "2026-06-13T15:16:29Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": "Peter",
+      "winnerIds": [
+        "Peter"
+      ],
+      "partnerId": null,
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 3,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 4,
+      "sourceGameMarker": 4,
+      "gameTypeRaw": "Gode",
+      "gameTypeNormalized": "Gode",
+      "resumeCaption": "Thomas meldte 9 ♣ (gode)||+2",
+      "playedAt": "2026-06-13T15:26:30Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 11,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Janus",
+      "dealerId": "Christian",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 4,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 5,
+      "sourceGameMarker": 5,
+      "gameTypeRaw": "Almindelige",
+      "gameTypeNormalized": "Almindelige",
+      "resumeCaption": "Christian meldte 10 almindelige med ♥ som trumf og ♣ som makker-es – STORSLEM||+3",
+      "playedAt": "2026-06-13T15:38:22Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 13,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Peter"
+      ],
+      "partnerId": "Peter",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 5,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 6,
+      "sourceGameMarker": 6,
+      "gameTypeRaw": "Gode",
+      "gameTypeNormalized": "Gode",
+      "resumeCaption": "Christian meldte 8 ♣ (gode) som selvmakker||-1",
+      "playedAt": "2026-06-13T15:57:06Z",
+      "bidTricks": 8,
+      "actualTricksTaken": 7,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Peter",
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Christian",
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 6,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 7,
+      "sourceGameMarker": 7,
+      "gameTypeRaw": "Almindelige",
+      "gameTypeNormalized": "Almindelige",
+      "resumeCaption": "Christian meldte 10 almindelige med ♠ som trumf og ♦ som makker-es||0",
+      "playedAt": "2026-06-13T16:07:41Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 10,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Janus"
+      ],
+      "partnerId": "Janus",
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 7,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 8,
+      "sourceGameMarker": 8,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Peter meldte ren sol – han gik hjem",
+      "playedAt": "2026-06-13T16:18:14Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": "Peter",
+      "winnerIds": [
+        "Peter"
+      ],
+      "partnerId": null,
+      "dealerId": "Christian",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 8,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 9,
+      "sourceGameMarker": 9,
+      "gameTypeRaw": "VIP",
+      "gameTypeNormalized": "VIP",
+      "resumeCaption": "Thomas meldte 9 VIP i tredje til ♠ med ♣ som trumf||+3",
+      "playedAt": "2026-06-13T16:28:45Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 12,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Peter",
+        "Thomas"
+      ],
+      "partnerId": "Peter",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 9,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 10,
+      "sourceGameMarker": 10,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Janus meldte ren sol og Peter gik med – de gik alle ned",
+      "playedAt": "2026-06-13T16:44:03Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Janus",
+      "bidderIds": [
+        "Janus"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Thomas"
+      ],
+      "partnerId": null,
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 10,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 11,
+      "sourceGameMarker": 11,
+      "gameTypeRaw": "Gode",
+      "gameTypeNormalized": "Gode",
+      "resumeCaption": "Janus meldte 9 ♣ (gode)||-1",
+      "playedAt": "2026-06-13T16:54:54Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 8,
+      "bidderId": "Janus",
+      "bidderIds": [
+        "Janus"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Peter"
+      ],
+      "partnerId": "Thomas",
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 11,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 12,
+      "sourceGameMarker": 12,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Christian meldte ren sol – han gik hjem",
+      "playedAt": "2026-06-13T17:06:15Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": "Christian",
+      "winnerIds": [
+        "Christian"
+      ],
+      "partnerId": null,
+      "dealerId": "Christian",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 12,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 13,
+      "sourceGameMarker": 13,
+      "gameTypeRaw": "Almindelige",
+      "gameTypeNormalized": "Almindelige",
+      "resumeCaption": "Thomas meldte 11 almindelige med ♥ som trumf og ♣ som makker-es som selvmakker||-4",
+      "playedAt": "2026-06-13T17:52:46Z",
+      "bidTricks": 11,
+      "actualTricksTaken": 7,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
         "Peter",
         "Janus"
+      ],
+      "partnerId": "Thomas",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 13,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 14,
+      "sourceGameMarker": 14,
+      "gameTypeRaw": "Halve",
+      "gameTypeNormalized": "Halve",
+      "resumeCaption": "Peter meldte 10 halve til ♠ med ♥ som trumf||-4",
+      "playedAt": "2026-06-13T18:29:00Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 6,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Christian",
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 14,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 15,
+      "sourceGameMarker": 15,
+      "gameTypeRaw": "Halve",
+      "gameTypeNormalized": "Halve",
+      "resumeCaption": "Peter meldte 10 halve til ♦ med ♠ som trumf||-1",
+      "playedAt": "2026-06-13T19:59:33Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 9,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Thomas"
+      ],
+      "partnerId": "Janus",
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 15,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 16,
+      "sourceGameMarker": 16,
+      "gameTypeRaw": "Sol",
+      "gameTypeNormalized": "Sol",
+      "resumeCaption": "Peter meldte sol – han gik hjem",
+      "playedAt": "2026-06-13T20:07:07Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": "Peter",
+      "winnerIds": [
+        "Peter"
+      ],
+      "partnerId": null,
+      "dealerId": "Christian",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 16,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 17,
+      "sourceGameMarker": 17,
+      "gameTypeRaw": "Gode",
+      "gameTypeNormalized": "Gode",
+      "resumeCaption": "Thomas meldte 10 ♣ (gode)||-4",
+      "playedAt": "2026-06-13T20:13:10Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 6,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Peter",
+        "Janus"
+      ],
+      "partnerId": "Christian",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 17,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 18,
+      "sourceGameMarker": 18,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Thomas meldte ren sol – han gik hjem",
+      "playedAt": "2026-06-13T20:21:20Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": "Thomas",
+      "winnerIds": [
+        "Thomas"
+      ],
+      "partnerId": null,
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 18,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 19,
+      "sourceGameMarker": 19,
+      "gameTypeRaw": "Almindelige",
+      "gameTypeNormalized": "Almindelige",
+      "resumeCaption": "Peter meldte 10 almindelige med ♠ som trumf og ♦ som makker-es som selvmakker||-4",
+      "playedAt": "2026-06-13T20:30:02Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 6,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Peter",
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 19,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 20,
+      "sourceGameMarker": 20,
+      "gameTypeRaw": "Sol",
+      "gameTypeNormalized": "Sol",
+      "resumeCaption": "Christian meldte sol – han gik hjem",
+      "playedAt": "2026-06-13T20:56:15Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": "Christian",
+      "winnerIds": [
+        "Christian"
+      ],
+      "partnerId": null,
+      "dealerId": "Christian",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 20,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 21,
+      "sourceGameMarker": 21,
+      "gameTypeRaw": "Almindelige",
+      "gameTypeNormalized": "Almindelige",
+      "resumeCaption": "Peter meldte 9 almindelige med ♣ som trumf og ♥ som makker-es||-1",
+      "playedAt": "2026-06-13T21:12:59Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 8,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Christian",
+      "dealerId": "Peter",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 21,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 22,
+      "sourceGameMarker": 22,
+      "gameTypeRaw": "Gode",
+      "gameTypeNormalized": "Gode",
+      "resumeCaption": "Christian meldte 9 ♣ (gode)||0",
+      "playedAt": "2026-06-13T21:25:52Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 9,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Peter"
+      ],
+      "partnerId": "Peter",
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 22,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 23,
+      "sourceGameMarker": 23,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Christian meldte ren sol – han gik ned",
+      "playedAt": "2026-06-13T21:34:38Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Christian",
+      "bidderIds": [
+        "Christian"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Peter",
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": null,
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 23,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 24,
+      "sourceGameMarker": 24,
+      "gameTypeRaw": "Gode",
+      "gameTypeNormalized": "Gode",
+      "resumeCaption": "Peter meldte 10 ♣ (gode)||-1",
+      "playedAt": "2026-06-13T21:48:09Z",
+      "bidTricks": 10,
+      "actualTricksTaken": 9,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Christian",
+      "dealerId": "Christian",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 24,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 25,
+      "sourceGameMarker": 25,
+      "gameTypeRaw": "Sol",
+      "gameTypeNormalized": "Sol",
+      "resumeCaption": "Peter meldte sol – han gik hjem",
+      "playedAt": "2026-06-13T22:27:15Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": "Peter",
+      "winnerIds": [
+        "Peter"
       ],
       "partnerId": null,
       "dealerId": "Peter",
       "checksum": 0,
-      "scoreSource": "primary_delta_columns",
-      "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
-      "sourceRow": 755,
-      "qualityFlags": [
-        "missing_partner"
-      ]
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 25,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 26,
+      "sourceGameMarker": 26,
+      "gameTypeRaw": "VIP",
+      "gameTypeNormalized": "VIP",
+      "resumeCaption": "Thomas meldte 9 VIP i første til ♥ med ♥ som trumf||+1",
+      "playedAt": "2026-06-13T22:41:06Z",
+      "bidTricks": 9,
+      "actualTricksTaken": 10,
+      "bidderId": "Thomas",
+      "bidderIds": [
+        "Thomas"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": "Janus",
+      "dealerId": "Thomas",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 26,
+      "qualityFlags": []
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027",
+      "sessionId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72",
+      "sessionNumber": "32",
+      "gameNumberInSession": 27,
+      "sourceGameMarker": 27,
+      "gameTypeRaw": "Ren sol",
+      "gameTypeNormalized": "Ren sol",
+      "resumeCaption": "Peter meldte ren sol – han gik ned",
+      "playedAt": "2026-06-13T22:57:21Z",
+      "bidTricks": null,
+      "actualTricksTaken": null,
+      "bidderId": "Peter",
+      "bidderIds": [
+        "Peter"
+      ],
+      "winnerId": null,
+      "winnerIds": [
+        "Christian",
+        "Thomas",
+        "Janus"
+      ],
+      "partnerId": null,
+      "dealerId": "Janus",
+      "checksum": 0,
+      "scoreSource": "server_backup",
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 27,
+      "qualityFlags": []
     }
   ],
   "playerResults": [
@@ -54877,7 +55675,7 @@
       "id": "session_31_2025-11-22_game_044_Thomas",
       "gameId": "session_31_2025-11-22_game_044",
       "playerId": "Thomas",
-      "score": -128,
+      "score": 128,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 755
     },
@@ -54893,7 +55691,7 @@
       "id": "session_31_2025-11-22_game_044_Janus",
       "gameId": "session_31_2025-11-22_game_044",
       "playerId": "Janus",
-      "score": 128,
+      "score": -128,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 755
     },
@@ -54904,34 +55702,899 @@
       "score": -128,
       "sourceSheetName": "SAMLET_alle regnskab_16-5-2026",
       "sourceRow": 755
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001",
+      "playerId": "Christian",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 1
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001",
+      "playerId": "Peter",
+      "score": -12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 1
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001",
+      "playerId": "Thomas",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 1
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-001",
+      "playerId": "Janus",
+      "score": -12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 1
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002",
+      "playerId": "Christian",
+      "score": -16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 2
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002",
+      "playerId": "Peter",
+      "score": 16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 2
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002",
+      "playerId": "Thomas",
+      "score": 16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 2
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-002",
+      "playerId": "Janus",
+      "score": -16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 2
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003",
+      "playerId": "Christian",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 3
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003",
+      "playerId": "Peter",
+      "score": 24,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 3
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003",
+      "playerId": "Thomas",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 3
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-003",
+      "playerId": "Janus",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 3
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004",
+      "playerId": "Christian",
+      "score": -16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 4
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004",
+      "playerId": "Peter",
+      "score": -16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 4
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004",
+      "playerId": "Thomas",
+      "score": 16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 4
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-004",
+      "playerId": "Janus",
+      "score": 16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 4
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005",
+      "playerId": "Christian",
+      "score": 40,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 5
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005",
+      "playerId": "Peter",
+      "score": 40,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 5
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005",
+      "playerId": "Thomas",
+      "score": -40,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 5
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-005",
+      "playerId": "Janus",
+      "score": -40,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 5
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006",
+      "playerId": "Christian",
+      "score": -6,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 6
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006",
+      "playerId": "Peter",
+      "score": 2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 6
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006",
+      "playerId": "Thomas",
+      "score": 2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 6
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-006",
+      "playerId": "Janus",
+      "score": 2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 6
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007",
+      "playerId": "Christian",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 7
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007",
+      "playerId": "Peter",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 7
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007",
+      "playerId": "Thomas",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 7
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-007",
+      "playerId": "Janus",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 7
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008",
+      "playerId": "Christian",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 8
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008",
+      "playerId": "Peter",
+      "score": 24,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 8
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008",
+      "playerId": "Thomas",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 8
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-008",
+      "playerId": "Janus",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 8
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009",
+      "playerId": "Christian",
+      "score": -160,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 9
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009",
+      "playerId": "Peter",
+      "score": 160,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 9
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009",
+      "playerId": "Thomas",
+      "score": 160,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 9
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-009",
+      "playerId": "Janus",
+      "score": -160,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 9
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010",
+      "playerId": "Christian",
+      "score": 16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 10
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010",
+      "playerId": "Peter",
+      "score": -16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 10
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010",
+      "playerId": "Thomas",
+      "score": 16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 10
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-010",
+      "playerId": "Janus",
+      "score": -16,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 10
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011",
+      "playerId": "Christian",
+      "score": 4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 11
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011",
+      "playerId": "Peter",
+      "score": 4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 11
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011",
+      "playerId": "Thomas",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 11
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-011",
+      "playerId": "Janus",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 11
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012",
+      "playerId": "Christian",
+      "score": 24,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 12
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012",
+      "playerId": "Peter",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 12
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012",
+      "playerId": "Thomas",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 12
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-012",
+      "playerId": "Janus",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 12
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013",
+      "playerId": "Christian",
+      "score": 22,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 13
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013",
+      "playerId": "Peter",
+      "score": 22,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 13
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013",
+      "playerId": "Thomas",
+      "score": -66,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 13
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-013",
+      "playerId": "Janus",
+      "score": 22,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 13
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014",
+      "playerId": "Christian",
+      "score": -32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 14
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014",
+      "playerId": "Peter",
+      "score": -32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 14
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014",
+      "playerId": "Thomas",
+      "score": 32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 14
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-014",
+      "playerId": "Janus",
+      "score": 32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 14
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015",
+      "playerId": "Christian",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 15
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015",
+      "playerId": "Peter",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 15
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015",
+      "playerId": "Thomas",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 15
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-015",
+      "playerId": "Janus",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 15
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016",
+      "playerId": "Christian",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 16
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016",
+      "playerId": "Peter",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 16
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016",
+      "playerId": "Thomas",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 16
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-016",
+      "playerId": "Janus",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 16
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017",
+      "playerId": "Christian",
+      "score": -32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 17
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017",
+      "playerId": "Peter",
+      "score": 32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 17
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017",
+      "playerId": "Thomas",
+      "score": -32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 17
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-017",
+      "playerId": "Janus",
+      "score": 32,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 17
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018",
+      "playerId": "Christian",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 18
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018",
+      "playerId": "Peter",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 18
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018",
+      "playerId": "Thomas",
+      "score": 24,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 18
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-018",
+      "playerId": "Janus",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 18
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019",
+      "playerId": "Christian",
+      "score": 11,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 19
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019",
+      "playerId": "Peter",
+      "score": -33,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 19
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019",
+      "playerId": "Thomas",
+      "score": 11,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 19
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-019",
+      "playerId": "Janus",
+      "score": 11,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 19
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020",
+      "playerId": "Christian",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 20
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020",
+      "playerId": "Peter",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 20
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020",
+      "playerId": "Thomas",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 20
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-020",
+      "playerId": "Janus",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 20
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021",
+      "playerId": "Christian",
+      "score": -2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 21
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021",
+      "playerId": "Peter",
+      "score": -2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 21
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021",
+      "playerId": "Thomas",
+      "score": 2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 21
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-021",
+      "playerId": "Janus",
+      "score": 2,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 21
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022",
+      "playerId": "Christian",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 22
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022",
+      "playerId": "Peter",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 22
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022",
+      "playerId": "Thomas",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 22
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-022",
+      "playerId": "Janus",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 22
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023",
+      "playerId": "Christian",
+      "score": -24,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 23
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023",
+      "playerId": "Peter",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 23
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023",
+      "playerId": "Thomas",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 23
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-023",
+      "playerId": "Janus",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 23
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024",
+      "playerId": "Christian",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 24
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024",
+      "playerId": "Peter",
+      "score": -8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 24
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024",
+      "playerId": "Thomas",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 24
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-024",
+      "playerId": "Janus",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 24
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025",
+      "playerId": "Christian",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 25
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025",
+      "playerId": "Peter",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 25
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025",
+      "playerId": "Thomas",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 25
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-025",
+      "playerId": "Janus",
+      "score": -4,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 25
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026",
+      "playerId": "Christian",
+      "score": -12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 26
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026",
+      "playerId": "Peter",
+      "score": -12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 26
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026",
+      "playerId": "Thomas",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 26
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-026",
+      "playerId": "Janus",
+      "score": 12,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 26
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027-Christian",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027",
+      "playerId": "Christian",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 27
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027-Peter",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027",
+      "playerId": "Peter",
+      "score": -24,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 27
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027-Thomas",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027",
+      "playerId": "Thomas",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 27
+    },
+    {
+      "id": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027-Janus",
+      "gameId": "live-96cc63a7-e5b4-48d9-acac-318296d1bb72-game-027",
+      "playerId": "Janus",
+      "score": 8,
+      "sourceSheetName": "Neon backup · Whist-gus",
+      "sourceRow": 27
     }
   ],
   "auditSummary": {
     "version": "v3",
     "sheetCount": 56,
-    "importedSessions": 32,
-    "importedGames": 903,
-    "playerResultRows": 3612,
+    "importedSessions": 33,
+    "importedGames": 930,
+    "playerResultRows": 3720,
     "playerTotals": {
-      "Christian": -669,
-      "Janus": 3547,
-      "Peter": -3853,
-      "Thomas": 895
+      "Christian": -836,
+      "Janus": 3144,
+      "Peter": -3680,
+      "Thomas": 1292
     },
     "fieldCounts": {
-      "gameType": 699,
-      "dealer": 678,
-      "bidder_or_winner": 903,
-      "partner": 251,
-      "score_sum_zero": 873
+      "gameType": 726,
+      "dealer": 705,
+      "bidder_or_winner": 930,
+      "partner": 269,
+      "score_sum_zero": 900
     },
-    "issueCount": 50,
+    "issueCount": 51,
     "issueCounts": {
       "date_mismatch": 8,
       "empty_source_sheet": 1,
       "expected_vs_imported_count_mismatch": 1,
       "individual_sheet_limited_source": 6,
       "known_control_total_error": 1,
+      "manual_result_correction": 1,
       "primary_header_sha256_mismatch": 1,
       "score_sum_not_zero": 30,
       "session19_manual_review_required": 1,
