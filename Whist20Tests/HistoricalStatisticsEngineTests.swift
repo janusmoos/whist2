@@ -17,10 +17,41 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(primary.auditSummary?.version, "v3")
         XCTAssertEqual(primary.games.count, 903)
         XCTAssertEqual(primary.playerResults.count, primary.games.count * 4)
+        XCTAssertEqual(primary.players.map(\.name), ["Christian", "Janus", "Peter", "Thomas"])
+        XCTAssertEqual(
+            HistoricalStatisticsEngine.playerScoreSummaries(from: primary).map(\.player.name),
+            ["Christian", "Janus", "Peter", "Thomas"]
+        )
 
         XCTAssertEqual(legacy.version, "whist_historical_data_v2_corrected")
         XCTAssertEqual(legacy.auditSummary?.version, "v2")
         XCTAssertEqual(legacy.games.count, 744)
+    }
+
+    func testSession31Game44UsesManuallyCorrectedResult() throws {
+        let data = try HistoricalDataJSONLoader(bundle: .main, pack: .primary).load()
+        let gameId = "session_31_2025-11-22_game_044"
+        let game = try XCTUnwrap(data.games.first { $0.id == gameId })
+        let scores = Dictionary(
+            uniqueKeysWithValues: data.playerResults
+                .filter { $0.gameId == gameId }
+                .map { ($0.playerId, $0.score) }
+        )
+
+        XCTAssertEqual(game.winnerIds, ["Thomas", "Peter"])
+        XCTAssertEqual(game.partnerId, "Peter")
+        XCTAssertEqual(game.scoreSource, "manual_result_correction")
+        XCTAssertEqual(game.qualityFlags, ["manual_result_correction"])
+        XCTAssertEqual(
+            game.correctionNote,
+            "Dette spil er tilsyneladende noteret forkert i det oprindelige regneark. Vinderholdet er manuelt rettet til Thomas og Peter."
+        )
+        XCTAssertEqual(scores, [
+            "Thomas": 128,
+            "Peter": 128,
+            "Janus": -128,
+            "Christian": -128,
+        ])
     }
 
     func testLiveAdapterAppendsRecordedHandsAsHistoricalSession() {
@@ -190,7 +221,7 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(decoded.auditSummary?.fieldCounts.scoreSumZero, 714)
     }
 
-    func testPlayerScoreSummariesAreRankedByTotalScore() {
+    func testPlayerScoreSummariesFollowDisplayOrder() {
         let data = HistoricalWhistData(
             version: "test",
             generatedAt: "now",
@@ -670,7 +701,7 @@ final class HistoricalStatisticsEngineTests: XCTestCase {
         XCTAssertEqual(overview?.issueCount, 1)
     }
 
-    func testPlayerTrendSummariesRankByPeriodScore() {
+    func testPlayerTrendSummariesFollowDisplayOrder() {
         let sessions = (1...3).map { index in
             HistoricalSession(
                 id: "s\(index)",

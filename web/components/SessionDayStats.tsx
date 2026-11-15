@@ -226,6 +226,8 @@ export function SessionDayStatsPanel({
             iconKind: row.iconKind,
             scores: row.scoresBySeat,
             resume: liveHandResume(row.caption) || null,
+            noteTitle: row.noteTitle,
+            noteText: row.noteText,
           }))}
         />
       </section>

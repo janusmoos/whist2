@@ -16,13 +16,26 @@ export function gameTypeIconKindFromHand(
   if (kind === "duty" || narrative.includes("duestraf")) {
     return { type: "duty" };
   }
-  if (narrative.includes("vip i tredje") || narrative.includes("vip 3")) {
+  if (
+    narrative.includes("vip i tredje") ||
+    narrative.includes("vip i 3") ||
+    narrative.includes("vip 3")
+  ) {
     return { type: "vip", level: 3 };
   }
-  if (narrative.includes("vip i anden") || narrative.includes("vip 2")) {
+  if (
+    narrative.includes("vip i anden") ||
+    narrative.includes("vip i 2") ||
+    narrative.includes("vip 2")
+  ) {
     return { type: "vip", level: 2 };
   }
-  if (narrative.includes("vip i første") || narrative.includes("vip 1") || narrative.includes("vip")) {
+  if (
+    narrative.includes("vip i første") ||
+    narrative.includes("vip i 1") ||
+    narrative.includes("vip 1") ||
+    narrative.includes("vip")
+  ) {
     return { type: "vip", level: 1 };
   }
   if (narrative.includes("gode")) return { type: "gode" };

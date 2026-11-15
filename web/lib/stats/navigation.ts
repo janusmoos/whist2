@@ -71,4 +71,5 @@ export const SITE_MENU_NAV = [
     label: item.title,
     indent: true as const,
   })),
+  { href: "/admin", label: "Admin" },
 ];

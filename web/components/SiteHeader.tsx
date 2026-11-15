@@ -8,7 +8,12 @@ export function SiteHeader({ sub = "live" }: { sub?: string }) {
         <h1>Whistklubben</h1>
         <span className="site-sub">{sub}</span>
       </Link>
-      <SiteMenu />
+      <div className="site-header-actions">
+        <Link href="/statistik" className="site-header-stats-link">
+          Statistik
+        </Link>
+        <SiteMenu />
+      </div>
     </div>
   );
 }

@@ -14,8 +14,19 @@ export type SessionGameTableRow = {
   iconKind?: GameTypeIconKind;
   scores: number[];
   resume: string | null;
+  noteTitle?: string | null;
+  noteText?: string | null;
   href?: string;
 };
+
+function noteText(row: Pick<SessionGameTableRow, "noteTitle" | "noteText">): string | null {
+  const title = row.noteTitle?.trim() ?? "";
+  const text = row.noteText?.trim() ?? "";
+  if (!title && !text) return null;
+  if (!title) return `Note: ${text}`;
+  if (!text) return `Note: ${title}`;
+  return `Note: ${title} - ${text}`;
+}
 
 function ExpandToggle({
   expanded,
@@ -63,7 +74,8 @@ function AccordionRow({
   onToggle: () => void;
 }) {
   const label = `spil ${row.gameNumber}`;
-  const hasResume = Boolean(row.resume?.trim());
+  const note = noteText(row);
+  const hasResume = Boolean(row.resume?.trim() || note);
 
   return (
     <Fragment>
@@ -112,7 +124,8 @@ function AccordionRow({
         <tr className="hands-table-resume-row stats-games-accordion-resume-row">
           <td colSpan={3 + row.scores.length}>
             <div className="hands-table-resume-box">
-              <SuitColoredText text={row.resume!} />
+              {row.resume ? <SuitColoredText text={row.resume} /> : null}
+              {note ? <p className="hands-table-resume-note">{note}</p> : null}
             </div>
           </td>
         </tr>

@@ -517,7 +517,7 @@ def main(argv: list[str]) -> int:
         "generatedAt": generated_at,
         "players": [
             {"id": player, "name": player, "displayOrder": index + 1, "isActive": True}
-            for index, player in enumerate(PLAYERS)
+            for index, player in enumerate(("Christian", "Janus", "Peter", "Thomas"))
         ],
         "sessions": sessions,
         "games": games,

@@ -14,10 +14,6 @@ const source = path.join(
   "whist_historical_data_v3.json"
 );
 
-if (fs.existsSync(target)) {
-  process.exit(0);
-}
-
 if (!fs.existsSync(source)) {
   console.warn("[ensure-historical-data] Kildefil mangler:", source);
   process.exit(0);
@@ -25,4 +21,4 @@ if (!fs.existsSync(source)) {
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.copyFileSync(source, target);
-console.log("[ensure-historical-data] Kopiér historisk JSON til web/data");
+console.log("[ensure-historical-data] Synkronisér historisk JSON til web/data");

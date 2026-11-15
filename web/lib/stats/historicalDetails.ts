@@ -228,17 +228,22 @@ export function buildGameIndex(
   const sessionIndexById = new Map(
     sessionDetails.map((d) => [d.session.id, d.sessionIndex] as const)
   );
+  const sessionNumberById = new Map(
+    sessionDetails.map((d) => [d.session.id, d.session.sessionNumber] as const)
+  );
   const out: Record<string, GameRecord> = {};
   for (const game of data.games) {
     out[game.id] = {
       id: game.id,
       sessionId: game.sessionId,
       sessionIndex: sessionIndexById.get(game.sessionId) ?? 0,
+      sessionNumber: sessionNumberById.get(game.sessionId) ?? "",
       gameNumber: game.gameNumberInSession,
       gameType: gameTypeLabel(game) === "—" ? null : gameTypeLabel(game),
       iconKind: gameTypeIconKindFromHistorical(game),
       scores: {},
       qualityFlags: game.qualityFlags ?? [],
+      correctionNote: game.correctionNote,
     };
   }
   for (const r of data.playerResults) {

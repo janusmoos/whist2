@@ -292,6 +292,33 @@ main {
   letter-spacing: 0.02em;
 }
 
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.site-header-stats-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  color: var(--green);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.site-header-stats-link:hover {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, var(--panel-hi));
+}
+
 .site-menu {
   position: relative;
   flex-shrink: 0;
@@ -1289,6 +1316,11 @@ main {
   font-size: 0.82rem;
   line-height: 1.45;
   color: color-mix(in srgb, var(--text) 82%, var(--muted));
+}
+
+.hands-table-resume-note {
+  margin: 0.35rem 0 0;
+  color: color-mix(in srgb, var(--text) 68%, var(--muted));
 }
 
 .table-empty,
@@ -3228,7 +3260,6 @@ main {
     stroke-dashoffset: inherit !important;
   }
 }
-
 /* Admin */
 .admin-login-card,
 .admin-control-card,
