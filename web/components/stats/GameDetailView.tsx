@@ -16,7 +16,7 @@ export function GameDetailView({ gameId }: { gameId: string }) {
     <StatsPageShell
       title={game ? `Spil #${game.gameNumber}` : "Spil"}
       backHref={game ? sessionPath(game.sessionIndex) : "/statistik/alle-spilledage"}
-      backLabel={game ? `Spilledag ${game.sessionIndex}` : "Alle spilledage"}
+      backLabel={game ? `Spilledag ${game.sessionNumber}` : "Alle spilledage"}
     >
       {error ? (
         <div className="banner" role="alert">
@@ -28,7 +28,7 @@ export function GameDetailView({ gameId }: { gameId: string }) {
       {game ? (
         <div className="stats-detail">
           <p className="stats-detail-sub stats-detail-sub--inline">
-            Spilledag {game.sessionIndex}
+            Spilledag {game.sessionNumber}
             {game.gameType ? (
               <>
                 {" · "}
@@ -68,6 +68,7 @@ export function GameDetailView({ gameId }: { gameId: string }) {
                   </li>
                 ))}
               </ul>
+              {game.correctionNote ? <p>{game.correctionNote}</p> : null}
             </section>
           ) : null}
 

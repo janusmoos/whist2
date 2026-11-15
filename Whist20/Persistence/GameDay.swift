@@ -15,6 +15,9 @@ final class GameDay {
     /// Bruges til visning og senere flows; defaults til standard-orden.
     var seatOrderJSON: String = "[0,1,2,3]"
 
+    /// Dealer i spil #1 (`Seat.rawValue`). Efterfølgende dealers følger bordrækkefølgen.
+    var firstDealerSeatRaw: Int = 0
+
     @Relationship(deleteRule: .cascade, inverse: \RecordedHand.gameDay)
     var hands: [RecordedHand] = []
 
@@ -28,7 +31,8 @@ final class GameDay {
         title: String = "Spilledag",
         notes: String = "",
         endedAt: Date? = nil,
-        seatOrderJSON: String = "[0,1,2,3]"
+        seatOrderJSON: String = "[0,1,2,3]",
+        firstDealerSeatRaw: Int = 0
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -36,6 +40,7 @@ final class GameDay {
         self.notes = notes
         self.endedAt = endedAt
         self.seatOrderJSON = seatOrderJSON
+        self.firstDealerSeatRaw = firstDealerSeatRaw
     }
 }
 
@@ -49,11 +54,21 @@ extension GameDay {
         return seats.count == 4 ? seats : Seat.all
     }
 
-    /// Dealer til kampnummer (#1 → første i `seatOrder`, #2 → næste, osv.).
+    var firstDealerSeat: Seat {
+        let order = seatOrder
+        guard let configured = Seat(rawValue: firstDealerSeatRaw),
+              order.contains(configured) else {
+            return order.first ?? .north
+        }
+        return configured
+    }
+
+    /// Dealer til kampnummer, roteret fra den valgte dealer i spil #1.
     func dealerSeat(forHandNumber handNumber: Int) -> Seat {
         let order = seatOrder
         guard !order.isEmpty else { return .north }
-        let idx = max(0, handNumber - 1) % order.count
+        let firstIndex = order.firstIndex(of: firstDealerSeat) ?? 0
+        let idx = (firstIndex + max(0, handNumber - 1)) % order.count
         return order[idx]
     }
 }

@@ -66,6 +66,8 @@ export type HandRow = {
   iconKind: GameTypeIconKind;
   scoresBySeat: number[];
   caption: string;
+  noteTitle?: string | null;
+  noteText?: string | null;
 };
 
 export type SessionDayStats = {
@@ -311,6 +313,8 @@ export function computeSessionDayStats(
     iconKind: gameTypeIconKindFromHand(hand.kind, hand.caption),
     scoresBySeat: hand.scoresBySeat,
     caption: hand.caption,
+    noteTitle: hand.noteTitle,
+    noteText: hand.noteText,
   }));
 
   return {

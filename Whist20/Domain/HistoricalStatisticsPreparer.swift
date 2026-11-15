@@ -229,6 +229,7 @@ struct LiveStatisticsGameDaySnapshot: Equatable, Sendable {
     var title: String
     var endedAt: Date?
     var seatOrder: [Seat]
+    var firstDealerSeat: Seat = .north
     var hands: [LiveStatisticsHandSnapshot]
     var hasPendingHand: Bool
 }
@@ -258,6 +259,7 @@ enum LiveHistoricalStatisticsAdapter {
                 title: day.title,
                 endedAt: day.endedAt,
                 seatOrder: day.seatOrder,
+                firstDealerSeat: day.firstDealerSeat,
                 hands: day.hands.map { hand in
                     LiveStatisticsHandSnapshot(
                         id: hand.id,
@@ -286,6 +288,11 @@ enum LiveHistoricalStatisticsAdapter {
                 return copy
             }
             .filter { !$0.hands.isEmpty }
+            .filter { snapshot in
+                !historicalData.sessions.contains {
+                    $0.id == sessionId(for: snapshot.id)
+                }
+            }
             .sorted { lhs, rhs in
                 if lhs.createdAt != rhs.createdAt {
                     return lhs.createdAt < rhs.createdAt
@@ -349,7 +356,11 @@ enum LiveHistoricalStatisticsAdapter {
                         winnerId: nil,
                         winnerIds: [],
                         partnerId: hand.partnerSeat.flatMap { playersBySeat[$0]?.id },
-                        dealerId: dealerSeat(forHandNumber: handNumber, seatOrder: snapshot.seatOrder)
+                        dealerId: dealerSeat(
+                            forHandNumber: handNumber,
+                            seatOrder: snapshot.seatOrder,
+                            firstDealerSeat: snapshot.firstDealerSeat
+                        )
                             .flatMap { playersBySeat[$0]?.id },
                         checksum: checksum,
                         scoreSource: scoreSource,
@@ -465,10 +476,15 @@ enum LiveHistoricalStatisticsAdapter {
         }
     }
 
-    private static func dealerSeat(forHandNumber handNumber: Int, seatOrder: [Seat]) -> Seat? {
+    private static func dealerSeat(
+        forHandNumber handNumber: Int,
+        seatOrder: [Seat],
+        firstDealerSeat: Seat
+    ) -> Seat? {
         let order = seatOrder.isEmpty ? Seat.all : seatOrder
         guard !order.isEmpty else { return nil }
-        return order[max(0, handNumber - 1) % order.count]
+        let firstIndex = order.firstIndex(of: firstDealerSeat) ?? 0
+        return order[(firstIndex + max(0, handNumber - 1)) % order.count]
     }
 
     private static func sessionId(for id: UUID) -> String {

@@ -1,0 +1,22 @@
+---
+description: Genstart og verificér localhost efter web-ændringer i web/
+globs: web/**
+alwaysApply: false
+---
+
+# Web dev-server (localhost:3000)
+
+## Efter hver afsluttet gruppe ændringer i `web/`
+
+1. **Kør ikke** `npm run build` mens `npm run dev` kører — det korrumperer `.next` og giver 500/404.
+2. **Afslut altid** med localhost-tjek:
+   - Dræb zombie-processer på port 3000/3002 hvis nødvendigt.
+   - Slet `web/.next` hvis siden returnerer 500, 404 eller hænger.
+   - Start `npm run dev` i `web/` (i baggrunden hvis den ikke kører).
+   - Verificér med `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/` → forvent **200**.
+   - Verificér API: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/sessions` → forvent **200**.
+3. Rapportér kort status til brugeren (OK eller hvad der blev rettet).
+
+## Hvis build skal køres
+
+Stop dev-serveren først, kør `npm run build`, genstart derefter `npm run dev` og tjek localhost igen.

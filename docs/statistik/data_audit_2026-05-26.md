@@ -78,6 +78,7 @@ CSV: `docs/statistik/audit/workbook_version_differences_2026-05-26.csv`
 
 ## Konklusion
 
+- Spilledag 31, spil 44 er manuelt rettet efter efterfølgende afklaring: vinderholdet er Thomas og Peter. Spillet var tilsyneladende noteret forkert i det oprindelige regneark. Pointene er nu Thomas +128, Peter +128, Janus -128 og Christian -128.
 - Den oprindelige workbook `Whist – resultater – samlet (2024)_AKTIV_forenkling af data.xlsx` indeholder 2 sikre delta/kumulativ-fejl: Spilledag 30, Spil 1, Spilledag 31, Spil 1.
 - Appens aktuelle v3-data er reimporteret fra den rettede workbook `...data-3.xlsx`, som har 0 delta/kumulativ-fejl i den primære kilde.
 - Direkte kontrol af appens JSON bekræfter, at Spilledag 30, Spil 1 og Spilledag 31, Spil 1 nu bruger de korrigerede scorer.

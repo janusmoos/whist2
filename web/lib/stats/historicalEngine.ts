@@ -137,8 +137,7 @@ export function scoreTimeline(data: HistoricalWhistData): ScoreTimelinePoint[] {
 export function playerScoreSummaries(data: HistoricalWhistData): PlayerScoreSummary[] {
   const grouped = groupBy(data.playerResults, (r) => r.playerId);
 
-  return sortedPlayers(data.players)
-    .map((player) => {
+  return sortedPlayers(data.players).map((player) => {
       const results = grouped.get(player.id) ?? [];
       const scores = results.map((r) => r.score);
       const total = scores.reduce((a, b) => a + b, 0);
@@ -155,10 +154,6 @@ export function playerScoreSummaries(data: HistoricalWhistData): PlayerScoreSumm
         worstSessionIndex: null,
         worstSessionScore: null,
       };
-    })
-    .sort((a, b) => {
-      if (a.totalScore !== b.totalScore) return b.totalScore - a.totalScore;
-      return a.player.displayOrder - b.player.displayOrder;
     });
 }
 

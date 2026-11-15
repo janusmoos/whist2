@@ -25,6 +25,8 @@ export type HistoricalGame = {
   gameNumberInSession: number;
   gameTypeRaw?: string | null;
   gameTypeNormalized?: string | null;
+  resumeCaption?: string | null;
+  playedAt?: string | null;
   bidTricks?: number | null;
   bidderId?: string | null;
   bidderIds?: string[];
@@ -129,11 +131,13 @@ export type GameRecord = {
   id: string;
   sessionId: string;
   sessionIndex: number;
+  sessionNumber: string;
   gameNumber: number;
   gameType: string | null;
   iconKind: GameTypeIconKind;
   scores: Record<string, number>;
   qualityFlags: string[];
+  correctionNote?: string | null;
 };
 
 export type HeatmapCell = {

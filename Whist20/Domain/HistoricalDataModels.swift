@@ -58,6 +58,8 @@ struct HistoricalGame: Codable, Equatable, Identifiable {
     var sourceGameMarker: Int?
     var gameTypeRaw: String?
     var gameTypeNormalized: String?
+    var resumeCaption: String?
+    var playedAt: String?
     var bidTricks: Int?
     /// Faktisk antal stik hjemtaget (kun tilgængeligt for live-data parseret fra resumeCaption).
     var actualTricksTaken: Int?
@@ -72,6 +74,7 @@ struct HistoricalGame: Codable, Equatable, Identifiable {
     var sourceSheetName: String
     var sourceRow: Int
     var qualityFlags: [String]
+    var correctionNote: String? = nil
 }
 
 struct HistoricalPlayerResult: Codable, Equatable, Identifiable {
