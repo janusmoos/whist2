@@ -11,6 +11,9 @@ export type HandSummary = {
   scoresBySeat: number[];
   /** ISO 8601 — hvornår kampen blev gemt i appen. Valgfrit for ældre payloads. */
   savedAt?: string;
+  noteTitle?: string | null;
+  noteText?: string | null;
+  noteCreatedAt?: string | null;
 };
 
 function scoreLabel(n: number): string {

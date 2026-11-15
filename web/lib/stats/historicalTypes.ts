@@ -34,6 +34,7 @@ export type HistoricalGame = {
   dealerId?: string | null;
   checksum?: number | null;
   qualityFlags?: string[];
+  correctionNote?: string | null;
 };
 
 export type HistoricalPlayerResult = {
