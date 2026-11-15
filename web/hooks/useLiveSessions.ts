@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { LiveSession } from "@/lib/liveSessionTypes";
+import type {
+  LiveSession,
+  LiveSessionsResponse,
+} from "@/lib/liveSessionTypes";
 
 export function useLiveSessions(pollMs = 2000) {
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [liveEnabled, setLiveEnabled] = useState(true);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
@@ -15,14 +19,17 @@ export function useLiveSessions(pollMs = 2000) {
     async function fetchSessions() {
       try {
         const res = await fetch("/api/sessions", { cache: "no-store" });
-        const data = await res.json();
+        const data = (await res.json()) as LiveSessionsResponse & {
+          error?: string;
+        };
         if (!res.ok) {
           throw new Error(
             typeof data.error === "string" ? data.error : "Serverfejl"
           );
         }
         if (!cancelledRef.current) {
-          setSessions(Array.isArray(data) ? data : []);
+          setSessions(Array.isArray(data.sessions) ? data.sessions : []);
+          setLiveEnabled(data.liveEnabled !== false);
           setError(null);
           setLoading(false);
         }
@@ -35,12 +42,12 @@ export function useLiveSessions(pollMs = 2000) {
     }
 
     fetchSessions();
-    const id = setInterval(fetchSessions, pollMs);
+    const id = liveEnabled ? setInterval(fetchSessions, pollMs) : null;
     return () => {
       cancelledRef.current = true;
-      clearInterval(id);
+      if (id) clearInterval(id);
     };
-  }, [pollMs]);
+  }, [pollMs, liveEnabled]);
 
-  return { sessions, error, loading };
+  return { sessions, error, loading, liveEnabled };
 }

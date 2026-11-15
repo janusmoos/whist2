@@ -199,7 +199,7 @@ function ActiveSessionView({
     <div>
       <div className="session-header">
         {sessionNumber != null ? (
-          <p className="session-index">Spilledage #{sessionNumber}</p>
+          <p className="session-index">Spilledag #{sessionNumber}</p>
         ) : null}
         <h2 className="session-title">{s.title ?? "Uden titel"}</h2>
         <div className="session-meta-row">
@@ -267,6 +267,9 @@ function FinishedSessionCard({ s }: { s: LiveSession }) {
       <div className="card-top">
         <span className="pill pill--done">Afsluttet</span>
       </div>
+      {s.sessionNumber != null ? (
+        <p className="session-index">Spilledag #{s.sessionNumber}</p>
+      ) : null}
       <h2>{s.title ?? "Uden titel"}</h2>
       <p className="hand-count muted">
         {handCount} {handCount === 1 ? "kamp" : "kampe"} spillet
@@ -287,7 +290,7 @@ function FinishedSessionCard({ s }: { s: LiveSession }) {
 // ── Hoved-side ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { sessions, error } = useLiveSessions();
+  const { sessions, error, liveEnabled } = useLiveSessions();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -332,7 +335,11 @@ export default function HomePage() {
         </section>
       ) : null}
 
-      <p className="footer-note">Opdateres automatisk hvert 2. sekund.</p>
+      <p className="footer-note">
+        {liveEnabled
+          ? "Opdateres automatisk hvert 2. sekund."
+          : "Live-opdatering er sat på pause. Statistikken er stadig tilgængelig."}
+      </p>
     </main>
   );
 }

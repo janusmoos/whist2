@@ -22,6 +22,12 @@ export type LiveSession = {
   serverUpdatedAt?: string;
 };
 
+export type LiveSessionsResponse = {
+  liveEnabled: boolean;
+  changedAt: string | null;
+  sessions: LiveSession[];
+};
+
 export function getActiveSession(sessions: LiveSession[]): LiveSession | null {
   return sessions.find((s) => s.status !== "finished") ?? null;
 }

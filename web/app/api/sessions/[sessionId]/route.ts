@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
+import { getLiveControl } from "@/lib/liveControl";
 
 export const dynamic = "force-dynamic";
 
@@ -45,15 +46,29 @@ export async function PUT(
   const payloadStr = JSON.stringify(body);
 
   try {
+    const control = await getLiveControl();
+    if (!control.enabled) {
+      return NextResponse.json(
+        { ok: false, paused: true, changedAt: control.changedAt },
+        {
+          status: 423,
+          headers: { "Retry-After": "300" },
+        }
+      );
+    }
     const sql = getSql();
-    await sql`
+    const rows = await sql`
       INSERT INTO live_sessions (session_id, payload, updated_at)
       VALUES (${sessionId}::uuid, ${payloadStr}::jsonb, now())
       ON CONFLICT (session_id) DO UPDATE SET
         payload = EXCLUDED.payload,
         updated_at = now()
+      RETURNING updated_at
     `;
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      serverSavedAt: new Date(rows[0]?.updated_at as string | Date).toISOString(),
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Databasefejl";
     return NextResponse.json({ error: msg }, { status: 500 });
