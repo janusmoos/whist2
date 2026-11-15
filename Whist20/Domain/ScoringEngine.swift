@@ -143,20 +143,11 @@ enum ScoringEngine: Sendable {
         return totalPoints
     }
 
+    /// Selvmakker: hver af de tre modspillere betaler `P` til melderen (`3P, −P, −P, −P`).
     private static func selfPartnerScores(basePoints: Int, bidder: Seat) -> [Seat: Int] {
         var scores = zeroScores()
-        let originalTotal = basePoints * 2
-        let adjustedTotal: Int = {
-            if originalTotal >= 0 {
-                Int(ceil(Double(originalTotal) / 3.0)) * 3
-            } else {
-                Int(floor(Double(originalTotal) / 3.0)) * 3
-            }
-        }()
-        scores[bidder] = adjustedTotal
-        let opponentPoints = -adjustedTotal / 3
-        for seat in Seat.all where seat != bidder {
-            scores[seat] = opponentPoints
+        for seat in Seat.all {
+            scores[seat] = seat == bidder ? 3 * basePoints : -basePoints
         }
         return scores
     }
