@@ -15,9 +15,35 @@ jobs:
 
       - name: Run tests (Simulator)
         run: |
+          set -euo pipefail
+          DEST=$(
+            xcrun simctl list devices available -j \
+              | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+preferred = ("iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro", "iPhone 15")
+devices = []
+for runtime, items in data.get("devices", {}).items():
+    if "iOS" not in runtime:
+        continue
+    for item in items:
+        if item.get("isAvailable"):
+            devices.append(item["name"])
+for name in preferred:
+    if name in devices:
+        print(f"platform=iOS Simulator,name={name},OS=latest")
+        raise SystemExit(0)
+# Fallback: first available iPhone
+for name in devices:
+    if name.startswith("iPhone"):
+        print(f"platform=iOS Simulator,name={name},OS=latest")
+        raise SystemExit(0)
+raise SystemExit("No available iPhone simulator found")
+'
+          )
+          echo "Using destination: $DEST"
           xcodebuild \
             -project "Whist20.xcodeproj" \
             -scheme "Whist20" \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
+            -destination "$DEST" \
             test
-
